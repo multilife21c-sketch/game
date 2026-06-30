@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>NOVA ARCADE — 게임 허브</title>
+<meta name="theme-color" content="#070b14">
+<meta name="description" content="다양한 게임을 한 곳에서. NOVA ARCADE 게임 허브.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Outfit:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg0:#070b14; --bg1:#0d1626; --panel:#111d31; --panel2:#16243b;
+  --border:#1e2c43; --border2:#2c4060;
+  --txt:#e6ecf7; --muted:#8194ad; --dim:#516581;
+  --amber:#ffb547; --cyan:#22d3ee; --magenta:#ff5c8a; --purple:#a855f7; --green:#00e5a0; --red:#ff4d6d;
+  --fdisp:'Orbitron',sans-serif; --fui:'Outfit','Noto Sans KR',sans-serif; --fkr:'Noto Sans KR',sans-serif; --fmono:'JetBrains Mono',monospace;
+  --accent:var(--amber);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{background:var(--bg0);color:var(--txt);font-family:var(--fui);min-height:100%;-webkit-font-smoothing:antialiased;}
+body{background:
+  radial-gradient(1100px 600px at 80% -10%, rgba(168,85,247,.10), transparent 60%),
+  radial-gradient(900px 500px at -5% 0%, rgba(34,211,238,.08), transparent 55%),
+  var(--bg0);}
+a{color:inherit;text-decoration:none;}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+input{font-family:inherit;}
+img{display:block;max-width:100%;}
+::selection{background:rgba(255,181,71,.3);}
+
+/* ===== HEADER ===== */
+.top{position:sticky;top:0;z-index:40;backdrop-filter:blur(12px);
+  background:linear-gradient(180deg,rgba(7,11,20,.92),rgba(7,11,20,.72));
+  border-bottom:1px solid var(--border);}
+.top-in{max-width:1240px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:18px;}
+.brand{display:flex;align-items:center;gap:11px;flex-shrink:0;}
+.logo{width:34px;height:34px;border-radius:9px;position:relative;
+  background:conic-gradient(from 210deg,var(--amber),var(--magenta),var(--purple),var(--cyan),var(--amber));
+  box-shadow:0 0 22px rgba(255,181,71,.35);}
+.logo::after{content:"";position:absolute;inset:5px;border-radius:5px;background:var(--bg0);}
+.logo::before{content:"";position:absolute;inset:0;z-index:2;border-radius:9px;
+  background:radial-gradient(circle at 50% 50%,var(--txt) 0 2px,transparent 3px);}
+.wordmark{font-family:var(--fdisp);font-weight:900;font-size:19px;letter-spacing:1.5px;line-height:1;}
+.wordmark b{color:var(--amber);}
+.tagline{font-size:10.5px;color:var(--dim);letter-spacing:3px;text-transform:uppercase;margin-top:3px;}
+.search{flex:1;max-width:420px;margin-left:auto;position:relative;}
+.search input{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:11px;
+  padding:11px 14px 11px 38px;color:var(--txt);font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s;}
+.search input:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(255,181,71,.12);}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--dim);}
+.acct{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.btn{border-radius:10px;padding:10px 16px;font-weight:600;font-size:13.5px;transition:transform .12s,filter .15s,background .15s;}
+.btn:active{transform:translateY(1px);}
+.btn-pri{background:var(--amber);color:#1a1206;}
+.btn-pri:hover{filter:brightness(1.07);}
+.btn-ghost{background:var(--panel);border:1px solid var(--border2);color:var(--txt);}
+.btn-ghost:hover{border-color:var(--amber);}
+.avatar{width:34px;height:34px;border-radius:50%;border:2px solid var(--amber);background:var(--panel2);object-fit:cover;}
+.menu{position:relative;}
+.menu-pop{position:absolute;right:0;top:46px;background:var(--panel);border:1px solid var(--border2);
+  border-radius:13px;padding:8px;min-width:210px;box-shadow:0 18px 40px rgba(0,0,0,.5);display:none;z-index:60;}
+.menu-pop.open{display:block;}
+.menu-pop .who{padding:9px 11px;border-bottom:1px solid var(--border);margin-bottom:6px;}
+.menu-pop .who b{display:block;font-size:14px;}
+.menu-pop .who span{font-size:11.5px;color:var(--dim);}
+.menu-pop a,.menu-pop button{display:block;width:100%;text-align:left;padding:9px 11px;border-radius:8px;font-size:13.5px;color:var(--txt);}
+.menu-pop a:hover,.menu-pop button:hover{background:var(--panel2);}
+
+/* ===== HERO ===== */
+.wrap{max-width:1240px;margin:0 auto;padding:24px 20px 80px;}
+.hero{position:relative;border:1px solid var(--border2);border-radius:22px;overflow:hidden;
+  min-height:300px;display:flex;align-items:flex-end;margin-bottom:34px;isolation:isolate;}
+.hero-grid{position:absolute;inset:0;z-index:-2;opacity:.5;
+  background-image:linear-gradient(rgba(34,211,238,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(34,211,238,.10) 1px,transparent 1px);
+  background-size:42px 42px;mask-image:radial-gradient(120% 100% at 70% 0%,#000,transparent 75%);}
+.hero-glow{position:absolute;inset:0;z-index:-1;transition:background .4s;}
+.hero-eyebrow{font-family:var(--fdisp);font-size:11px;letter-spacing:4px;color:var(--amber);text-transform:uppercase;margin-bottom:10px;}
+.hero-body{padding:34px 36px;max-width:640px;}
+.hero h1{font-family:var(--fdisp);font-weight:900;font-size:clamp(30px,5vw,52px);line-height:.98;letter-spacing:.5px;}
+.hero .sub{font-size:16px;color:var(--txt);margin-top:6px;font-weight:500;}
+.hero p{color:var(--muted);font-size:14.5px;line-height:1.6;margin:14px 0 22px;}
+.hero-cta{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+.hero-play{display:inline-flex;align-items:center;gap:9px;padding:13px 26px;border-radius:12px;font-weight:700;font-size:15px;
+  color:#0a0a0a;box-shadow:0 8px 30px rgba(0,0,0,.4);}
+
+/* ===== TOOLBAR ===== */
+.toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px;}
+.chips{display:flex;gap:8px;flex-wrap:wrap;}
+.chip{padding:8px 15px;border-radius:999px;font-size:13px;font-weight:600;background:var(--panel);
+  border:1px solid var(--border);color:var(--muted);transition:all .15s;}
+.chip:hover{border-color:var(--border2);color:var(--txt);}
+.chip.on{background:rgba(255,181,71,.14);border-color:var(--amber);color:var(--amber);}
+.chip.star.on{background:rgba(255,92,138,.15);border-color:var(--magenta);color:var(--magenta);}
+.sort{margin-left:auto;}
+.sort select{background:var(--panel);border:1px solid var(--border);border-radius:10px;color:var(--txt);
+  padding:9px 12px;font-size:13px;outline:none;cursor:pointer;}
+
+/* ===== GRID / CARTRIDGE CARDS ===== */
+.section-label{font-family:var(--fdisp);font-size:12px;letter-spacing:3px;color:var(--dim);
+  text-transform:uppercase;margin:0 0 14px;display:flex;align-items:center;gap:12px;}
+.section-label::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:18px;}
+.card{position:relative;border:1px solid var(--border2);border-radius:18px;overflow:hidden;background:var(--panel);
+  cursor:pointer;transition:transform .16s,box-shadow .16s,border-color .16s;display:flex;flex-direction:column;}
+.card:hover{transform:translateY(-4px);border-color:var(--ac,var(--amber));
+  box-shadow:0 14px 40px rgba(0,0,0,.5),0 0 0 1px var(--ac,var(--amber));}
+.card-cover{position:relative;aspect-ratio:16/10;overflow:hidden;
+  background:linear-gradient(135deg,var(--ac,#ffb547),var(--ac2,#22d3ee));}
+.card-cover::before{content:"";position:absolute;inset:0;background:
+  repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px);mix-blend-mode:overlay;}
+.card-cover .gloss{position:absolute;inset:0;background:radial-gradient(120% 90% at 20% 0%,rgba(255,255,255,.28),transparent 55%);}
+.card-cover .mono{position:absolute;left:16px;bottom:14px;font-family:var(--fdisp);font-weight:900;font-size:30px;
+  color:rgba(7,11,20,.82);letter-spacing:-.5px;text-shadow:0 2px 0 rgba(255,255,255,.18);line-height:.9;max-width:80%;}
+.card-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.slot{position:absolute;top:0;left:18px;background:var(--bg0);border:1px solid var(--border2);border-top:none;
+  border-radius:0 0 8px 8px;padding:4px 11px;font-family:var(--fmono);font-size:10.5px;letter-spacing:1px;color:var(--ac,var(--amber));z-index:3;}
+.fav{position:absolute;top:12px;right:12px;z-index:4;width:36px;height:36px;border-radius:50%;
+  background:rgba(7,11,20,.66);backdrop-filter:blur(4px);display:grid;place-items:center;border:1px solid var(--border2);transition:all .15s;}
+.fav:hover{border-color:var(--magenta);}
+.fav svg{width:18px;height:18px;color:var(--muted);transition:all .15s;}
+.fav.on svg{color:var(--magenta);fill:var(--magenta);}
+.card-body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:9px;flex:1;}
+.card-cat{font-family:var(--fdisp);font-size:10px;letter-spacing:2px;color:var(--ac,var(--amber));text-transform:uppercase;}
+.card-title{font-weight:700;font-size:17px;line-height:1.15;}
+.card-desc{font-size:12.8px;color:var(--muted);line-height:1.5;flex:1;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.card-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.tag{font-size:10.5px;color:var(--dim);background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;}
+.card-foot{display:flex;align-items:center;gap:14px;margin-top:2px;padding-top:11px;border-top:1px solid var(--border);}
+.stat{display:flex;align-items:center;gap:5px;font-family:var(--fmono);font-size:12px;color:var(--dim);}
+.stat svg{width:14px;height:14px;}
+.rank-link{margin-left:auto;font-size:12px;color:var(--muted);font-weight:600;}
+.rank-link:hover{color:var(--cyan);}
+.card-play{width:100%;margin-top:11px;padding:11px;border-radius:11px;font-weight:700;font-size:14px;
+  background:var(--ac,var(--amber));color:#0a0a0a;transition:filter .15s;}
+.card-play:hover{filter:brightness(1.08);}
+
+.empty{text-align:center;padding:70px 20px;color:var(--dim);}
+.empty b{display:block;font-size:17px;color:var(--muted);margin-bottom:6px;}
+
+/* ===== MODAL ===== */
+.modal-bg{position:fixed;inset:0;z-index:100;background:rgba(4,7,13,.78);backdrop-filter:blur(6px);
+  display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-bg.open{display:flex;}
+.modal{width:100%;max-width:460px;max-height:84vh;overflow:auto;background:var(--panel);
+  border:1px solid var(--border2);border-radius:20px;}
+.modal-head{padding:20px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+.modal-head .tt{font-family:var(--fdisp);font-weight:700;font-size:16px;}
+.modal-head .ss{font-size:12px;color:var(--dim);}
+.modal-head .x{margin-left:auto;width:34px;height:34px;border-radius:9px;background:var(--panel2);font-size:18px;color:var(--muted);}
+.modal-head .x:hover{color:var(--txt);}
+.lb-list{padding:8px 0;}
+.lb-row{display:flex;align-items:center;gap:13px;padding:11px 22px;}
+.lb-row+.lb-row{border-top:1px solid var(--border);}
+.lb-rank{font-family:var(--fmono);font-weight:700;font-size:15px;width:30px;color:var(--dim);}
+.lb-row.top1 .lb-rank{color:var(--amber);} .lb-row.top2 .lb-rank{color:#cfd8e6;} .lb-row.top3 .lb-rank{color:#e0a06a;}
+.lb-av{width:30px;height:30px;border-radius:50%;background:var(--panel2);object-fit:cover;}
+.lb-name{flex:1;font-size:14px;font-weight:500;}
+.lb-score{font-family:var(--fmono);font-weight:700;color:var(--cyan);}
+.lb-note{padding:34px 22px;text-align:center;color:var(--dim);font-size:13.5px;line-height:1.6;}
+
+.banner{max-width:1240px;margin:14px auto 0;padding:0 20px;}
+.banner-in{background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.3);border-radius:12px;
+  padding:11px 16px;font-size:13px;color:#bfeaf3;display:flex;gap:9px;align-items:center;}
+.banner-in b{color:var(--cyan);}
+
+.foot{max-width:1240px;margin:0 auto;padding:24px 20px 50px;color:var(--dim);font-size:12.5px;
+  display:flex;gap:16px;align-items:center;border-top:1px solid var(--border);}
+.foot a:hover{color:var(--amber);}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;
+  background:var(--panel);border:1px solid var(--border2);border-radius:12px;padding:12px 20px;font-size:13.5px;
+  z-index:200;transition:all .25s;box-shadow:0 12px 30px rgba(0,0,0,.5);pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+@media (max-width:640px){
+  .top-in{flex-wrap:wrap;gap:12px;} .search{order:3;max-width:none;flex-basis:100%;margin-left:0;}
+  .tagline{display:none;} .hero-body{padding:24px;} .wrap{padding:18px 14px 60px;}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="./">
+      <div class="logo"></div>
+      <div>
+        <div class="wordmark">NOVA <b>ARCADE</b></div>
+        <div class="tagline">game hub</div>
+      </div>
+    </a>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="search" type="search" placeholder="게임 검색…" autocomplete="off">
+    </div>
+    <div class="acct" id="acct"></div>
+  </div>
+</header>
+
+<div class="banner" id="banner" style="display:none">
+  <div class="banner-in">⚙️ <span><b>데모 모드</b> — Firebase 설정 전입니다. 갤러리는 보이지만 로그인·즐겨찾기·랭킹은 비활성 상태예요. <code>firebase-config.js</code>를 채우면 모두 켜집니다.</span></div>
+</div>
+
+<main class="wrap">
+  <section class="hero" id="hero" style="display:none">
+    <div class="hero-grid"></div>
+    <div class="hero-glow" id="heroGlow"></div>
+    <div class="hero-body">
+      <div class="hero-eyebrow" id="heroEyebrow">FEATURED</div>
+      <h1 id="heroTitle"></h1>
+      <div class="sub" id="heroSub"></div>
+      <p id="heroDesc"></p>
+      <div class="hero-cta">
+        <button class="hero-play" id="heroPlay">▶ 플레이</button>
+        <button class="btn btn-ghost" id="heroRank">🏆 랭킹</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="toolbar">
+    <div class="chips" id="chips"></div>
+    <div class="sort">
+      <select id="sort">
+        <option value="order">기본 정렬</option>
+        <option value="popular">인기순 (플레이)</option>
+        <option value="name">이름순</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="section-label" id="gridLabel">ALL GAMES</div>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none"><b>게임이 없어요</b>검색어나 필터를 바꿔보세요.</div>
+</main>
+
+<footer class="foot">
+  <span>© NOVA ARCADE</span>
+  <a href="admin.html" id="adminLink" style="display:none">⚙ 관리자</a>
+  <span style="margin-left:auto">게임 <b id="countFoot">0</b>개 운영 중</span>
+</footer>
+
+<!-- Leaderboard modal -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="tt" id="lbTitle">랭킹</div>
+        <div class="ss" id="lbSub">TOP 20</div>
+      </div>
+      <button class="x" id="lbClose">✕</button>
+    </div>
+    <div id="lbBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import {
+  DEMO, auth, db, isAdmin,
+  GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged,
+  collection, doc, getDoc, setDoc, getDocs, updateDoc, query, where, orderBy, limit, onSnapshot,
+  serverTimestamp, increment, arrayUnion, arrayRemove,
+} from "./firebase-config.js";
+
+const SITE = { name:"NOVA ARCADE" };
+const $ = (s)=>document.querySelector(s);
+const esc = (s)=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const state = { games:[], favs:new Set(), user:null, admin:false, filter:"all", q:"", sort:"order" };
+
+// ---------- toast ----------
+let toastT;
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),2200); }
+
+// ---------- load games ----------
+async function loadGames(){
+  if(DEMO){
+    $("#banner").style.display="block";
+    try{ const r=await fetch("games.json"); const j=await r.json(); state.games=(j.games||[]).filter(g=>g.enabled!==false); }
+    catch(e){ state.games=[]; }
+    render();
+    return;
+  }
+  // live: subscribe to Firestore catalog
+  const qy=query(collection(db,"games"), orderBy("order","asc"));
+  onSnapshot(qy,(snap)=>{
+    state.games=snap.docs.map(d=>({id:d.id,...d.data()})).filter(g=>g.enabled!==false);
+    render();
+  },(err)=>{
+    console.error(err); toast("카탈로그를 불러오지 못했어요");
+  });
+}
+
+// ---------- auth ----------
+function renderAcct(){
+  const el=$("#acct");
+  if(DEMO){ el.innerHTML=`<button class="btn btn-ghost" disabled style="opacity:.5">로그인 (설정 필요)</button>`; return; }
+  if(!state.user){
+    el.innerHTML=`<button class="btn btn-pri" id="loginBtn">구글 로그인</button>`;
+    $("#loginBtn").onclick=login;
+  }else{
+    const u=state.user;
+    el.innerHTML=`<div class="menu">
+      <img class="avatar" id="avBtn" src="${esc(u.photoURL||'')}" alt="${esc(u.displayName||'')}" referrerpolicy="no-referrer">
+      <div class="menu-pop" id="menuPop">
+        <div class="who"><b>${esc(u.displayName||'플레이어')}</b><span>${esc(u.email||'')}</span></div>
+        ${state.admin?'<a href="admin.html">⚙ 관리자 페이지</a>':''}
+        <button id="logoutBtn">로그아웃</button>
+      </div></div>`;
+    $("#avBtn").onclick=(e)=>{e.stopPropagation();$("#menuPop").classList.toggle("open");};
+    $("#logoutBtn").onclick=()=>signOut(auth);
+  }
+}
+document.addEventListener("click",()=>{const m=$("#menuPop"); if(m)m.classList.remove("open");});
+
+async function login(){
+  const provider=new GoogleAuthProvider();
+  try{ await signInWithPopup(auth,provider); }
+  catch(e){ try{ await signInWithRedirect(auth,provider); }catch(e2){ toast("로그인 실패"); } }
+}
+
+async function loadFavs(uid){
+  state.favs=new Set();
+  try{ const s=await getDoc(doc(db,"users",uid)); if(s.exists()) state.favs=new Set(s.data().favorites||[]); }
+  catch(e){}
+}
+
+if(!DEMO){
+  getRedirectResult(auth).catch(()=>{});
+  onAuthStateChanged(auth, async(u)=>{
+    state.user=u||null;
+    state.admin=u?isAdmin(u.uid):false;
+    if(u){ await loadFavs(u.uid); await setDoc(doc(db,"users",u.uid),
+        {displayName:u.displayName||"",photoURL:u.photoURL||"",email:u.email||"",lastSeen:serverTimestamp()},{merge:true}); }
+    $("#adminLink").style.display=state.admin?"inline":"none";
+    renderAcct(); render();
+  });
+}else{ renderAcct(); }
+
+// ---------- favorites ----------
+async function toggleFav(id,ev){
+  ev.stopPropagation();
+  if(DEMO){ toast("Firebase 설정 후 사용할 수 있어요"); return; }
+  if(!state.user){ toast("즐겨찾기는 로그인 후 사용할 수 있어요"); login(); return; }
+  const ref=doc(db,"users",state.user.uid);
+  if(state.favs.has(id)){ state.favs.delete(id); await updateDoc(ref,{favorites:arrayRemove(id)}).catch(()=>{}); }
+  else{ state.favs.add(id); await updateDoc(ref,{favorites:arrayUnion(id)}).catch(()=>{}); toast("⭐ 즐겨찾기에 추가"); }
+  render();
+}
+
+// ---------- play ----------
+async function play(g){
+  const recents=JSON.parse(localStorage.getItem("nova_recent")||"[]").filter(x=>x!==g.id);
+  recents.unshift(g.id); localStorage.setItem("nova_recent",JSON.stringify(recents.slice(0,12)));
+  if(!DEMO && state.user){ updateDoc(doc(db,"games",g.id),{playCount:increment(1)}).catch(()=>{}); }
+  window.open(g.url,"_blank","noopener");
+}
+
+// ---------- leaderboard ----------
+async function openLeaderboard(g){
+  $("#lbTitle").textContent=g.title; $("#lbSub").textContent="TOP 20 · 통합 랭킹";
+  const body=$("#lbBody"); $("#modalBg").classList.add("open");
+  if(DEMO){ body.innerHTML=`<div class="lb-note">통합 랭킹은 Firebase 연결 후 표시됩니다.<br>게임이 점수를 보고하도록 <code>portal-sdk.js</code>를 연결하세요.</div>`; return; }
+  if(g.reportsScore===false){ body.innerHTML=`<div class="lb-note">이 게임은 아직 점수 보고를 연결하지 않았어요.<br><code>portal-sdk.js</code>를 적용하면 랭킹이 쌓입니다.</div>`; return; }
+  body.innerHTML=`<div class="lb-note">불러오는 중…</div>`;
+  try{
+    const qy=query(collection(db,"scores"),where("gameId","==",g.id),orderBy("score","desc"),limit(20));
+    const snap=await getDocs(qy);
+    if(snap.empty){ body.innerHTML=`<div class="lb-note">아직 기록이 없어요. 첫 기록의 주인공이 되어보세요!</div>`; return; }
+    let html='<div class="lb-list">';
+    snap.docs.forEach((d,i)=>{const s=d.data();
+      html+=`<div class="lb-row ${i<3?'top'+(i+1):''}"><div class="lb-rank">${i+1}</div>
+        <img class="lb-av" src="${esc(s.photoURL||'')}" referrerpolicy="no-referrer">
+        <div class="lb-name">${esc(s.name||'익명')}</div>
+        <div class="lb-score">${Number(s.score||0).toLocaleString()}</div></div>`;});
+    body.innerHTML=html+'</div>';
+  }catch(e){ console.error(e); body.innerHTML=`<div class="lb-note">랭킹을 불러오지 못했어요.<br>(Firestore 색인이 필요할 수 있어요 — 콘솔 안내 링크로 생성)</div>`; }
+}
+$("#lbClose").onclick=()=>$("#modalBg").classList.remove("open");
+$("#modalBg").onclick=(e)=>{if(e.target===$("#modalBg"))$("#modalBg").classList.remove("open");};
+
+// ---------- render ----------
+function categories(){ return [...new Set(state.games.map(g=>g.category).filter(Boolean))]; }
+
+function visible(){
+  let list=state.games.slice();
+  if(state.filter==="fav") list=list.filter(g=>state.favs.has(g.id));
+  else if(state.filter!=="all") list=list.filter(g=>g.category===state.filter);
+  if(state.q){ const q=state.q.toLowerCase();
+    list=list.filter(g=>(g.title+" "+(g.subtitle||"")+" "+(g.description||"")+" "+(g.tags||[]).join(" ")).toLowerCase().includes(q)); }
+  if(state.sort==="popular") list.sort((a,b)=>(b.playCount||0)-(a.playCount||0));
+  else if(state.sort==="name") list.sort((a,b)=>a.title.localeCompare(b.title));
+  else list.sort((a,b)=>(a.order||99)-(b.order||99));
+  return list;
+}
+
+function cardHTML(g){
+  const fav=state.favs.has(g.id);
+  return `<div class="card" data-id="${esc(g.id)}" style="--ac:${esc(g.accent||'#ffb547')};--ac2:${esc(g.accent2||'#22d3ee')}">
+    <div class="card-cover">
+      <span class="slot">CARTRIDGE</span>
+      ${g.cover?`<img src="${esc(g.cover)}" alt="">`:`<div class="gloss"></div><div class="mono">${esc(g.title)}</div>`}
+      <button class="fav ${fav?'on':''}" data-fav="${esc(g.id)}" title="즐겨찾기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.3l-6.2 3.7 1.6-7L2 9.2l7.1-.6L12 2l2.9 6.6 7.1.6-5.4 4.8 1.6 7z"/></svg>
+      </button>
+    </div>
+    <div class="card-body">
+      <div class="card-cat">${esc(g.category||'GAME')}</div>
+      <div class="card-title">${esc(g.title)}</div>
+      <div class="card-desc">${esc(g.description||g.subtitle||'')}</div>
+      <div class="card-tags">${(g.tags||[]).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
+      <div class="card-foot">
+        <span class="stat"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>${(g.playCount||0).toLocaleString()}</span>
+        <a class="rank-link" data-rank="${esc(g.id)}">🏆 랭킹</a>
+      </div>
+      <button class="card-play" data-play="${esc(g.id)}">플레이</button>
+    </div>
+  </div>`;
+}
+
+function render(){
+  // chips
+  const chips=$("#chips");
+  const cats=categories();
+  let ch=`<button class="chip ${state.filter==='all'?'on':''}" data-f="all">전체</button>`;
+  if(!DEMO) ch+=`<button class="chip star ${state.filter==='fav'?'on':''}" data-f="fav">⭐ 즐겨찾기</button>`;
+  ch+=cats.map(c=>`<button class="chip ${state.filter===c?'on':''}" data-f="${esc(c)}">${esc(c)}</button>`).join("");
+  chips.innerHTML=ch;
+  chips.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{state.filter=b.dataset.f;render();});
+
+  // hero (featured = first featured else top of default order)
+  const feat=state.games.find(g=>g.featured)||state.games.slice().sort((a,b)=>(a.order||99)-(b.order||99))[0];
+  const hero=$("#hero");
+  if(feat && state.filter==="all" && !state.q){
+    hero.style.display="flex";
+    $("#heroGlow").style.background=`radial-gradient(80% 120% at 80% 50%, ${feat.accent||'#ffb547'}22, transparent 60%),linear-gradient(110deg, ${feat.accent2||'#22d3ee'}14, transparent 55%)`;
+    $("#heroEyebrow").textContent=(feat.category||"FEATURED");
+    $("#heroTitle").textContent=feat.title;
+    $("#heroSub").textContent=feat.subtitle||"";
+    $("#heroDesc").textContent=feat.description||"";
+    const hp=$("#heroPlay"); hp.style.background=feat.accent||"#ffb547"; hp.onclick=()=>play(feat);
+    $("#heroRank").onclick=()=>openLeaderboard(feat);
+  }else hero.style.display="none";
+
+  // grid
+  const list=visible();
+  $("#gridLabel").textContent=state.filter==="fav"?"MY FAVORITES":state.filter==="all"?"ALL GAMES":state.filter.toUpperCase();
+  $("#grid").innerHTML=list.map(cardHTML).join("");
+  $("#empty").style.display=list.length?"none":"block";
+  $("#countFoot").textContent=state.games.length;
+
+  // wire cards
+  $("#grid").querySelectorAll(".card").forEach(c=>{
+    const g=state.games.find(x=>x.id===c.dataset.id);
+    c.querySelector("[data-play]").onclick=(e)=>{e.stopPropagation();play(g);};
+    c.querySelector("[data-fav]").onclick=(e)=>toggleFav(g.id,e);
+    c.querySelector("[data-rank]").onclick=(e)=>{e.stopPropagation();openLeaderboard(g);};
+    c.onclick=()=>play(g);
+  });
+}
+
+// search
+let sT; $("#search").oninput=(e)=>{clearTimeout(sT);sT=setTimeout(()=>{state.q=e.target.value.trim();render();},120);};
+$("#sort").onchange=(e)=>{state.sort=e.target.value;render();};
+
+loadGames();
+</script>
+</body>
+</html>

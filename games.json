@@ -1,0 +1,52 @@
+{
+  "games": [
+    {
+      "id": "neon-strikers",
+      "title": "NEON STRIKERS",
+      "subtitle": "탑다운 액션 슈터",
+      "description": "네온 아레나에서 펼쳐지는 탑다운 슈팅. 스킬·가챠·어드벤처 시스템까지 갖춘 모바일 친화 액션 게임.",
+      "url": "games/neon-strikers/",
+      "category": "액션",
+      "tags": ["슈팅", "모바일", "싱글플레이"],
+      "accent": "#ffd23f",
+      "accent2": "#ff5c8a",
+      "featured": true,
+      "enabled": true,
+      "order": 1,
+      "playCount": 0,
+      "reportsScore": true
+    },
+    {
+      "id": "nationrise",
+      "title": "NationRise",
+      "subtitle": "내 나라를 세계 최강으로",
+      "description": "외교·무역·위기 이벤트·AI 라이벌이 살아있는 국가 경영 시뮬레이션. 경제 교육용으로도 좋은 전략 게임.",
+      "url": "games/nationrise/",
+      "category": "전략·경영",
+      "tags": ["시뮬레이션", "경제", "교육"],
+      "accent": "#ffb547",
+      "accent2": "#22d3ee",
+      "featured": false,
+      "enabled": true,
+      "order": 2,
+      "playCount": 0,
+      "reportsScore": false
+    },
+    {
+      "id": "cosmic-gear",
+      "title": "COSMIC GEAR",
+      "subtitle": "Defense Edition",
+      "description": "은하를 탐험하며 외계 동료를 소환하는 SF 방치형 디펜스 RPG. (React 빌드 후 별도 호스팅 → URL 등록)",
+      "url": "https://YOUR-COSMIC-GEAR.vercel.app/",
+      "category": "RPG·방치형",
+      "tags": ["RPG", "방치형", "디펜스"],
+      "accent": "#a855f7",
+      "accent2": "#38bdf8",
+      "featured": false,
+      "enabled": true,
+      "order": 3,
+      "playCount": 0,
+      "reportsScore": false
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+rules_version = '2';
+// ============================================================
+//  Firestore 보안 규칙  —  Firebase 콘솔 > Firestore > 규칙 에 붙여넣기
+//  ※ 아래 ADMIN UID 는 firebase-config.js 의 ADMIN_UIDS 와 동일하게 유지
+// ============================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null && request.auth.uid in [
+        "PASTE_YOUR_FIREBASE_UID"   // ← 관리자 UID (여러 명이면 콤마로 추가)
+      ];
+    }
+    function signedIn() { return request.auth != null; }
+
+    // 게임 카탈로그: 누구나 읽기 / 관리자만 등록·수정·삭제
+    // 단, 로그인 사용자는 playCount 만 증가시킬 수 있음(플레이 집계)
+    match /games/{gameId} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (signedIn()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['playCount']));
+    }
+
+    // 사용자 프로필 + 즐겨찾기: 본인만
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // 통합 랭킹: 누구나 읽기 / 본인 점수만 기록
+    match /scores/{docId} {
+      allow read: if true;
+      allow create, update: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.score is number;
+      allow delete: if isAdmin();
+    }
+  }
+}
