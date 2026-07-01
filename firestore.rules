@@ -8,7 +8,7 @@ service cloud.firestore {
 
     function isAdmin() {
       return request.auth != null && request.auth.uid in [
-        "PASTE_YOUR_FIREBASE_UID"   // ← 관리자 UID (여러 명이면 콤마로 추가)
+        "KLYhz0dSVJVEJh2EJLZGAh9UM6w1"   // ← 관리자 UID (여러 명이면 콤마로 추가)
       ];
     }
     function signedIn() { return request.auth != null; }

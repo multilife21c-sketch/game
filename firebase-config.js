@@ -23,17 +23,17 @@ import {
 
 // ▼▼▼ 여기 채우세요 ▼▼▼
 export const firebaseConfig = {
-  apiKey: "PASTE_API_KEY",
-  authDomain: "PASTE_PROJECT.firebaseapp.com",
-  projectId: "PASTE_PROJECT",
-  storageBucket: "PASTE_PROJECT.appspot.com",
-  messagingSenderId: "PASTE_SENDER_ID",
-  appId: "PASTE_APP_ID",
+  apiKey: "AIzaSyApM7BihAI_Lbo81WXweO2hvRo2fAtH1W8",
+  authDomain: "nova-arcade-55375.firebaseapp.com",
+  projectId: "nova-arcade-55375",
+  storageBucket: "nova-arcade-55375.firebasestorage.app",
+  messagingSenderId: "585521594918",
+  appId: "1:585521594918:web:8af817caea2a60a579dce7"
 };
 
 // 관리자 UID 목록 (admin.html 접근 + 게임 CRUD 권한)
 export const ADMIN_UIDS = [
-  "PASTE_YOUR_FIREBASE_UID",
+  "KLYhz0dSVJVEJh2EJLZGAh9UM6w1",
 ];
 // ▲▲▲ 여기까지 ▲▲▲
 
