@@ -87,11 +87,8 @@ function gate(){
   $("#lg").onclick=async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){toast("로그인 실패");}};
 }
 function denied(u){
-  root.innerHTML=`<div class="gate"><h2>접근 권한 없음</h2>
-    <p>이 계정은 관리자가 아니에요.<br>아래 UID를 <code>firebase-config.js</code>의 <b>ADMIN_UIDS</b>에 추가하세요.</p>
-    <div style="font-family:var(--fmono);font-size:12px;background:var(--bg0);border:1px solid var(--border2);border-radius:9px;padding:12px;margin-bottom:18px;word-break:break-all">${u.uid}</div>
-    <button class="btn btn-ghost" id="lo">로그아웃</button></div>`;
-  $("#lo").onclick=()=>signOut(auth);
+  // 비관리자: 아무것도 보여주지 않고 즉시 포탈로 리다이렉트
+  location.replace("index.html");
 }
 
 async function dashboard(u){
