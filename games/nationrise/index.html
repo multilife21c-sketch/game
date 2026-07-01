@@ -980,12 +980,12 @@ body { background:var(--bg0); color:var(--txt1); font-family:var(--font-kr), san
 <!-- ===== FIREBASE ===== -->
 <script type="module">
   const firebaseConfig = {
-    apiKey: "AIzaSyDVHOri8UljixEE1dlPJGlcG8XGetW_nIo",
-    authDomain: "infinity-universe-bb54c.firebaseapp.com",
-    projectId: "infinity-universe-bb54c",
-    storageBucket: "infinity-universe-bb54c.firebasestorage.app",
-    messagingSenderId: "304263640416",
-    appId: "1:304263640416:web:7230809cc0b9d9a62a1a05"
+    apiKey: "AIzaSyApM7BihAI_Lbo81WXweO2hvRo2fAtH1W8",
+    authDomain: "nova-arcade-55375.firebaseapp.com",
+    projectId: "nova-arcade-55375",
+    storageBucket: "nova-arcade-55375.firebasestorage.app",
+    messagingSenderId: "585521594918",
+    appId: "1:585521594918:web:8af817caea2a60a579dce7"
   };
   window.FIREBASE_ENABLED = !!firebaseConfig.apiKey;
   if (window.FIREBASE_ENABLED) {
@@ -5297,6 +5297,17 @@ async function saveState() {
         publicDoc.alias = state.myNation.alias.trim().slice(0,16);
       }
       await window.fb.setDoc(window.fb.doc(window.fb.db,'nationrise_players', currentUser.uid), publicDoc);
+      // NOVA ARCADE 포탈 통합 랭킹에도 GDP 기록 (프라이버시: 국가명/별칭만, 사진 없음)
+      try {
+        const novaName = (state.myNation.alias && state.myNation.alias.trim())
+          ? state.myNation.alias.trim().slice(0,16) : state.myNation.name;
+        await window.fb.setDoc(window.fb.doc(window.fb.db,'scores','nationrise_'+currentUser.uid), {
+          gameId: 'nationrise', uid: currentUser.uid,
+          name: novaName, photoURL: '',
+          score: Math.round((state.myNation.gdp||0) * 1000),  // 조($T) → 정수(십억$) 스케일
+          createdAt: Date.now(),
+        }, { merge: true });
+      } catch(e){ console.warn('[Nova] nationrise 포탈 랭킹 기록 실패', e); }
       setSyncStatus('synced');
     } catch(e){ console.error('클라우드 저장 실패', e); setSyncStatus('local'); }
   }
