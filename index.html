@@ -205,6 +205,13 @@ img{display:block;max-width:100%;}
   <div class="banner-in">⚙️ <span><b>데모 모드</b> — Firebase 설정 전입니다. 갤러리는 보이지만 로그인·즐겨찾기·랭킹은 비활성 상태예요. <code>firebase-config.js</code>를 채우면 모두 켜집니다.</span></div>
 </div>
 
+<div class="banner" id="inappBanner" style="display:none">
+  <div class="banner-in" style="border-color:rgba(255,181,71,.45);background:rgba(255,181,71,.08);color:#ffe3b0">
+    ⚠️ <span><b>앱 내 브라우저 감지</b> — 카카오톡·인스타 등 앱 안에서는 구글 로그인이 차단됩니다.
+    <button id="inappOpen" style="margin-left:8px;padding:6px 14px;border-radius:8px;border:none;background:var(--amber);color:#1a1206;font-weight:700;font-size:12.5px;cursor:pointer">외부 브라우저로 열기</button></span>
+  </div>
+</div>
+
 <main class="wrap">
   <section class="hero" id="hero" style="display:none">
     <div class="hero-grid"></div>
@@ -318,7 +325,35 @@ function renderAcct(){
 }
 document.addEventListener("click",()=>{const m=$("#menuPop"); if(m)m.classList.remove("open");});
 
+// ---------- 인앱 브라우저 대응 (카카오톡 등에서 구글 로그인 차단 회피) ----------
+const UA=navigator.userAgent||"";
+const INAPP={ kakao:/KAKAOTALK/i.test(UA), line:/\bLine\//i.test(UA),
+  naver:/NAVER\(inapp|NaverSearch/i.test(UA), insta:/Instagram/i.test(UA),
+  fb:/FBAN|FBAV|FB_IAB/i.test(UA), daum:/DaumApps/i.test(UA), everytime:/everytimeApp/i.test(UA) };
+const IS_INAPP=Object.values(INAPP).some(Boolean);
+const IS_ANDROID=/android/i.test(UA), IS_IOS=/iphone|ipad|ipod/i.test(UA);
+function escapeInApp(){
+  const url=location.href;
+  if(INAPP.kakao){ location.href="kakaotalk://web/openExternal?url="+encodeURIComponent(url); return true; }
+  if(INAPP.line){ location.href=url+(url.includes("?")?"&":"?")+"openExternalBrowser=1"; return true; }
+  if(IS_ANDROID){ // 크롬으로 강제 오픈 (인텐트)
+    location.href="intent://"+location.host+location.pathname+location.search+"#Intent;scheme=https;package=com.android.chrome;end";
+    return true; }
+  return false; // iOS 기타 인앱: 스킴 강제 불가 → 수동 안내
+}
+if(IS_INAPP){
+  const b=document.getElementById("inappBanner"); b.style.display="block";
+  document.getElementById("inappOpen").onclick=()=>{
+    if(!escapeInApp()) toast("우측 하단 메뉴에서 'Safari로 열기'를 눌러주세요"); };
+  // 카카오톡은 신뢰성 높게 자동 탈출
+  if(INAPP.kakao) setTimeout(escapeInApp, 600);
+}
+
 async function login(){
+  if(IS_INAPP){ // 인앱에서는 구글이 로그인 자체를 차단 → 외부로 유도
+    if(!escapeInApp()) toast("앱 브라우저에서는 로그인이 안 돼요. 'Safari로 열기'를 이용해주세요");
+    return;
+  }
   const provider=new GoogleAuthProvider();
   try{ await signInWithPopup(auth,provider); }
   catch(e){ try{ await signInWithRedirect(auth,provider); }catch(e2){ toast("로그인 실패"); } }
