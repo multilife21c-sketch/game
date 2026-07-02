@@ -170,6 +170,16 @@ img{display:block;max-width:100%;}
   display:flex;gap:16px;align-items:center;border-top:1px solid var(--border);}
 .foot a:hover{color:var(--amber);}
 
+/* 닉네임 모달 */
+.nick-body{padding:20px 22px;display:flex;flex-direction:column;gap:12px;}
+.nick-body input{background:var(--bg0);border:1px solid var(--border2);border-radius:10px;color:var(--txt);
+  padding:12px 14px;font-size:15px;outline:none;width:100%;font-family:inherit;}
+.nick-body input:focus{border-color:var(--amber);}
+.nick-msg{font-size:12.5px;color:var(--dim);min-height:17px;}
+.nick-msg.err{color:var(--red);} .nick-msg.ok{color:var(--green);}
+.nick-save{background:var(--amber);color:#1a1206;border:none;border-radius:10px;padding:12px;
+  font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;}
+.nick-save:disabled{opacity:.45;cursor:not-allowed;}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;
   background:var(--panel);border:1px solid var(--border2);border-radius:12px;padding:12px 20px;font-size:13.5px;
   z-index:200;transition:all .25s;box-shadow:0 12px 30px rgba(0,0,0,.5);pointer-events:none;}
@@ -264,6 +274,21 @@ img{display:block;max-width:100%;}
   </div>
 </div>
 
+<!-- Nickname modal -->
+<div class="modal-bg" id="nickBg">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-head">
+      <div><div class="tt">✏️ 랭킹 닉네임</div><div class="ss">모든 게임 랭킹에 이 이름이 표시됩니다</div></div>
+      <button class="x" id="nickClose">✕</button>
+    </div>
+    <div class="nick-body">
+      <input id="nickInput" maxlength="12" placeholder="2~12자 (한글/영문/숫자/_-)" autocomplete="off">
+      <div class="nick-msg" id="nickMsg"></div>
+      <button class="nick-save" id="nickSave">저장</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -278,7 +303,7 @@ const SITE = { name:"NOVA ARCADE" };
 const $ = (s)=>document.querySelector(s);
 const esc = (s)=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-const state = { games:[], favs:new Set(), user:null, admin:false, filter:"all", q:"", sort:"order" };
+const state = { games:[], favs:new Set(), user:null, admin:false, nickname:null, filter:"all", q:"", sort:"order" };
 
 // ---------- toast ----------
 let toastT;
@@ -315,11 +340,13 @@ function renderAcct(){
     el.innerHTML=`<div class="menu">
       <img class="avatar" id="avBtn" src="${esc(u.photoURL||'')}" alt="${esc(u.displayName||'')}" referrerpolicy="no-referrer">
       <div class="menu-pop" id="menuPop">
-        <div class="who"><b>${esc(u.displayName||'플레이어')}</b><span>${esc(u.email||'')}</span></div>
+        <div class="who"><b>${esc(state.nickname||u.displayName||'플레이어')}</b><span>${esc(u.email||'')}</span></div>
+        <button id="nickBtn">✏️ 랭킹 닉네임 ${state.nickname?'변경':'설정'}</button>
         ${state.admin?'<a href="admin.html">⚙ 관리자 페이지</a>':''}
         <button id="logoutBtn">로그아웃</button>
       </div></div>`;
     $("#avBtn").onclick=(e)=>{e.stopPropagation();$("#menuPop").classList.toggle("open");};
+    $("#nickBtn").onclick=(e)=>{e.stopPropagation();$("#menuPop").classList.remove("open");openNick();};
     $("#logoutBtn").onclick=()=>signOut(auth);
   }
 }
@@ -370,8 +397,15 @@ if(!DEMO){
   onAuthStateChanged(auth, async(u)=>{
     state.user=u||null;
     state.admin=u?isAdmin(u.uid):false;
-    if(u){ await loadFavs(u.uid); await setDoc(doc(db,"users",u.uid),
-        {displayName:u.displayName||"",photoURL:u.photoURL||"",email:u.email||"",lastSeen:serverTimestamp()},{merge:true}); }
+    if(u){ await loadFavs(u.uid);
+      try{ const us=await getDoc(doc(db,"users",u.uid));
+        state.nickname = us.exists()? (us.data().nickname||null) : null; }catch(e){ state.nickname=null; }
+      await setDoc(doc(db,"users",u.uid),
+        {displayName:u.displayName||"",photoURL:u.photoURL||"",email:u.email||"",lastSeen:serverTimestamp()},{merge:true});
+      if(!state.nickname && !localStorage.getItem("nickPrompted")){
+        localStorage.setItem("nickPrompted","1");
+        setTimeout(()=>{ toast("랭킹에 쓸 닉네임을 설정해보세요! (프로필 메뉴)"); openNick(); }, 800); } }
+    else { state.nickname=null; }
     $("#adminLink").style.display=state.admin?"inline":"none";
     renderAcct(); render();
   });
@@ -416,6 +450,52 @@ async function openLeaderboard(g){
     body.innerHTML=html+'</div>';
   }catch(e){ console.error(e); body.innerHTML=`<div class="lb-note">랭킹을 불러오지 못했어요.<br>(Firestore 색인이 필요할 수 있어요 — 콘솔 안내 링크로 생성)</div>`; }
 }
+// ---------- 닉네임 설정 ----------
+const NICK_RE=/^[A-Za-z0-9가-힣_-]{2,12}$/;
+function openNick(){
+  if(DEMO||!state.user){ toast("로그인 후 설정할 수 있어요"); return; }
+  $("#nickInput").value=state.nickname||"";
+  $("#nickMsg").textContent=""; $("#nickMsg").className="nick-msg";
+  $("#nickBg").classList.add("open");
+  setTimeout(()=>$("#nickInput").focus(),80);
+}
+$("#nickClose").onclick=()=>$("#nickBg").classList.remove("open");
+$("#nickBg").onclick=(e)=>{ if(e.target===$("#nickBg")) $("#nickBg").classList.remove("open"); };
+$("#nickSave").onclick=saveNick;
+$("#nickInput").addEventListener("keydown",e=>{ if(e.key==="Enter") saveNick(); });
+async function saveNick(){
+  const msg=$("#nickMsg"), btn=$("#nickSave");
+  const nick=$("#nickInput").value.trim();
+  if(!NICK_RE.test(nick)){ msg.textContent="2~12자, 한글/영문/숫자/_/- 만 가능해요"; msg.className="nick-msg err"; return; }
+  if(nick===state.nickname){ $("#nickBg").classList.remove("open"); return; }
+  btn.disabled=true; msg.textContent="확인 중…"; msg.className="nick-msg";
+  const key=nick.toLowerCase();
+  try{
+    // 1) 중복 확인
+    const ex=await getDoc(doc(db,"nicknames",key));
+    if(ex.exists() && ex.data().uid!==state.user.uid){
+      msg.textContent="이미 사용 중인 닉네임이에요 😢"; msg.className="nick-msg err"; btn.disabled=false; return; }
+    // 2) 닉네임 등록 + 예전 닉네임 해제
+    await setDoc(doc(db,"nicknames",key),{uid:state.user.uid,nick});
+    if(state.nickname && state.nickname.toLowerCase()!==key){
+      try{ await deleteDoc(doc(db,"nicknames",state.nickname.toLowerCase())); }catch(e){} }
+    // 3) 프로필 저장
+    await setDoc(doc(db,"users",state.user.uid),{nickname:nick},{merge:true});
+    // 4) 내 기존 랭킹 기록 이름도 일괄 갱신
+    try{
+      const mine=await getDocs(query(collection(db,"scores"),where("uid","==",state.user.uid)));
+      if(!mine.empty){ const b=writeBatch(db);
+        mine.docs.forEach(d=>b.update(d.ref,{name:nick})); await b.commit(); }
+    }catch(e){ console.warn("scores rename",e); }
+    state.nickname=nick;
+    msg.textContent="저장 완료! 모든 랭킹에 적용됩니다 ✔"; msg.className="nick-msg ok";
+    renderAcct();
+    setTimeout(()=>$("#nickBg").classList.remove("open"),700);
+    toast("닉네임 설정: "+nick);
+  }catch(e){ console.error(e); msg.textContent="저장 실패 — 잠시 후 다시 시도해주세요"; msg.className="nick-msg err"; }
+  btn.disabled=false;
+}
+
 $("#lbClose").onclick=()=>$("#modalBg").classList.remove("open");
 $("#modalBg").onclick=(e)=>{if(e.target===$("#modalBg"))$("#modalBg").classList.remove("open");};
 

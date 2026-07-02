@@ -56,8 +56,14 @@ export const Nova = {
 };
 
 if(!DEMO){
-  onAuthStateChanged(auth, (u)=>{
-    CURRENT = u ? { uid:u.uid, displayName:u.displayName, photoURL:u.photoURL } : null;
+  onAuthStateChanged(auth, async (u)=>{
+    if(u){
+      // 포탈에서 설정한 랭킹 닉네임을 우선 사용 (없으면 구글 이름)
+      let nick=null;
+      try{ const s=await getDoc(doc(db,"users",u.uid));
+        if(s.exists()) nick=s.data().nickname||null; }catch(e){}
+      CURRENT={ uid:u.uid, displayName: nick||u.displayName, photoURL:u.photoURL, googleName:u.displayName };
+    } else CURRENT=null;
     userCbs.forEach(cb=>{ try{ cb(CURRENT); }catch(e){} });
   });
 }else{ CURRENT = null; }
