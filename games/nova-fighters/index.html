@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Neon Strikers - NOVA ARCADE</title>
+<title>Nova Fighters - NOVA ARCADE</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -35,8 +35,8 @@
     border: 2px solid var(--border2); border-radius: 4px;
     position: relative; overflow: hidden;
   }
-  #player-health { width: 100%; height: 100%; background: var(--cyan); transition: width 0.2s; transform-origin: left; }
-  #enemy-health { width: 100%; height: 100%; background: var(--magenta); transition: width 0.2s; transform-origin: right; }
+  #player-health { width: 100%; height: 100%; background: var(--cyan); transition: width 0.1s; transform-origin: left; }
+  #enemy-health { width: 100%; height: 100%; background: var(--magenta); transition: width 0.1s; transform-origin: right; }
   
   .player-name {
     position: absolute; top: -25px; font-family: var(--fdisp); font-weight: 700;
@@ -83,7 +83,6 @@
     box-shadow: 0 5px 20px rgba(34,211,238,0.3);
   }
   
-  /* SVG Icons in Menu */
   .char-icon { width: 60px; height: 60px; margin-bottom: 15px; display: flex; justify-content: center; align-items: center; }
   .char-name { font-family: var(--fdisp); font-weight: 700; font-size: 16px; }
   
@@ -94,22 +93,20 @@
 <body>
 
 <div id="game-container">
-  <!-- UI Layer -->
   <div id="hud">
     <div class="health-bg">
       <div class="player-name" id="p1-name" style="left:0;">P1</div>
       <div id="player-health"></div>
     </div>
-    <div id="timer">60</div>
+    <div id="timer">120</div>
     <div class="health-bg" style="display: flex; justify-content: flex-end;">
       <div class="player-name" id="p2-name" style="right:0;">P2</div>
       <div id="enemy-health"></div>
     </div>
   </div>
 
-  <!-- Main Menu -->
   <div id="main-menu" class="menu-screen">
-    <div class="menu-title">NEON STRIKERS</div>
+    <div class="menu-title">NOVA FIGHTERS</div>
     <div class="btn-group">
       <button class="btn active" id="mode-cpu" data-mode="cpu">1P vs CPU</button>
       <button class="btn" id="mode-p2" data-mode="p2">1P vs 2P</button>
@@ -117,48 +114,38 @@
     <div style="font-size: 14px; color: var(--amber); margin-bottom: 15px;">내 캐릭터를 선택하세요</div>
     
     <div class="char-grid">
-      <!-- VANGUARD (Robot) -->
       <div class="char-card selected" data-index="0">
         <div class="char-icon" style="color: var(--cyan);">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="100%" height="100%">
-            <path d="M12 2a2 2 0 0 1 2 2v2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-1v2a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-2H7a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3V4a2 2 0 0 1 2-2zm-3 8a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm6 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="currentColor" width="100%" height="100%"><path d="M12 2a2 2 0 0 1 2 2v2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-1v2a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-2H7a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3V4a2 2 0 0 1 2-2zm-3 8a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm6 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/></svg>
         </div>
         <div class="char-name">VANGUARD</div>
       </div>
-      <!-- SEOA (Virtual Girl) -->
       <div class="char-card" data-index="1">
         <div class="char-icon" style="color: var(--magenta);">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="100%" height="100%">
-            <path d="M12 3c-4.4 0-8 3.6-8 8 0 2.6 1.2 4.9 3.1 6.3L6 22l4-2.2c.6.2 1.3.3 2 .3s1.4-.1 2-.3L18 22l-1.1-4.7c1.9-1.4 3.1-3.7 3.1-6.3 0-4.4-3.6-8-8-8zM9 13a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm6 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="currentColor" width="100%" height="100%"><path d="M12 3c-4.4 0-8 3.6-8 8 0 2.6 1.2 4.9 3.1 6.3L6 22l4-2.2c.6.2 1.3.3 2 .3s1.4-.1 2-.3L18 22l-1.1-4.7c1.9-1.4 3.1-3.7 3.1-6.3 0-4.4-3.6-8-8-8zM9 13a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm6 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg>
         </div>
         <div class="char-name">SEOA</div>
       </div>
-      <!-- TITAN (Mech) -->
       <div class="char-card" data-index="2">
         <div class="char-icon" style="color: #00e5a0;">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="100%" height="100%">
-            <path d="M3 4h18v4H3V4zm2 6h14v10H5V10zm4 3v4h6v-4H9z"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="currentColor" width="100%" height="100%"><path d="M3 4h18v4H3V4zm2 6h14v10H5V10zm4 3v4h6v-4H9z"/></svg>
         </div>
         <div class="char-name">TITAN</div>
       </div>
     </div>
     
     <button class="btn" id="start-btn" style="background: var(--amber); color: #000;">전투 시작 (START)</button>
-    <div style="margin-top: 20px; font-size: 12px; color: var(--border2); font-family: var(--fdisp);">
-      P1: W,A,S,D (Move) / F (Attack)<br>P2: Arrow Keys (Move) / L (Attack)
+    <div style="margin-top: 20px; font-size: 13px; color: #fff; font-family: var(--fdisp); line-height: 1.6; text-align: center;">
+      <span style="color:var(--cyan)">[P1]</span> 이동: W,A,S,D | 일반공격: F | 특수스킬: G<br>
+      <span style="color:var(--magenta)">[P2]</span> 이동: 방향키 | 일반공격: L | 특수스킬: K
     </div>
   </div>
 
-  <!-- Game Over Screen -->
   <div id="game-over" class="menu-screen">
     <div class="result-text" id="result-text">PLAYER 1 WINS!</div>
     <button class="btn" id="restart-btn">메인으로 (MAIN MENU)</button>
   </div>
 
-  <!-- Game Canvas -->
   <canvas id="game-canvas"></canvas>
 </div>
 
@@ -170,14 +157,14 @@
 
   const GRAVITY = 0.7;
   let gameMode = 'cpu'; 
-  let timer = 60;
+  let timer = 120; // 2분으로 변경
   let timerId;
   let gameActive = false;
 
   const CHARACTERS = [
-    { name: 'VANGUARD', color: '#22d3ee', speed: 5, jump: -15, damage: 10, width: 50 },
-    { name: 'SEOA', color: '#ff5c8a', speed: 8, jump: -17, damage: 7, width: 40 }, 
-    { name: 'TITAN', color: '#00e5a0', speed: 3, jump: -12, damage: 20, width: 70 }
+    { name: 'VANGUARD', color: '#22d3ee', speed: 5, jump: -15, damage: 8, width: 50 },
+    { name: 'SEOA', color: '#ff5c8a', speed: 8, jump: -17, damage: 5, width: 40 }, 
+    { name: 'TITAN', color: '#00e5a0', speed: 3, jump: -12, damage: 15, width: 70 }
   ];
   let selectedCharIndex = 0;
 
@@ -186,7 +173,7 @@
       this.position = position;
       this.velocity = velocity;
       this.width = charData.width;
-      this.height = 150;
+      this.height = 140;
       this.color = charData.color;
       this.speed = charData.speed;
       this.jumpPower = charData.jump;
@@ -194,62 +181,75 @@
       this.isEnemy = isEnemy;
       
       this.health = 100;
-      this.attackBox = { position: { x: this.position.x, y: this.position.y }, width: 100, height: 50 };
+      
+      // 공격 상태 관리
+      this.attackBox = { position: { x: this.position.x, y: this.position.y }, width: 80, height: 40 };
+      this.skillBox = { position: { x: this.position.x, y: this.position.y }, width: 160, height: 80 };
+      
       this.isAttacking = false;
-      this.lastKey;
+      this.isSkilling = false;
+      this.hasHit = false;         // 중복 타격 방지 플래그
+      this.skillCooldown = false;  // 스킬 쿨타임 플래그
+      
+      this.lastKey = isEnemy ? 'ArrowLeft' : 'd';
     }
 
     draw() {
       const { x, y } = this.position;
-      const isSeoa = this.color === '#ff5c8a';
-      const isTitan = this.color === '#00e5a0';
+      const isLeft = (this.lastKey === 'a' || this.lastKey === 'ArrowLeft');
       
+      // 몸통
       c.fillStyle = this.color;
+      c.fillRect(x, y + 30, this.width, this.height - 50); 
       
-      // 캐릭터별 캔버스 외형 드로잉 (네모 대신 인간/로봇 실루엣 적용)
-      if (isTitan) {
-        // 타이탄: 거대한 중장갑 로봇
-        c.fillRect(x, y + 30, this.width, this.height - 30); // 몸통
-        c.fillRect(x + 15, y, 40, 30); // 머리
-        c.fillStyle = '#000';
-        c.fillRect(x + 25, y + 10, 20, 5); // 사이클롭스 눈
-      } else if (isSeoa) {
-        // 서아: 슬림하고 빠른 가상 캐릭터
-        c.fillRect(x + 5, y + 40, 30, this.height - 40); // 슬림 몸통
-        c.beginPath();
-        c.arc(x + 20, y + 20, 20, 0, Math.PI * 2); // 둥근 머리
-        c.fill();
-        c.fillStyle = '#000';
-        const eyeX = this.isEnemy ? -3 : 3; // 바라보는 방향에 따른 눈동자 위치
-        c.fillRect(x + 20 + eyeX - 6, y + 15, 4, 4);
-        c.fillRect(x + 20 + eyeX + 6, y + 15, 4, 4);
-      } else {
-        // 뱅가드: 표준 전투 로봇
-        c.fillRect(x + 5, y + 35, 40, this.height - 35); // 바디
-        c.fillRect(x + 10, y, 30, 35); // 사각형 머리
-        c.fillStyle = '#000';
-        const eyeX = this.isEnemy ? -3 : 3;
-        c.fillRect(x + 25 + eyeX - 7, y + 10, 6, 6);
-        c.fillRect(x + 25 + eyeX + 7, y + 10, 6, 6);
-      }
+      // 머리 (동그랗게 표현)
+      c.beginPath();
+      c.arc(x + this.width / 2, y + 15, 20, 0, Math.PI * 2);
+      c.fill();
+      
+      // 눈동자 (방향에 따라 이동)
+      c.fillStyle = '#000';
+      const eyeX = isLeft ? -5 : 5;
+      c.fillRect(x + this.width / 2 + eyeX - 6, y + 10, 4, 4);
+      c.fillRect(x + this.width / 2 + eyeX + 6, y + 10, 4, 4);
 
-      // 공격 이펙트 처리
+      // 다리
+      c.fillStyle = this.color;
+      c.fillRect(x + 5, y + this.height - 20, 10, 20);
+      c.fillRect(x + this.width - 15, y + this.height - 20, 10, 20);
+
+      // 팔 및 공격 모션 (다양한 스킬 시각화)
+      c.fillStyle = '#fff';
       if (this.isAttacking) {
-        c.fillStyle = isSeoa ? 'rgba(255, 92, 138, 0.7)' : 'rgba(255, 255, 255, 0.8)';
-        c.fillRect(this.attackBox.position.x, this.attackBox.position.y, this.attackBox.width, this.attackBox.height);
+        // 일반 공격: 뻗은 팔
+        if (isLeft) c.fillRect(x - 40, y + 45, 50, 12);
+        else c.fillRect(x + this.width - 10, y + 45, 50, 12);
+      } else if (this.isSkilling) {
+        // 특수 스킬: 거대한 에너지 방출
+        c.fillStyle = this.color;
+        if (isLeft) c.fillRect(x - 140, y + 25, 140, 50);
+        else c.fillRect(x + this.width, y + 25, 140, 50);
+      } else {
+        // 대기 상태: 얌전히 내린 팔
+        c.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        c.fillRect(x + this.width / 2 - 6, y + 40, 12, 35);
       }
     }
 
     update() {
       this.draw();
       
-      if (this.isEnemy || this.lastKey === 'a' || this.lastKey === 'ArrowLeft') {
-        this.attackBox.position.x = this.position.x - this.attackBox.width + this.width;
-      } else {
-        this.attackBox.position.x = this.position.x;
-      }
-      this.attackBox.position.y = this.position.y + 20;
+      const isLeft = (this.lastKey === 'a' || this.lastKey === 'ArrowLeft');
+      
+      // 타격 박스 위치 업데이트 (일반 공격)
+      this.attackBox.position.x = isLeft ? this.position.x - this.attackBox.width + this.width : this.position.x;
+      this.attackBox.position.y = this.position.y + 40;
 
+      // 타격 박스 위치 업데이트 (스킬 공격 - 더 크고 멂)
+      this.skillBox.position.x = isLeft ? this.position.x - this.skillBox.width + this.width : this.position.x;
+      this.skillBox.position.y = this.position.y + 10;
+
+      // 물리 엔진 (중력 및 이동)
       this.position.x += this.velocity.x;
       this.position.y += this.velocity.y;
 
@@ -265,8 +265,20 @@
     }
 
     attack() {
+      if(this.isAttacking || this.isSkilling) return;
       this.isAttacking = true;
-      setTimeout(() => { this.isAttacking = false; }, 100);
+      this.hasHit = false; // 공격 시전 시 타격 판정 초기화
+      setTimeout(() => { this.isAttacking = false; }, 150); // 짧은 펀치 유지 시간
+    }
+
+    skill() {
+      if(this.isAttacking || this.isSkilling || this.skillCooldown) return;
+      this.isSkilling = true;
+      this.hasHit = false;
+      this.skillCooldown = true;
+      
+      setTimeout(() => { this.isSkilling = false; }, 300); // 스킬 이펙트 유지 시간
+      setTimeout(() => { this.skillCooldown = false; }, 2000); // 2초 뒤 스킬 재사용 가능
     }
   }
 
@@ -276,7 +288,6 @@
     ArrowLeft: { pressed: false }, ArrowRight: { pressed: false }, ArrowUp: { pressed: false }
   };
 
-  // --- 이벤트 리스너 바인딩 (에러 방지용 완벽 분리) ---
   document.getElementById('mode-cpu').addEventListener('click', () => setMode('cpu'));
   document.getElementById('mode-p2').addEventListener('click', () => setMode('p2'));
   
@@ -315,15 +326,26 @@
     });
 
     gameActive = true;
+    timer = 120;
     decreaseTimer();
     animate();
+  }
+
+  function rectangularCollision(rect1, rect2, isSkill = false) {
+    const box = isSkill ? rect1.skillBox : rect1.attackBox;
+    return (
+      box.position.x + box.width >= rect2.position.x &&
+      box.position.x <= rect2.position.x + rect2.width &&
+      box.position.y + box.height >= rect2.position.y &&
+      box.position.y <= rect2.position.y + rect2.height
+    );
   }
 
   function animate() {
     if(!gameActive) return;
     window.requestAnimationFrame(animate);
     
-    // 배경 및 바닥 그리기
+    // 배경 그리기
     c.fillStyle = '#0d1626';
     c.fillRect(0, 0, canvas.width, canvas.height);
     c.fillStyle = '#1e2c43';
@@ -344,30 +366,37 @@
       cpuAI();
     }
 
-    if (rectangularCollision({ rect1: player, rect2: enemy }) && player.isAttacking) {
-      player.isAttacking = false;
+    // --- 타격 판정 로직 (hasHit을 통한 중복 데미지 방지) ---
+    
+    // 1. P1이 P2를 때렸을 때
+    if (player.isAttacking && !player.hasHit && rectangularCollision(player, enemy, false)) {
+      player.hasHit = true;
       enemy.health -= player.damage;
       document.getElementById('enemy-health').style.width = Math.max(0, enemy.health) + '%';
     }
+    // 1-1. P1 스킬 히트
+    if (player.isSkilling && !player.hasHit && rectangularCollision(player, enemy, true)) {
+      player.hasHit = true;
+      enemy.health -= (player.damage * 2.5); // 스킬은 데미지 2.5배
+      document.getElementById('enemy-health').style.width = Math.max(0, enemy.health) + '%';
+    }
 
-    if (rectangularCollision({ rect1: enemy, rect2: player }) && enemy.isAttacking) {
-      enemy.isAttacking = false;
+    // 2. P2가 P1을 때렸을 때
+    if (enemy.isAttacking && !enemy.hasHit && rectangularCollision(enemy, player, false)) {
+      enemy.hasHit = true;
       player.health -= enemy.damage;
+      document.getElementById('player-health').style.width = Math.max(0, player.health) + '%';
+    }
+    // 2-1. P2 스킬 히트
+    if (enemy.isSkilling && !enemy.hasHit && rectangularCollision(enemy, player, true)) {
+      enemy.hasHit = true;
+      player.health -= (enemy.damage * 2.5);
       document.getElementById('player-health').style.width = Math.max(0, player.health) + '%';
     }
 
     if (enemy.health <= 0 || player.health <= 0) {
       determineWinner({ player, enemy, timerId });
     }
-  }
-
-  function rectangularCollision({ rect1, rect2 }) {
-    return (
-      rect1.attackBox.position.x + rect1.attackBox.width >= rect2.position.x &&
-      rect1.attackBox.position.x <= rect2.position.x + rect2.width &&
-      rect1.attackBox.position.y + rect1.attackBox.height >= rect2.position.y &&
-      rect1.attackBox.position.y <= rect2.position.y + rect2.height
-    );
   }
 
   function decreaseTimer() {
@@ -388,56 +417,58 @@
     if (player.health === enemy.health) resText.innerText = 'TIE!';
     else if (player.health > enemy.health) resText.innerText = 'PLAYER 1 WINS!';
     else resText.innerText = gameMode === 'cpu' ? 'CPU WINS!' : 'PLAYER 2 WINS!';
-
-    if (player.health > enemy.health && typeof window.reportScore === 'function') {
-        window.reportScore(player.health + timer); 
-    }
   }
 
   function cpuAI() {
     enemy.velocity.x = 0;
     const distance = player.position.x - enemy.position.x;
     
-    if (Math.abs(distance) > 80) {
+    // 플레이어 쫓아가기
+    if (Math.abs(distance) > 90) {
       if (distance > 0) { enemy.velocity.x = enemy.speed - 1; enemy.lastKey = 'ArrowRight'; }
       else { enemy.velocity.x = -(enemy.speed - 1); enemy.lastKey = 'ArrowLeft'; }
     } else {
+      // 가까우면 무작위 공격
       if (Math.random() < 0.05) enemy.attack();
     }
+    
+    // 스킬 사용 및 점프 로직
+    if (Math.random() < 0.005) enemy.skill();
     if (Math.random() < 0.01 && enemy.position.y >= canvas.height - 50 - enemy.height) {
       enemy.velocity.y = enemy.jumpPower;
     }
   }
 
-  // 구문 에러를 해결한 완벽한 키보드 이벤트 분리
   window.addEventListener('keydown', (event) => {
     if(!gameActive) return;
     
-    // P1 Controls
-    switch (event.key) {
+    // P1 조작
+    switch (event.key.toLowerCase()) { // 대소문자 방어
       case 'd': keys.d.pressed = true; player.lastKey = 'd'; break;
       case 'a': keys.a.pressed = true; player.lastKey = 'a'; break;
       case 'w': if(player.position.y >= canvas.height - 50 - player.height) player.velocity.y = player.jumpPower; break;
       case 'f': player.attack(); break;
+      case 'g': player.skill(); break; // P1 스킬
     }
     
-    // P2 Controls
+    // P2 조작
     if(gameMode === 'p2') {
-      switch (event.key) {
-        case 'ArrowRight': keys.ArrowRight.pressed = true; enemy.lastKey = 'ArrowRight'; break;
-        case 'ArrowLeft': keys.ArrowLeft.pressed = true; enemy.lastKey = 'ArrowLeft'; break;
-        case 'ArrowUp': if(enemy.position.y >= canvas.height - 50 - enemy.height) enemy.velocity.y = enemy.jumpPower; break;
+      switch (event.key.toLowerCase()) {
+        case 'arrowright': keys.ArrowRight.pressed = true; enemy.lastKey = 'ArrowRight'; break;
+        case 'arrowleft': keys.ArrowLeft.pressed = true; enemy.lastKey = 'ArrowLeft'; break;
+        case 'arrowup': if(enemy.position.y >= canvas.height - 50 - enemy.height) enemy.velocity.y = enemy.jumpPower; break;
         case 'l': enemy.attack(); break;
+        case 'k': enemy.skill(); break; // P2 스킬
       }
     }
   });
 
   window.addEventListener('keyup', (event) => {
-    switch (event.key) {
+    switch (event.key.toLowerCase()) {
       case 'd': keys.d.pressed = false; break;
       case 'a': keys.a.pressed = false; break;
-      case 'ArrowRight': keys.ArrowRight.pressed = false; break;
-      case 'ArrowLeft': keys.ArrowLeft.pressed = false; break;
+      case 'arrowright': keys.ArrowRight.pressed = false; break;
+      case 'arrowleft': keys.ArrowLeft.pressed = false; break;
     }
   });
 </script>
