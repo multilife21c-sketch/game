@@ -10,7 +10,7 @@
 <style>
   :root {
     --bg0: #04070a; --panel: rgba(17, 29, 49, 0.75); --border2: #2c4060;
-    --txt: #e6ecf7; --amber: #ffb547; --cyan: #22d3ee; --magenta: #ff5c8a;
+    --txt: #e6ecf7; --amber: #ffb547; --cyan: #22d3ee; --magenta: #ff5c8a; --red: #ff003c;
     --fdisp: 'Orbitron', sans-serif; --fkr: 'Noto Sans KR', sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
@@ -19,15 +19,22 @@
   #game-container { position: relative; width: 1024px; height: 576px; background: #000; border: 2px solid var(--cyan); box-shadow: 0 0 50px rgba(34, 211, 238, 0.2); border-radius: 8px; overflow: hidden; }
   #webgl-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 
-  #ui-layer { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 30px; }
+  /* 페널티 피드백 화면 */
+  #damage-overlay { position: absolute; inset: 0; background: rgba(255, 0, 60, 0.4); pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 15; mix-blend-mode: overlay; }
+
+  #ui-layer { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 30px; z-index: 20; }
+  
   .header { display: flex; justify-content: space-between; align-items: flex-start; }
-  .title-box { background: var(--panel); border: 1px solid var(--cyan); padding: 15px 30px; border-radius: 4px; backdrop-filter: blur(10px); box-shadow: 0 0 20px rgba(34,211,238,0.2); transition: all 0.3s; }
+  .title-box { position: relative; background: var(--panel); border: 1px solid var(--cyan); padding: 15px 30px; border-radius: 4px; backdrop-filter: blur(10px); box-shadow: 0 0 20px rgba(34,211,238,0.2); transition: all 0.3s; }
+  .version { position: absolute; top: 5px; right: 8px; font-family: var(--fdisp); font-size: 10px; color: var(--cyan); letter-spacing: 1px; font-weight: 700; }
   .title { font-family: var(--fdisp); font-size: 28px; font-weight: 900; color: #fff; letter-spacing: 2px; text-shadow: 0 0 10px var(--cyan); }
   .subtitle { font-size: 12px; color: var(--cyan); letter-spacing: 5px; margin-top: 5px; }
   
   .status-box { background: var(--panel); border: 1px solid var(--magenta); padding: 15px 25px; border-radius: 4px; backdrop-filter: blur(10px); text-align: right; }
-  .timer { font-family: var(--fdisp); font-size: 36px; font-weight: 900; color: var(--amber); text-shadow: 0 0 15px var(--amber); font-variant-numeric: tabular-nums; }
+  .timer { font-family: var(--fdisp); font-size: 36px; font-weight: 900; color: var(--amber); text-shadow: 0 0 15px var(--amber); font-variant-numeric: tabular-nums; transition: color 0.2s, transform 0.2s; }
+  .timer.damage { color: var(--red); transform: scale(1.1); text-shadow: 0 0 20px var(--red); }
   .status-label { font-size: 13px; color: var(--magenta); letter-spacing: 1px; font-weight: 700; margin-bottom: 5px; }
+  .stage-label { font-family: var(--fdisp); font-size: 18px; color: #fff; font-weight: 900; margin-bottom: 8px; letter-spacing: 2px; text-shadow: 0 0 5px #fff; }
 
   .footer { display: flex; justify-content: space-between; align-items: flex-end; pointer-events: auto; }
   .avatar-select { display: flex; gap: 15px; }
@@ -36,42 +43,37 @@
   .action-btn { background: var(--cyan); color: #000; border: none; padding: 15px 40px; font-family: var(--fdisp); font-size: 20px; font-weight: 900; cursor: pointer; border-radius: 4px; box-shadow: 0 0 20px rgba(34,211,238,0.6); transition: all 0.2s; }
   .action-btn:hover { transform: scale(1.05); background: #fff; box-shadow: 0 0 30px #fff; }
 
-  /* 설명 텍스트 스타일 및 애니메이션 설정 */
-  .instruction { 
-    position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); 
-    width: 90%; max-width: 550px; color: rgba(255,255,255,0.9); font-size: 14px; letter-spacing: 1px; 
-    text-align: center; background: rgba(0,0,0,0.7); padding: 15px 25px; border-radius: 8px; 
-    border: 1px solid var(--border2); pointer-events: none; 
-    transition: opacity 0.8s ease, transform 0.8s ease; 
+  /* 게임 시작 전 가이드 (크게 확장) */
+  .guide-box {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 90%; max-width: 500px; background: rgba(17, 29, 49, 0.9); padding: 25px;
+    border-radius: 8px; border: 1px solid var(--border2); pointer-events: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8); transition: opacity 0.5s ease;
   }
-  .instruction.fade-out { opacity: 0; transform: translate(-50%, 20px); }
+  .guide-title { font-family: var(--fkr); font-size: 18px; font-weight: 900; color: #fff; text-align: center; margin-bottom: 15px; border-bottom: 1px solid var(--border2); padding-bottom: 10px; }
+  .guide-list { list-style: none; font-size: 14px; line-height: 1.8; color: #cbd5e1; }
+  .guide-list li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+  .guide-color { width: 14px; height: 14px; display: inline-block; border-radius: 3px; box-shadow: 0 0 8px currentColor; }
+  .guide-box.fade-out { opacity: 0; pointer-events: none; }
 
   #result-screen { position: absolute; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 30; pointer-events: auto; }
   .result-title { font-family: var(--fdisp); font-size: 50px; font-weight: 900; color: var(--cyan); text-shadow: 0 0 20px var(--cyan); margin-bottom: 10px; text-align: center; }
   .result-score { font-family: var(--fdisp); font-size: 30px; color: #fff; margin-bottom: 40px; }
   .restart-btn { background: transparent; border: 2px solid var(--amber); color: var(--amber); padding: 15px 40px; font-family: var(--fdisp); font-size: 18px; font-weight: 700; cursor: pointer; border-radius: 4px; transition: all 0.2s; }
   .restart-btn:hover { background: var(--amber); color: #000; box-shadow: 0 0 20px var(--amber); }
-
   #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; display: none; }
 
-  /* ==========================================
-     📱 모바일 반응형 (Mobile Responsive) 적용
-     ========================================== */
   @media (max-width: 768px) {
     #game-container { width: 100%; height: 100vh; border: none; border-radius: 0; }
     #ui-layer { padding: 15px; }
     .header { flex-direction: column; gap: 10px; }
-    .title-box { padding: 10px; width: 100%; text-align: center; }
-    .title { font-size: 22px; }
-    .status-box { padding: 10px; width: 100%; text-align: center; }
-    .timer { font-size: 30px; }
+    .title-box, .status-box { padding: 10px; width: 100%; text-align: center; }
+    .title { font-size: 22px; } .timer { font-size: 30px; }
     .footer { flex-direction: column; gap: 15px; align-items: center; padding-bottom: 20px; }
     .avatar-select { flex-wrap: wrap; justify-content: center; }
     .action-btn { width: 100%; font-size: 18px; padding: 15px; }
-    
-    .instruction { bottom: 180px; font-size: 12px; padding: 12px; }
-    .result-title { font-size: 32px; }
-    .result-score { font-size: 24px; }
+    .guide-box { width: 95%; font-size: 12px; }
+    .result-title { font-size: 32px; } .result-score { font-size: 24px; }
   }
 </style>
 </head>
@@ -80,22 +82,30 @@
 <div id="game-container">
   <canvas id="webgl-canvas"></canvas>
   <div id="crosshair"></div>
-
-  <div id="ui-layer">
+  <div id="damage-overlay"></div> <div id="ui-layer">
     <div class="header">
       <div class="title-box" id="title-box">
+        <div class="version">v1.3</div>
         <div class="title">NEURAL GRID</div>
         <div class="subtitle">PROJECT: ZERO HOUR</div>
       </div>
       <div class="status-box">
+        <div class="stage-label" id="stage-ui">STAGE 1</div>
         <div class="status-label" id="keys-ui">SECURITY KEYS: 0 / 2</div>
-        <div class="timer" id="timer-ui">01:00:00</div>
+        <div class="timer" id="timer-ui">02:00:00</div>
       </div>
     </div>
     
-    <div class="instruction" id="instruction-text">
-      아바타를 선택하고 [INFILTRATE]를 눌러 침투를 시작하세요.<br>
-      <span style="color:var(--amber); font-size:12px;">마우스/터치 스와이프로 맵을 회전할 수 있습니다.</span>
+    <div class="guide-box" id="guide-box">
+      <div class="guide-title">해킹 침투 가이드 (How to Play)</div>
+      <ul class="guide-list">
+        <li>👉 마우스/터치로 맵을 회전하며 경로를 찾으세요.</li>
+        <li><span class="guide-color" style="background:var(--cyan); color:var(--cyan)"></span> 인접한 큐브(노드)를 차례대로 클릭해 이동합니다.</li>
+        <li><span class="guide-color" style="background:var(--amber); color:var(--amber)"></span> <b>[필수]</b> 노란색 보안키를 모두 찾아야 코어가 열립니다.</li>
+        <li><span class="guide-color" style="background:var(--red); color:var(--red)"></span> <b>[주의]</b> 빨간색 방어벽을 건드리면 <b>시간이 10초 깎입니다.</b></li>
+        <li><span class="guide-color" style="background:#fff; color:#fff"></span> 하얀색 코어를 장악하면 다음 단계(총 3단계)로 넘어갑니다.</li>
+      </ul>
+      <div style="text-align:center; color:var(--amber); font-weight:bold; margin-top:15px;">아바타를 고르고 [INFILTRATE]를 누르세요.</div>
     </div>
 
     <div class="footer" id="footer-menu">
@@ -119,7 +129,6 @@
   const canvas = document.getElementById('webgl-canvas');
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   
-  // 캔버스 사이즈 자동 조절 (모바일 대응)
   function resizeCanvas() {
     const container = document.getElementById('game-container');
     renderer.setSize(container.clientWidth, container.clientHeight);
@@ -144,27 +153,43 @@
   pointLight.position.set(0, 0, 0);
   scene.add(pointLight);
 
+  // ==========================================
+  // 게임 데이터 및 스테이지 (1~3단계) 설정
+  // ==========================================
   let gameStatus = 'menu'; 
   let currentGridColor = 0x22d3ee;
-  let timeRemaining = 60;
+  let timeRemaining = 120; // 3단계를 깨기 위해 120초로 증가
   let timerInterval;
-  let keysRequired = 2;
+  
+  let currentStage = 1;
   let keysFound = 0;
+  
+  // 단계별 맵 크기, 큐브 간격, 큐브 크기, 필요 키 갯수
+  const STAGE_CONFIG = {
+    1: { size: 2, spacing: 2.5, scale: 1.0, keys: 2 }, // 5x5x5
+    2: { size: 3, spacing: 1.8, scale: 0.7, keys: 3 }, // 7x7x7
+    3: { size: 4, spacing: 1.4, scale: 0.5, keys: 4 }  // 9x9x9
+  };
 
   const gridGroup = new THREE.Group();
   scene.add(gridGroup);
   
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
-  
-  const gridSize = 2; 
-  const spacing = 2.5;
   const nodeGeometry = new THREE.BoxGeometry(1, 1, 1);
 
   function generateGrid() {
-    while(gridGroup.children.length > 0){ gridGroup.remove(gridGroup.children[0]); }
+    // 맵 초기화 및 메모리 관리
+    while(gridGroup.children.length > 0){ 
+      gridGroup.remove(gridGroup.children[0]); 
+    }
+    
+    const config = STAGE_CONFIG[currentStage];
+    const gridSize = config.size;
+    const spacing = config.spacing;
     let normalNodes = [];
 
+    // 노드 생성
     for (let x = -gridSize; x <= gridSize; x++) {
       for (let y = -gridSize; y <= gridSize; y++) {
         for (let z = -gridSize; z <= gridSize; z++) {
@@ -174,13 +199,15 @@
           let nodeType = 'normal';
           if (isCore) nodeType = 'core';
           else if (isStart) nodeType = 'start';
+          // 빈 공간 10%, 방어벽 25%
+          else if (Math.random() < 0.10) continue; 
           else if (Math.random() < 0.25) nodeType = 'firewall';
 
           const nodeMaterial = new THREE.MeshPhysicalMaterial({ transparent: true });
           const node = new THREE.Mesh(nodeGeometry, nodeMaterial);
           
           node.position.set(x * spacing, y * spacing, z * spacing);
-          node.userData = { gx: x, gy: y, gz: z, type: nodeType, isHacked: false };
+          node.userData = { gx: x, gy: y, gz: z, type: nodeType, isHacked: false, baseScale: config.scale };
           
           if(nodeType === 'normal') normalNodes.push(node);
           
@@ -190,7 +217,8 @@
       }
     }
 
-    for(let i=0; i<keysRequired; i++) {
+    // 보안 키 무작위 배치
+    for(let i=0; i<config.keys; i++) {
       if(normalNodes.length > 0) {
         const idx = Math.floor(Math.random() * normalNodes.length);
         const keyNode = normalNodes.splice(idx, 1)[0];
@@ -204,60 +232,65 @@
     const mat = node.material;
     const type = node.userData.type;
     const isHacked = node.userData.isHacked;
+    const base = node.userData.baseScale;
 
     if (type === 'core') {
       mat.color.setHex(0xffffff); mat.emissive.setHex(0xffffff); mat.opacity = 0.9;
-      mat.roughness = 0.1; mat.metalness = 1.0; node.scale.set(1.3, 1.3, 1.3);
+      mat.roughness = 0.1; mat.metalness = 1.0; node.scale.set(base*1.3, base*1.3, base*1.3);
     } else if (type === 'firewall') {
       mat.color.setHex(0xff003c); mat.emissive.setHex(0xff003c); mat.opacity = 0.8;
-      mat.wireframe = false; node.scale.set(0.7, 0.7, 0.7);
+      mat.wireframe = false; node.scale.set(base*0.7, base*0.7, base*0.7);
     } else if (type === 'key') {
       mat.color.setHex(0xffb547); mat.emissive.setHex(0xffb547); mat.opacity = 0.9;
-      mat.wireframe = false; node.scale.set(0.8, 0.8, 0.8);
+      mat.wireframe = false; node.scale.set(base*0.8, base*0.8, base*0.8);
     } else if (type === 'start' || isHacked) {
       mat.color.setHex(currentGridColor); mat.emissive.setHex(currentGridColor); mat.opacity = 0.85;
-      mat.wireframe = false; node.userData.isHacked = true; node.scale.set(0.9, 0.9, 0.9);
+      mat.wireframe = false; node.userData.isHacked = true; node.scale.set(base*0.9, base*0.9, base*0.9);
     } else {
       mat.color.setHex(currentGridColor); mat.emissive.setHex(currentGridColor); mat.opacity = 0.15;
-      mat.wireframe = true; node.scale.set(0.6, 0.6, 0.6);
+      mat.wireframe = true; node.scale.set(base*0.6, base*0.6, base*0.6);
     }
   }
 
-  resizeCanvas(); // 초기 크기 맞춤
+  resizeCanvas(); 
   generateGrid(); 
 
-  // 터치(모바일) 및 클릭 이벤트 통합
-  canvas.addEventListener('pointerdown', (e) => {
+  // 클릭 / 터치 이벤트
+  function handleInteract(e) {
     if (gameStatus !== 'playing') return;
-    
-    // 모바일 터치 스와이프와 탭을 구분하기 위한 로직
     const isTouch = e.pointerType === 'touch';
-    if(isTouch) return; // OrbitControls가 회전을 처리하도록 드래그 중에는 무시
+    if(isTouch && e.type === 'pointerdown') return; 
 
     const rect = canvas.getBoundingClientRect();
-    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    let clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    let clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    
+    mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(gridGroup.children);
 
     if (intersects.length > 0) processHackAttempt(intersects[0].object);
-  });
+  }
 
-  // 터치(클릭) 이벤트 전용 바인딩
-  canvas.addEventListener('click', (e) => {
-    if (gameStatus !== 'playing') return;
-    const rect = canvas.getBoundingClientRect();
-    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(gridGroup.children);
-    if (intersects.length > 0) processHackAttempt(intersects[0].object);
-  });
+  canvas.addEventListener('pointerdown', handleInteract);
+  canvas.addEventListener('click', handleInteract);
 
+  // ==========================================
+  // 노드 클릭 및 페널티/클리어 로직
+  // ==========================================
   function processHackAttempt(node) {
-    if (node.userData.isHacked || node.userData.type === 'firewall') { flashError(node); return; }
+    if (node.userData.isHacked) return;
 
+    // 1. 방어벽(빨간색) 클릭 시 즉각 페널티 (-10초)
+    if (node.userData.type === 'firewall') {
+      applyPenalty();
+      flashError(node);
+      return; 
+    }
+
+    // 2. 인접성 체크 (이미 해킹된 노드 주변만 가능)
     let isAdjacent = false;
     for (let other of gridGroup.children) {
       if (other.userData.isHacked) {
@@ -270,23 +303,55 @@
 
     if (!isAdjacent) { flashError(node); return; }
 
+    const reqKeys = STAGE_CONFIG[currentStage].keys;
+
+    // 3. 코어 해킹 및 다음 스테이지 넘어가기
     if (node.userData.type === 'core') {
-      if (keysFound >= keysRequired) endGame(true);
-      else flashError(node); 
+      if (keysFound >= reqKeys) {
+        if (currentStage < 3) {
+          // 다음 스테이지 진입
+          currentStage++;
+          startStageLogic();
+        } else {
+          // 게임 올 클리어
+          endGame(true);
+        }
+      } else {
+        flashError(node); 
+      }
     } else {
       if (node.userData.type === 'key') {
         keysFound++;
-        document.getElementById('keys-ui').innerText = `SECURITY KEYS: ${keysFound} / 2`;
-        document.getElementById('keys-ui').style.color = '#00e5a0';
+        updateKeyUI();
       }
       
       node.userData.isHacked = true;
       applyNodeStyle(node);
       
-      const originalScale = node.scale.x;
-      node.scale.set(originalScale * 1.5, originalScale * 1.5, originalScale * 1.5);
-      setTimeout(() => node.scale.set(originalScale, originalScale, originalScale), 150);
+      const bs = node.userData.baseScale;
+      node.scale.set(bs * 1.5, bs * 1.5, bs * 1.5);
+      setTimeout(() => node.scale.set(bs * 0.9, bs * 0.9, bs * 0.9), 150);
     }
+  }
+
+  // 타임 페널티 함수 (-10초 및 붉은색 점멸)
+  function applyPenalty() {
+    timeRemaining -= 10;
+    if (timeRemaining < 0) timeRemaining = 0;
+    
+    const timerUI = document.getElementById('timer-ui');
+    timerUI.innerText = `00:00:${timeRemaining.toString().padStart(2, '0')}`;
+    
+    // UI 텍스트 붉게 강조
+    timerUI.classList.add('damage');
+    setTimeout(() => timerUI.classList.remove('damage'), 300);
+
+    // 전체 화면 붉은 오버레이
+    const overlay = document.getElementById('damage-overlay');
+    overlay.style.opacity = '1';
+    setTimeout(() => { overlay.style.opacity = '0'; }, 200);
+
+    if (timeRemaining === 0) endGame(false);
   }
 
   function flashError(node) {
@@ -294,6 +359,14 @@
     const origEmissive = node.material.emissive.getHex();
     node.material.color.setHex(0xff0000); node.material.emissive.setHex(0xff0000);
     setTimeout(() => { node.material.color.setHex(origColor); node.material.emissive.setHex(origEmissive); }, 150);
+  }
+
+  function updateKeyUI() {
+    const req = STAGE_CONFIG[currentStage].keys;
+    const ui = document.getElementById('keys-ui');
+    ui.innerText = `SECURITY KEYS: ${keysFound} / ${req}`;
+    if (keysFound >= req) ui.style.color = '#00e5a0';
+    else ui.style.color = 'var(--magenta)';
   }
 
   const clock = new THREE.Clock();
@@ -331,34 +404,37 @@
 
   function startGame() {
     gameStatus = 'playing';
-    keysFound = 0;
-    timeRemaining = 60;
+    timeRemaining = 120; // 2분
+    currentStage = 1;
     
     document.getElementById('footer-menu').style.display = 'none';
     
-    // 게임 시작 시 안내 문구를 아래로 내리고 내용 변경
-    const instText = document.getElementById('instruction-text');
-    instText.style.bottom = "30px";
-    instText.innerHTML = `인접한 노드를 터치해 해킹하세요.<br><span style="color:var(--magenta)">방어벽(빨강)</span>을 피해 <span style="color:var(--amber)">보안키(노랑)</span> 2개 획득 후 <span style="color:#fff">코어(중앙)</span> 장악!`;
-    instText.classList.remove('fade-out');
+    // 시작 시 가이드 박스 숨김
+    const guideBox = document.getElementById('guide-box');
+    guideBox.classList.add('fade-out');
 
-    // 🌟 핵심: 4초 뒤에 텍스트가 스르륵 사라짐 (시야 확보)
-    setTimeout(() => {
-      instText.classList.add('fade-out');
-    }, 4000);
-
-    document.getElementById('keys-ui').innerText = `SECURITY KEYS: 0 / 2`;
-    document.getElementById('keys-ui').style.color = 'var(--magenta)';
     document.getElementById('crosshair').style.display = 'block';
-
-    generateGrid(); 
-    controls.autoRotateSpeed = 0.2; 
 
     timerInterval = setInterval(() => {
       timeRemaining--;
       document.getElementById('timer-ui').innerText = `00:00:${timeRemaining.toString().padStart(2, '0')}`;
       if (timeRemaining <= 0) endGame(false);
     }, 1000);
+
+    startStageLogic();
+  }
+
+  function startStageLogic() {
+    keysFound = 0;
+    updateKeyUI();
+    document.getElementById('stage-ui').innerText = `STAGE ${currentStage}`;
+    
+    // 스케일 축소로 인한 카메라 줌인 보정
+    if(currentStage === 2) camera.position.set(10, 8, 12);
+    if(currentStage === 3) camera.position.set(8, 6, 10);
+    
+    controls.autoRotateSpeed = 0.2; 
+    generateGrid();
   }
 
   function endGame(isWin) {
@@ -373,8 +449,8 @@
     resultScreen.style.display = 'flex';
     
     if (isWin) {
-      const finalScore = timeRemaining * 150 + 5000; 
-      resultMsg.innerText = "SYSTEM COMPROMISED";
+      const finalScore = timeRemaining * 500 + 10000; 
+      resultMsg.innerText = "ALL SYSTEMS COMPROMISED!";
       resultMsg.style.color = "var(--green)";
       resultMsg.style.textShadow = "0 0 20px var(--green)";
       resultScore.innerText = `FINAL SCORE: ${finalScore}`;
@@ -383,7 +459,7 @@
       resultMsg.innerText = "INFILTRATION FAILED";
       resultMsg.style.color = "var(--magenta)";
       resultMsg.style.textShadow = "0 0 20px var(--magenta)";
-      resultScore.innerText = "TIME OUT / SECURITY LOCKDOWN";
+      resultScore.innerText = `REACHED STAGE ${currentStage}`;
     }
   }
 </script>
