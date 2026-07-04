@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
 <title>Neural Grid: Zero Hour</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -17,7 +17,7 @@
   body { background: var(--bg0); color: var(--txt); font-family: var(--fkr); display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
   
   #game-container { position: relative; width: 1024px; height: 576px; background: #000; border: 2px solid var(--cyan); box-shadow: 0 0 50px rgba(34, 211, 238, 0.2); border-radius: 8px; overflow: hidden; }
-  #webgl-canvas { display: block; width: 100%; height: 100%; }
+  #webgl-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 
   #ui-layer { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 30px; }
   .header { display: flex; justify-content: space-between; align-items: flex-start; }
@@ -36,17 +36,43 @@
   .action-btn { background: var(--cyan); color: #000; border: none; padding: 15px 40px; font-family: var(--fdisp); font-size: 20px; font-weight: 900; cursor: pointer; border-radius: 4px; box-shadow: 0 0 20px rgba(34,211,238,0.6); transition: all 0.2s; }
   .action-btn:hover { transform: scale(1.05); background: #fff; box-shadow: 0 0 30px #fff; }
 
-  .instruction { position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.8); font-size: 14px; letter-spacing: 1px; text-align: center; background: rgba(0,0,0,0.5); padding: 15px 25px; border-radius: 8px; border: 1px solid var(--border2); pointer-events: none; transition: opacity 0.3s; }
-  
-  /* Result Screen */
+  /* 설명 텍스트 스타일 및 애니메이션 설정 */
+  .instruction { 
+    position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); 
+    width: 90%; max-width: 550px; color: rgba(255,255,255,0.9); font-size: 14px; letter-spacing: 1px; 
+    text-align: center; background: rgba(0,0,0,0.7); padding: 15px 25px; border-radius: 8px; 
+    border: 1px solid var(--border2); pointer-events: none; 
+    transition: opacity 0.8s ease, transform 0.8s ease; 
+  }
+  .instruction.fade-out { opacity: 0; transform: translate(-50%, 20px); }
+
   #result-screen { position: absolute; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 30; pointer-events: auto; }
-  .result-title { font-family: var(--fdisp); font-size: 50px; font-weight: 900; color: var(--cyan); text-shadow: 0 0 20px var(--cyan); margin-bottom: 10px; }
+  .result-title { font-family: var(--fdisp); font-size: 50px; font-weight: 900; color: var(--cyan); text-shadow: 0 0 20px var(--cyan); margin-bottom: 10px; text-align: center; }
   .result-score { font-family: var(--fdisp); font-size: 30px; color: #fff; margin-bottom: 40px; }
   .restart-btn { background: transparent; border: 2px solid var(--amber); color: var(--amber); padding: 15px 40px; font-family: var(--fdisp); font-size: 18px; font-weight: 700; cursor: pointer; border-radius: 4px; transition: all 0.2s; }
   .restart-btn:hover { background: var(--amber); color: #000; box-shadow: 0 0 20px var(--amber); }
 
-  /* Crosshair */
   #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; display: none; }
+
+  /* ==========================================
+     📱 모바일 반응형 (Mobile Responsive) 적용
+     ========================================== */
+  @media (max-width: 768px) {
+    #game-container { width: 100%; height: 100vh; border: none; border-radius: 0; }
+    #ui-layer { padding: 15px; }
+    .header { flex-direction: column; gap: 10px; }
+    .title-box { padding: 10px; width: 100%; text-align: center; }
+    .title { font-size: 22px; }
+    .status-box { padding: 10px; width: 100%; text-align: center; }
+    .timer { font-size: 30px; }
+    .footer { flex-direction: column; gap: 15px; align-items: center; padding-bottom: 20px; }
+    .avatar-select { flex-wrap: wrap; justify-content: center; }
+    .action-btn { width: 100%; font-size: 18px; padding: 15px; }
+    
+    .instruction { bottom: 180px; font-size: 12px; padding: 12px; }
+    .result-title { font-size: 32px; }
+    .result-score { font-size: 24px; }
+  }
 </style>
 </head>
 <body>
@@ -69,7 +95,7 @@
     
     <div class="instruction" id="instruction-text">
       아바타를 선택하고 [INFILTRATE]를 눌러 침투를 시작하세요.<br>
-      <span style="color:var(--amber); font-size:12px;">마우스/터치로 맵을 회전할 수 있습니다.</span>
+      <span style="color:var(--amber); font-size:12px;">마우스/터치 스와이프로 맵을 회전할 수 있습니다.</span>
     </div>
 
     <div class="footer" id="footer-menu">
@@ -90,13 +116,17 @@
 </div>
 
 <script>
-  // ==========================================
-  // 1. 코어 엔진 및 렌더러 설정
-  // ==========================================
   const canvas = document.getElementById('webgl-canvas');
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setSize(1024, 576);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  
+  // 캔버스 사이즈 자동 조절 (모바일 대응)
+  function resizeCanvas() {
+    const container = document.getElementById('game-container');
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resizeCanvas);
 
   const scene = new THREE.Scene();
   scene.fog = new THREE.FogExp2(0x04070a, 0.035);
@@ -114,10 +144,7 @@
   pointLight.position.set(0, 0, 0);
   scene.add(pointLight);
 
-  // ==========================================
-  // 2. 게임 변수 및 상호작용 설정
-  // ==========================================
-  let gameStatus = 'menu'; // 'menu', 'playing', 'ended'
+  let gameStatus = 'menu'; 
   let currentGridColor = 0x22d3ee;
   let timeRemaining = 60;
   let timerInterval;
@@ -130,17 +157,12 @@
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
   
-  const gridSize = 2; // -2, -1, 0, 1, 2 (5x5x5 Grid)
+  const gridSize = 2; 
   const spacing = 2.5;
   const nodeGeometry = new THREE.BoxGeometry(1, 1, 1);
 
-  // ==========================================
-  // 3. 퍼즐 맵(그리드) 생성 로직
-  // ==========================================
   function generateGrid() {
-    // 기존 노드 초기화
     while(gridGroup.children.length > 0){ gridGroup.remove(gridGroup.children[0]); }
-    
     let normalNodes = [];
 
     for (let x = -gridSize; x <= gridSize; x++) {
@@ -152,7 +174,6 @@
           let nodeType = 'normal';
           if (isCore) nodeType = 'core';
           else if (isStart) nodeType = 'start';
-          // 25% 확률로 길을 막는 방어벽(Firewall) 생성
           else if (Math.random() < 0.25) nodeType = 'firewall';
 
           const nodeMaterial = new THREE.MeshPhysicalMaterial({ transparent: true });
@@ -169,7 +190,6 @@
       }
     }
 
-    // 보안 키(Key) 2개 무작위 배치
     for(let i=0; i<keysRequired; i++) {
       if(normalNodes.length > 0) {
         const idx = Math.floor(Math.random() * normalNodes.length);
@@ -187,38 +207,33 @@
 
     if (type === 'core') {
       mat.color.setHex(0xffffff); mat.emissive.setHex(0xffffff); mat.opacity = 0.9;
-      mat.roughness = 0.1; mat.metalness = 1.0;
-      node.scale.set(1.3, 1.3, 1.3);
+      mat.roughness = 0.1; mat.metalness = 1.0; node.scale.set(1.3, 1.3, 1.3);
     } else if (type === 'firewall') {
       mat.color.setHex(0xff003c); mat.emissive.setHex(0xff003c); mat.opacity = 0.8;
-      mat.wireframe = false;
-      node.scale.set(0.7, 0.7, 0.7);
+      mat.wireframe = false; node.scale.set(0.7, 0.7, 0.7);
     } else if (type === 'key') {
       mat.color.setHex(0xffb547); mat.emissive.setHex(0xffb547); mat.opacity = 0.9;
-      mat.wireframe = false;
-      node.scale.set(0.8, 0.8, 0.8);
+      mat.wireframe = false; node.scale.set(0.8, 0.8, 0.8);
     } else if (type === 'start' || isHacked) {
       mat.color.setHex(currentGridColor); mat.emissive.setHex(currentGridColor); mat.opacity = 0.85;
-      mat.wireframe = false;
-      node.userData.isHacked = true;
-      node.scale.set(0.9, 0.9, 0.9);
+      mat.wireframe = false; node.userData.isHacked = true; node.scale.set(0.9, 0.9, 0.9);
     } else {
-      // 일반 해킹 안된 노드
       mat.color.setHex(currentGridColor); mat.emissive.setHex(currentGridColor); mat.opacity = 0.15;
-      mat.wireframe = true;
-      node.scale.set(0.6, 0.6, 0.6);
+      mat.wireframe = true; node.scale.set(0.6, 0.6, 0.6);
     }
   }
 
-  generateGrid(); // 초기 관전용 생성
+  resizeCanvas(); // 초기 크기 맞춤
+  generateGrid(); 
 
-  // ==========================================
-  // 4. 이벤트: 클릭(해킹) 및 렌더링
-  // ==========================================
+  // 터치(모바일) 및 클릭 이벤트 통합
   canvas.addEventListener('pointerdown', (e) => {
     if (gameStatus !== 'playing') return;
+    
+    // 모바일 터치 스와이프와 탭을 구분하기 위한 로직
+    const isTouch = e.pointerType === 'touch';
+    if(isTouch) return; // OrbitControls가 회전을 처리하도록 드래그 중에는 무시
 
-    // 캔버스 좌표계 보정 (Raycasting)
     const rect = canvas.getBoundingClientRect();
     mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -226,17 +241,23 @@
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(gridGroup.children);
 
-    if (intersects.length > 0) {
-      processHackAttempt(intersects[0].object);
-    }
+    if (intersects.length > 0) processHackAttempt(intersects[0].object);
+  });
+
+  // 터치(클릭) 이벤트 전용 바인딩
+  canvas.addEventListener('click', (e) => {
+    if (gameStatus !== 'playing') return;
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(gridGroup.children);
+    if (intersects.length > 0) processHackAttempt(intersects[0].object);
   });
 
   function processHackAttempt(node) {
-    if (node.userData.isHacked || node.userData.type === 'firewall') {
-      flashError(node); return;
-    }
+    if (node.userData.isHacked || node.userData.type === 'firewall') { flashError(node); return; }
 
-    // 인접성 검사 (상하좌우 및 앞뒤 십자 방향만 가능)
     let isAdjacent = false;
     for (let other of gridGroup.children) {
       if (other.userData.isHacked) {
@@ -249,22 +270,19 @@
 
     if (!isAdjacent) { flashError(node); return; }
 
-    // 노드 해킹 처리
     if (node.userData.type === 'core') {
       if (keysFound >= keysRequired) endGame(true);
-      else flashError(node); // 키가 부족하면 코어 거부
+      else flashError(node); 
     } else {
       if (node.userData.type === 'key') {
         keysFound++;
         document.getElementById('keys-ui').innerText = `SECURITY KEYS: ${keysFound} / 2`;
-        document.getElementById('keys-ui').style.color = '#00e5a0'; // 진행 시 초록색 피드백
+        document.getElementById('keys-ui').style.color = '#00e5a0';
       }
       
-      // 해킹 성공 시각 효과
       node.userData.isHacked = true;
       applyNodeStyle(node);
       
-      // 약간의 튀어오르는 스케일 애니메이션 효과
       const originalScale = node.scale.x;
       node.scale.set(originalScale * 1.5, originalScale * 1.5, originalScale * 1.5);
       setTimeout(() => node.scale.set(originalScale, originalScale, originalScale), 150);
@@ -275,9 +293,7 @@
     const origColor = node.material.color.getHex();
     const origEmissive = node.material.emissive.getHex();
     node.material.color.setHex(0xff0000); node.material.emissive.setHex(0xff0000);
-    setTimeout(() => {
-      node.material.color.setHex(origColor); node.material.emissive.setHex(origEmissive);
-    }, 150);
+    setTimeout(() => { node.material.color.setHex(origColor); node.material.emissive.setHex(origEmissive); }, 150);
   }
 
   const clock = new THREE.Clock();
@@ -285,18 +301,12 @@
     requestAnimationFrame(animate);
     const time = clock.getElapsedTime();
 
-    // 부유 애니메이션 및 맥박 치는 조명
     gridGroup.position.y = Math.sin(time * 1.5) * 0.2;
     pointLight.intensity = 1.5 + Math.sin(time * 3) * 0.5;
 
-    // 코어 회전 연출
     gridGroup.children.forEach(node => {
-      if(node.userData.type === 'core') {
-        node.rotation.x += 0.01; node.rotation.y += 0.01;
-      }
-      if(node.userData.type === 'key' && !node.userData.isHacked) {
-        node.rotation.z = Math.sin(time * 5) * 0.5; // 키는 흔들림
-      }
+      if(node.userData.type === 'core') { node.rotation.x += 0.01; node.rotation.y += 0.01; }
+      if(node.userData.type === 'key' && !node.userData.isHacked) { node.rotation.z = Math.sin(time * 5) * 0.5; }
     });
 
     controls.update();
@@ -304,9 +314,6 @@
   }
   animate();
 
-  // ==========================================
-  // 5. 게임 흐름 제어 및 UI
-  // ==========================================
   function selectAvatar(btn, hexColor) {
     if(gameStatus !== 'menu') return;
     document.querySelectorAll('.avatar-btn').forEach(el => el.classList.remove('active'));
@@ -317,7 +324,6 @@
     document.documentElement.style.setProperty('--cyan', '#' + hexColor.toString(16).padStart(6, '0'));
     document.getElementById('title-box').style.borderColor = '#' + hexColor.toString(16).padStart(6, '0');
 
-    // 기존 맵 색상 업데이트
     gridGroup.children.forEach(node => {
       if (node.userData.type === 'normal' || node.userData.isHacked) applyNodeStyle(node);
     });
@@ -329,15 +335,25 @@
     timeRemaining = 60;
     
     document.getElementById('footer-menu').style.display = 'none';
-    document.getElementById('instruction-text').innerHTML = `인접한 노드를 클릭해 해킹을 확산시키세요.<br><span style="color:var(--magenta)">방어벽(빨강)</span>을 피해 <span style="color:var(--amber)">보안키(노랑)</span> 2개를 획득 후 <span style="color:#fff">코어(중앙)</span>를 장악하세요!`;
+    
+    // 게임 시작 시 안내 문구를 아래로 내리고 내용 변경
+    const instText = document.getElementById('instruction-text');
+    instText.style.bottom = "30px";
+    instText.innerHTML = `인접한 노드를 터치해 해킹하세요.<br><span style="color:var(--magenta)">방어벽(빨강)</span>을 피해 <span style="color:var(--amber)">보안키(노랑)</span> 2개 획득 후 <span style="color:#fff">코어(중앙)</span> 장악!`;
+    instText.classList.remove('fade-out');
+
+    // 🌟 핵심: 4초 뒤에 텍스트가 스르륵 사라짐 (시야 확보)
+    setTimeout(() => {
+      instText.classList.add('fade-out');
+    }, 4000);
+
     document.getElementById('keys-ui').innerText = `SECURITY KEYS: 0 / 2`;
     document.getElementById('keys-ui').style.color = 'var(--magenta)';
     document.getElementById('crosshair').style.display = 'block';
 
-    generateGrid(); // 새로운 랜덤 맵 생성
-    controls.autoRotateSpeed = 0.2; // 플레이 중에는 덜 회전하도록 조절
+    generateGrid(); 
+    controls.autoRotateSpeed = 0.2; 
 
-    // 타이머 시작
     timerInterval = setInterval(() => {
       timeRemaining--;
       document.getElementById('timer-ui').innerText = `00:00:${timeRemaining.toString().padStart(2, '0')}`;
@@ -357,13 +373,11 @@
     resultScreen.style.display = 'flex';
     
     if (isWin) {
-      const finalScore = timeRemaining * 150 + 5000; // 남은 시간 비례 점수
+      const finalScore = timeRemaining * 150 + 5000; 
       resultMsg.innerText = "SYSTEM COMPROMISED";
       resultMsg.style.color = "var(--green)";
       resultMsg.style.textShadow = "0 0 20px var(--green)";
       resultScore.innerText = `FINAL SCORE: ${finalScore}`;
-      
-      // NOVA 포털 랭킹 연동
       if (typeof window.reportScore === 'function') window.reportScore(finalScore);
     } else {
       resultMsg.innerText = "INFILTRATION FAILED";
