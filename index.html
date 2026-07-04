@@ -409,18 +409,19 @@ async function login(){
   }
   const provider=new GoogleAuthProvider();
   provider.setCustomParameters({ prompt:'select_account' });
-  // 모바일: 팝업은 자주 무효화됨 → 처음부터 리다이렉트
-  if(IS_MOBILE){
-    try{ toast("구글 로그인으로 이동합니다…"); await signInWithRedirect(auth,provider); }
-    catch(e){ console.error("redirect login:",e.code,e.message); toast("로그인 이동 실패: "+(e.code||'')); }
-    return;
-  }
-  // 데스크톱: 팝업 우선, 실패 시 리다이렉트
+  // 팝업 우선 (모바일 포함) — 리다이렉트는 서드파티 저장소 차단으로 복귀 실패가 잦아 최후수단
   try{ await signInWithPopup(auth,provider); }
   catch(e){
-    console.warn("popup login:",e.code);
+    console.warn("popup login:",e.code,e.message);
+    // 사용자가 직접 닫음 → 조용히 종료
     if(e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request') return;
-    try{ await signInWithRedirect(auth,provider); }catch(e2){ console.error(e2.code); toast("로그인 실패: "+(e2.code||'')); }
+    // 팝업이 브라우저에 막힘 → 리다이렉트로 폴백
+    if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'){
+      try{ toast("구글 로그인으로 이동합니다…"); await signInWithRedirect(auth,provider); }
+      catch(e2){ console.error(e2.code); toast("로그인 실패: "+(e2.code||'')); }
+      return;
+    }
+    toast("로그인 실패: "+(e.code||''));
   }
 }
 
