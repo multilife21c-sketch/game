@@ -401,14 +401,27 @@ if(IS_INAPP){
   if(INAPP.kakao) setTimeout(escapeInApp, 600);
 }
 
+const IS_MOBILE = IS_ANDROID || IS_IOS || /Mobi|Tablet/i.test(UA) || ('ontouchstart' in window && Math.min(screen.width,screen.height)<820);
 async function login(){
   if(IS_INAPP){ // 인앱에서는 구글이 로그인 자체를 차단 → 외부로 유도
     if(!escapeInApp()) toast("앱 브라우저에서는 로그인이 안 돼요. 'Safari로 열기'를 이용해주세요");
     return;
   }
   const provider=new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt:'select_account' });
+  // 모바일: 팝업은 자주 무효화됨 → 처음부터 리다이렉트
+  if(IS_MOBILE){
+    try{ toast("구글 로그인으로 이동합니다…"); await signInWithRedirect(auth,provider); }
+    catch(e){ console.error("redirect login:",e.code,e.message); toast("로그인 이동 실패: "+(e.code||'')); }
+    return;
+  }
+  // 데스크톱: 팝업 우선, 실패 시 리다이렉트
   try{ await signInWithPopup(auth,provider); }
-  catch(e){ try{ await signInWithRedirect(auth,provider); }catch(e2){ toast("로그인 실패"); } }
+  catch(e){
+    console.warn("popup login:",e.code);
+    if(e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request') return;
+    try{ await signInWithRedirect(auth,provider); }catch(e2){ console.error(e2.code); toast("로그인 실패: "+(e2.code||'')); }
+  }
 }
 
 async function loadFavs(uid){
@@ -418,7 +431,11 @@ async function loadFavs(uid){
 }
 
 if(!DEMO){
-  getRedirectResult(auth).catch(()=>{});
+  getRedirectResult(auth).catch(e=>{
+    if(e && e.code && e.code!=='auth/no-auth-event'){
+      console.error("redirect result:",e.code,e.message); toast("로그인 오류: "+e.code);
+    }
+  });
   onAuthStateChanged(auth, async(u)=>{
     state.user=u||null;
     state.admin=u?isAdmin(u.uid):false;
