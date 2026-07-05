@@ -74,6 +74,7 @@
 <body>
 
 <div id="game-container">
+  <div id="ver-badge" style="position:absolute;top:6px;left:8px;z-index:50;font-family:'Orbitron',var(--fdisp,sans-serif);font-size:11px;color:#516581;letter-spacing:1px;pointer-events:none;">NOVA FIGHTERS <span id="ver-num">v?</span></div>
   <div id="hud">
     <div class="status-wrapper">
       <div class="player-name" id="p1-name" style="left:0;">P1</div>
@@ -169,6 +170,8 @@
   canvas.width = 1024;
   canvas.height = 576;
 
+  const GAME_VERSION = 'v1.1';
+  document.getElementById('ver-num').textContent = GAME_VERSION;
   const GRAVITY = 0.7;
   let gameMode = 'arcade';
   let timer = 60;
@@ -214,11 +217,11 @@
       name: 'VANGUARD', id: 'vanguard', color: '#22d3ee', speed: 5, jump: -15, damage: 15, maxHp: 100, width: 50, height: 150,
       scale: 2.5, offset: { x: 80, y: 70 }, nativeFacing: 'right',
       sprites: {
-        idle: { src: './assets/Biker/Biker_idle.png', framesMax: 4 },
-        run: { src: './assets/Biker/Biker_run.png', framesMax: 6 },
-        jump: { src: './assets/Biker/Biker_jump.png', framesMax: 4 },
-        fall: { src: './assets/Biker/Biker_jump.png', framesMax: 4 },
-        attack1: { src: './assets/Biker/Biker_attack1.png', framesMax: 6 }
+        idle: { src: './assets/1%20Biker/Biker_idle.png', framesMax: 4 },
+        run: { src: './assets/1%20Biker/Biker_run.png', framesMax: 6 },
+        jump: { src: './assets/1%20Biker/Biker_jump.png', framesMax: 4 },
+        fall: { src: './assets/1%20Biker/Biker_jump.png', framesMax: 4 },
+        attack1: { src: './assets/1%20Biker/Biker_attack1.png', framesMax: 6 }
       },
       attackBox: { offset: { x: 65, y: 50 }, width: 120, height: 50 }, hitFrame: 2
     },
@@ -226,11 +229,11 @@
       name: 'SEOA', id: 'seoa', color: '#ff5c8a', speed: 7, jump: -17, damage: 10, maxHp: 85, width: 50, height: 150,
       scale: 2.5, offset: { x: 80, y: 70 }, nativeFacing: 'right',
       sprites: {
-        idle: { src: './assets/Punk/Punk_idle.png', framesMax: 4 },
-        run: { src: './assets/Punk/Punk_run.png', framesMax: 6 },
-        jump: { src: './assets/Punk/Punk_jump.png', framesMax: 4 },
-        fall: { src: './assets/Punk/Punk_jump.png', framesMax: 4 },
-        attack1: { src: './assets/Punk/Punk_attack1.png', framesMax: 6 }
+        idle: { src: './assets/2%20Punk/Punk_idle.png', framesMax: 4 },
+        run: { src: './assets/2%20Punk/Punk_run.png', framesMax: 6 },
+        jump: { src: './assets/2%20Punk/Punk_jump.png', framesMax: 4 },
+        fall: { src: './assets/2%20Punk/Punk_jump.png', framesMax: 4 },
+        attack1: { src: './assets/2%20Punk/Punk_attack1.png', framesMax: 6 }
       },
       attackBox: { offset: { x: 65, y: 50 }, width: 120, height: 50 }, hitFrame: 2
     },
@@ -238,11 +241,11 @@
       name: 'TITAN', id: 'titan', color: '#00e5a0', speed: 3, jump: -12, damage: 25, maxHp: 130, width: 60, height: 170,
       scale: 2.5, offset: { x: 80, y: 70 }, nativeFacing: 'right',
       sprites: {
-        idle: { src: './assets/Cyborg/Cyborg_idle.png', framesMax: 4 },
-        run: { src: './assets/Cyborg/Cyborg_run.png', framesMax: 6 },
-        jump: { src: './assets/Cyborg/Cyborg_jump.png', framesMax: 4 },
-        fall: { src: './assets/Cyborg/Cyborg_jump.png', framesMax: 4 },
-        attack1: { src: './assets/Cyborg/Cyborg_attack1.png', framesMax: 6 }
+        idle: { src: './assets/3%20Cyborg/Cyborg_idle.png', framesMax: 4 },
+        run: { src: './assets/3%20Cyborg/Cyborg_run.png', framesMax: 6 },
+        jump: { src: './assets/3%20Cyborg/Cyborg_jump.png', framesMax: 4 },
+        fall: { src: './assets/3%20Cyborg/Cyborg_jump.png', framesMax: 4 },
+        attack1: { src: './assets/3%20Cyborg/Cyborg_attack1.png', framesMax: 6 }
       },
       attackBox: { offset: { x: 70, y: 50 }, width: 140, height: 60 }, hitFrame: 2
     }
