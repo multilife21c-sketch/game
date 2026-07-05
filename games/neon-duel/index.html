@@ -14,7 +14,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 #game{position:fixed;inset:0;width:100%;height:100%;display:block;}
 .fdisp{font-family:'Orbitron',sans-serif;}
 .ui{position:fixed;inset:0;pointer-events:none;}
-#ver{position:fixed;top:6px;left:8px;font-family:'Orbitron',sans-serif;font-size:11px;color:#516581;letter-spacing:1px;z-index:6;}
+#ver{position:fixed;top:7px;left:10px;font-family:'Orbitron',sans-serif;font-size:12px;color:#6a7f9c;letter-spacing:1.5px;z-index:6;}
 #muteBtn{position:fixed;top:5px;right:12px;width:34px;height:34px;border-radius:9px;border:1px solid var(--border2);
   background:rgba(17,29,49,.7);color:var(--muted);font-size:15px;pointer-events:auto;cursor:pointer;z-index:6;}
 
@@ -150,6 +150,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 <!-- MENU -->
 <div class="screen" id="menu">
   <div class="logo">NEON DUEL</div>
+  <div style="font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:2px;color:#5a6f8c;margin-top:-6px;" id="menu-ver">v1.4</div>
   <div class="tagline">좌우 비행체의 <b>미사일 대결</b>! 가운데 아이템을 먹고,<br>정확히 <b>한가운데</b> 맞춰 크리티컬 → 궁극기로 폭발시켜라 ⚡</div>
   <div class="modes">
     <button class="mbtn on" data-mode="rank">🏆 랭킹(연승)</button>
@@ -185,8 +186,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
    모드: 랭킹(연승) / 스테이지 / AI 1:1
    랭킹: 연승 수 (동률 시 짧은 클리어시간 우선 → score 인코딩)
    ============================================================ */
-const GAME_VERSION='v1.3';
+const GAME_VERSION='v1.4';
 document.getElementById('vernum').textContent=GAME_VERSION;
+const _mv=document.getElementById('menu-ver'); if(_mv)_mv.textContent=GAME_VERSION;
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 const $=(s)=>document.querySelector(s), $id=(s)=>document.getElementById(s);
 const esc=(t)=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
