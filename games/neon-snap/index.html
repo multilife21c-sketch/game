@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Neon Snap - v0.2 Update</title>
+    <title>Neon Snap - v0.3</title>
     <style>
         :root {
             --neon-cyan: #00ffcc;
@@ -271,11 +271,12 @@
     <div id="effectBanner"></div>
 
     <div id="startScreen" class="ui-screen">
-        <div class="version-tag">v0.2</div>
+        <div class="version-tag">v0.3</div>
         <div class="fullscreen-container">
             <div class="header-group">
                 <h1>NEON SNAP</h1>
                 <div class="subtitle">Tension Slicing Action • Ultimate</div>
+                <div id="acctBadge" style="margin-top:10px;font-size:13px;color:#7fd8ff;">계정 확인 중…</div>
             </div>
             
             <div class="main-content">
@@ -301,7 +302,7 @@
     </div>
 
     <div id="gameOverScreen" class="ui-screen" style="display:none;">
-        <div class="version-tag">v0.2</div>
+        <div class="version-tag">v0.3</div>
         <div class="fullscreen-container">
             <div class="header-group">
                 <h1>CONNECTION LOST</h1>
@@ -310,6 +311,7 @@
             
             <div class="main-content">
                 <input type="text" id="nicknameInput" placeholder="ACCESS CODE (이름 입력)" maxlength="10">
+                <div id="loginRankNote" style="display:none;font-size:14px;color:#7fd8ff;margin-bottom:12px;"></div>
                 <button class="btn btn-start" onclick="game.submitScore()">데이터 업로드 및 재시작</button>
                 <button class="btn" onclick="game.showStartScreen()">메인 터미널로</button>
 
@@ -851,6 +853,18 @@
                 document.getElementById('hud').style.display = 'none';
                 document.getElementById('effectBanner').style.display = 'none';
                 document.getElementById('finalScoreDisplay').innerText = `최종 동기화 점수: ${this.score}`;
+                // 로그인 여부에 따라 닉네임 입력창/안내 전환
+                const inp = document.getElementById('nicknameInput');
+                const note = document.getElementById('loginRankNote');
+                if (window.NS && window.NS.user) {
+                    inp.style.display = 'none';
+                    note.style.display = 'block';
+                    note.innerText = `🏆 ${window.NS.myName || '플레이어'} 님으로 통합 랭킹에 자동 기록됩니다`;
+                } else {
+                    inp.style.display = '';
+                    note.style.display = 'block';
+                    note.innerText = '⚪ 포탈에서 로그인하면 통합 랭킹에 기록됩니다 (미로그인 시 기기 저장)';
+                }
                 document.getElementById('gameOverScreen').style.display = 'flex';
                 this.loadLeaderboard();
                 document.getElementById('nicknameInput').focus();
@@ -861,11 +875,21 @@
                 document.getElementById('startScreen').style.display = 'flex';
                 this.loadLeaderboard();
             }
-            loadLeaderboard() {
+            async loadLeaderboard() {
+                // 포탈(Firebase) 연동 시 통합 랭킹, 아니면 localStorage 폴백
+                if (window.NS && window.NS.ready && !window.NS.demo) {
+                    const rows = await window.NS.loadTop();
+                    if (rows) {
+                        const html = rows.length
+                          ? rows.map((it, i) => `<div class="rank-item"><span>${i+1}. ${it.name}</span><span>${it.score} PTS</span></div>`).join('')
+                          : '<div class="rank-item"><span>첫 기록에 도전하세요!</span><span></span></div>';
+                        document.getElementById('startLeaderboard').innerHTML = html;
+                        document.getElementById('endLeaderboard').innerHTML = html;
+                        return;
+                    }
+                }
                 const scores = JSON.parse(localStorage.getItem('neon_snap_ranks_v2')) || [
-                    {name: "RYAN", score: 2800},
-                    {name: "CYBER_BLADE", score: 1950},
-                    {name: "X_SECURITY", score: 1100}
+                    {name: "RYAN", score: 2800}, {name: "CYBER_BLADE", score: 1950}, {name: "X_SECURITY", score: 1100}
                 ];
                 scores.sort((a,b) => b.score - a.score);
                 let html = '';
@@ -875,14 +899,19 @@
                 document.getElementById('startLeaderboard').innerHTML = html;
                 document.getElementById('endLeaderboard').innerHTML = html;
             }
-            submitScore() {
-                let name = document.getElementById('nicknameInput').value.trim().toUpperCase();
-                if (!name) name = "OPERATOR";
-                const scores = JSON.parse(localStorage.getItem('neon_snap_ranks_v2')) || [];
-                scores.push({name: name, score: this.score});
-                scores.sort((a,b) => b.score - a.score);
-                localStorage.setItem('neon_snap_ranks_v2', JSON.stringify(scores.slice(0, 10)));
-                document.getElementById('nicknameInput').value = '';
+            async submitScore() {
+                // 로그인 상태면 포탈 통합 랭킹에 자동 기록 (닉네임 사용)
+                if (window.NS && window.NS.ready && window.NS.user) {
+                    await window.NS.report(this.score);
+                } else {
+                    let name = document.getElementById('nicknameInput').value.trim().toUpperCase();
+                    if (!name) name = "OPERATOR";
+                    const scores = JSON.parse(localStorage.getItem('neon_snap_ranks_v2')) || [];
+                    scores.push({name: name, score: this.score});
+                    scores.sort((a,b) => b.score - a.score);
+                    localStorage.setItem('neon_snap_ranks_v2', JSON.stringify(scores.slice(0, 10)));
+                    document.getElementById('nicknameInput').value = '';
+                }
                 this.start();
             }
             update(dt) {
@@ -998,14 +1027,31 @@
                     ctx.arc(cx, cy, Math.hypot(this.pointerX - cx, this.pointerY - cy), 0, Math.PI * 2);
                     ctx.stroke();
 
-                    ctx.lineWidth = 4;
-                    ctx.strokeStyle = '#ffff00';
-                    ctx.shadowBlur = 20;
-                    ctx.shadowColor = '#ffff00';
+                    // 당김 길이 = 파워. 길수록 뜨거운 색(노랑→주황→빨강)
+                    const pullLen = Math.hypot(this.pointerX - cx, this.pointerY - cy);
+                    const pw = Math.min(1, pullLen / (Math.min(width, height) * 0.42));
+                    const hot = pw < 0.5 ? '#ffff00' : pw < 0.8 ? '#ff9900' : '#ff2b5e';
+                    ctx.lineWidth = 3 + pw * 5;
+                    ctx.strokeStyle = hot;
+                    ctx.shadowBlur = 15 + pw * 25;
+                    ctx.shadowColor = hot;
                     ctx.beginPath();
                     ctx.moveTo(cx, cy);
                     ctx.lineTo(this.pointerX, this.pointerY);
                     ctx.stroke();
+                    // 파워 아크(코어 주변) — 하이리스크 시각화
+                    ctx.lineWidth = 4;
+                    ctx.strokeStyle = hot;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 40, -Math.PI/2, -Math.PI/2 + pw * Math.PI * 2);
+                    ctx.stroke();
+                    // 최대 충전 시 경고 펄스
+                    if (pw >= 0.99) {
+                        ctx.globalAlpha = 0.5 + Math.sin(Date.now()*0.02)*0.4;
+                        ctx.strokeStyle = '#ff2b5e'; ctx.lineWidth = 2;
+                        ctx.beginPath(); ctx.arc(cx, cy, 52, 0, Math.PI*2); ctx.stroke();
+                        ctx.globalAlpha = 1;
+                    }
                     ctx.restore();
                 }
 
@@ -1018,7 +1064,7 @@
             }
         }
 
-        const game = new GameEngine();
+        const game = new GameEngine(); window.game = game;
         let lastTime = performance.now();
         function frame(now) {
             const dt = now - lastTime;
@@ -1029,5 +1075,40 @@
         }
         requestAnimationFrame(frame);
     </script>
+
+<!-- 🌐 NOVA ARCADE 포탈 통합 (SSO + 통합 랭킹) -->
+<script type="module">
+import { Nova } from "../../portal-sdk.js";
+import { DEMO, db, collection, query, where, orderBy, limit, getDocs } from "../../firebase-config.js";
+const GAME_ID = "neon-snap";
+Nova.init(GAME_ID);
+window.NS = {
+  ready: true, demo: DEMO, user: null, myName: null,
+  async report(score){
+    try { const ok = await Nova.reportScore(Math.max(0, Math.round(score))); console.log("[NS] report", score, ok); return ok; }
+    catch(e){ console.warn("[NS] report", e); return false; }
+  },
+  async loadTop(){
+    if (DEMO) return null;
+    try {
+      const snap = await getDocs(query(collection(db,"scores"), where("gameId","==",GAME_ID), orderBy("score","desc"), limit(5)));
+      const esc = (t)=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      return snap.docs.map(d=>{ const x=d.data(); return { name: esc(x.name||'익명'), score: Number(x.score||0) }; });
+    } catch(e){ console.warn("[NS] loadTop", e); return null; }
+  }
+};
+Nova.onUser(u => {
+  window.NS.user = u || null;
+  window.NS.myName = u ? (u.displayName || '플레이어') : null;
+  const b = document.getElementById('acctBadge');
+  if (b) {
+    if (u) b.innerHTML = '🟢 <b style="color:#00ffcc">' + String(u.displayName||'플레이어').replace(/[<>&]/g,'') + '</b> · 통합 랭킹 기록됨';
+    else b.innerHTML = (DEMO) ? '데모 모드' : '⚪ 비로그인 — 포탈에서 로그인 시 랭킹 연동';
+  }
+  // 로그인 상태 바뀌면 리더보드 새로고침
+  if (window.game && typeof window.game.loadLeaderboard === 'function') window.game.loadLeaderboard();
+});
+console.log('[NEON SNAP] NOVA ARCADE 통합 연동됨');
+</script>
 </body>
 </html>
