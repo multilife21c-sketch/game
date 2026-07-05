@@ -76,7 +76,7 @@
   .shop-btn { background: transparent; border: 2px solid var(--amber); color: var(--amber); font-size: 16px; padding: 12px 30px; cursor: pointer; border-radius: 4px; transition: all 0.2s;}
   .shop-btn:hover { background: var(--amber); color: #000; box-shadow: 0 0 20px var(--amber); }
 
-  /* 상점 화면 */
+  /* 상점 (BLACK MARKET) 화면 */
   #shop-screen { position: absolute; inset: 0; background: rgba(4, 7, 10, 0.95); backdrop-filter: blur(10px); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 40; pointer-events: auto; }
   .shop-title { font-family: var(--fdisp); font-size: 40px; font-weight: 900; color: var(--amber); text-shadow: 0 0 20px var(--amber); margin-bottom: 5px; }
   .shop-grid { display: flex; gap: 20px; margin-bottom: 40px; }
@@ -118,7 +118,7 @@
 <div id="app-wrapper">
   <div class="header">
     <div class="title-box">
-      <div class="version">v2.0</div>
+      <div class="version">v2.1</div>
       <div class="title">NEURAL GRID</div>
       <div class="subtitle">PROJECT: ZERO HOUR</div>
     </div>
@@ -148,10 +148,10 @@
       <div class="guide-title">해킹 침투 가이드 (How to Play)</div>
       <ul class="guide-list">
         <li>👉 마우스/터치로 맵을 회전하며 경로를 찾으세요.</li>
-        <li><span class="guide-color" style="background:var(--cyan); color:var(--cyan)"></span> 투명한 큐브(노드)를 차례대로 클릭해 이동합니다.</li>
-        <li><span class="guide-color" style="background:var(--amber); color:var(--amber)"></span> <b>[필수]</b> 노란색 보안키를 획득할 때마다 <span style="color:var(--amber); font-weight:bold;">골드</span>를 받습니다.</li>
+        <li><span class="guide-color" style="background:var(--cyan); color:var(--cyan)"></span> 오직 <b>현재 빛나는 하늘색 큐브의 상하좌우(인접)</b>만 클릭 가능합니다.</li>
+        <li><span class="guide-color" style="background:var(--magenta); color:var(--magenta)"></span> <b>지나온 궤적(보라색)</b>으로는 다시 되돌아갈 수 없습니다!</li>
+        <li><span class="guide-color" style="background:var(--amber); color:var(--amber)"></span> 보안키 획득 시 보상 <span style="color:var(--amber); font-weight:bold;">골드</span>를 받습니다.</li>
         <li><span class="guide-color" style="background:var(--red); color:var(--red)"></span> 빨간 방어벽을 건드리면 <b>시간이 10초 깎입니다.</b></li>
-        <li><span class="guide-color" style="background:#fff; color:#fff"></span> 하얀색 코어를 장악하면 스테이지가 클리어됩니다!</li>
       </ul>
       <div style="text-align:center; color:var(--amber); font-weight:bold; margin-top:15px;">상점에서 아이템을 구매하거나 즉시 침투를 시작하세요.</div>
     </div>
@@ -256,11 +256,13 @@
   let keysFound = 0;
   let hackHistory = []; 
   
+  // 🌟 (신규 변수) 현재 개척 중인 헤드(하늘색) 큐브를 추적
+  let currentActiveNode = null;
+  
   let playerGold = parseInt(localStorage.getItem('ng_gold')) || 0;
   let inventory = { undo: 0, scan: 0, time: 0 };
   document.getElementById('gold-ui').innerText = `${playerGold} G`;
 
-  // 🌟 변경된 보상 설정 (1단계 20G, 2단계 50G, 3단계 100G)
   const STAGE_CONFIG = {
     1: { size: 2, spacing: 2.5, scale: 1.0, keys: 2, reward: 20 }, 
     2: { size: 3, spacing: 1.8, scale: 0.7, keys: 3, reward: 50 }, 
@@ -315,6 +317,7 @@
   function generateGrid() {
     while(gridGroup.children.length > 0){ gridGroup.remove(gridGroup.children[0]); }
     hackHistory = []; 
+    currentActiveNode = null;
     const config = STAGE_CONFIG[currentStage];
     const s = config.size;
     
@@ -351,6 +354,7 @@
           let str = `${x},${y},${z}`;
           let isCore = (str === `0,0,0`); let isStart = (str === `${-s},${-s},${-s}`);
           let isKey = keyCoords.includes(str); let isSafe = safePathSet.has(str);
+          
           let nodeType = 'normal';
           if (isCore) nodeType = 'core';
           else if (isStart) nodeType = 'start';
@@ -359,33 +363,54 @@
             let r = Math.random();
             if (r < 0.15) continue; else if (r < 0.35) nodeType = 'firewall';
           }
+          
           const mat = new THREE.MeshPhysicalMaterial({ transparent: true });
           const node = new THREE.Mesh(nodeGeometry, mat);
           node.position.set(x * config.spacing, y * config.spacing, z * config.spacing);
           node.userData = { gx: x, gy: y, gz: z, type: nodeType, isHacked: false, baseScale: config.scale };
-          applyNodeStyle(node); gridGroup.add(node); nodeMap[str] = node;
+          
+          gridGroup.add(node); nodeMap[str] = node;
+          
+          // 시작 지점을 최초의 활성 헤드로 지정
+          if (isStart) {
+            currentActiveNode = node;
+            node.userData.isHacked = true;
+            hackHistory.push(node);
+          }
         }
       }
     }
+    
+    gridGroup.children.forEach(node => applyNodeStyle(node));
     window.answerPathMeshes = orderedPathCoords.map(str => nodeMap[str]).filter(n => n);
   }
 
+  // 🌟 V2.1: 헤드(하늘색), 궤적(보라색) 렌더링 스타일 세분화
   function applyNodeStyle(node) {
-    const mat = node.material; const type = node.userData.type;
-    const isHacked = node.userData.isHacked; const base = node.userData.baseScale;
+    const mat = node.material; 
+    const type = node.userData.type;
+    const isHacked = node.userData.isHacked; 
+    const base = node.userData.baseScale;
+    
     if (type === 'core') {
       mat.color.setHex(0xffffff); mat.emissive.setHex(0xffffff); mat.opacity = 0.9;
       mat.wireframe = false; node.scale.set(base*1.3, base*1.3, base*1.3);
     } else if (type === 'firewall') {
       mat.color.setHex(0xff003c); mat.emissive.setHex(0xff003c); mat.opacity = 0.8;
       mat.wireframe = false; node.scale.set(base*0.7, base*0.7, base*0.7);
-    } else if (type === 'key') {
+    } else if (type === 'key' && !isHacked) {
       mat.color.setHex(0xffb547); mat.emissive.setHex(0xffb547); mat.opacity = 0.9;
       mat.wireframe = false; node.scale.set(base*0.8, base*0.8, base*0.8);
-    } else if (type === 'start' || isHacked) {
-      mat.color.setHex(currentGridColor); mat.emissive.setHex(currentGridColor); mat.opacity = 0.85;
-      mat.wireframe = false; node.userData.isHacked = true; node.scale.set(base*0.9, base*0.9, base*0.9);
+    } else if (node === currentActiveNode) {
+      // 🌟 현재 개척 중인 헤드 (하늘색/아바타 컬러)
+      mat.color.setHex(currentGridColor); mat.emissive.setHex(currentGridColor); mat.opacity = 0.9;
+      mat.wireframe = false; node.scale.set(base*0.95, base*0.95, base*0.95);
+    } else if (isHacked || type === 'start') {
+      // 🌟 지나온 궤적 (보라색 - 재클릭 불가)
+      mat.color.setHex(0xff5c8a); mat.emissive.setHex(0xff5c8a); mat.opacity = 0.4;
+      mat.wireframe = false; node.scale.set(base*0.65, base*0.65, base*0.65);
     } else {
+      // 일반 빈 노드
       mat.color.setHex(currentGridColor); mat.emissive.setHex(currentGridColor); mat.opacity = 0.15;
       mat.wireframe = true; node.scale.set(base*0.6, base*0.6, base*0.6);
     }
@@ -402,7 +427,7 @@
   }
   function closeShop() { document.getElementById('shop-screen').style.display = 'none'; }
   function updateShopUI() {
-    document.getElementById('shop-gold-ui').innerText = `${playerGold} G`; // 🌟 상점 내 보유 골드 표시
+    document.getElementById('shop-gold-ui').innerText = `${playerGold} G`; 
     ['undo', 'scan', 'time'].forEach(item => {
       const card = document.getElementById(`shop-${item}`);
       if(inventory[item] > 0) { 
@@ -438,12 +463,19 @@
   function useItem(id) {
     if(gameStatus !== 'playing' || inventory[id] <= 0) return;
     
+    // 🌟 V2.1: UNDO 아이템 헤드 후진 로직 수정
     if(id === 'undo') {
-      if(hackHistory.length === 0) return; 
-      let lastNode = hackHistory.pop();
-      lastNode.userData.isHacked = false;
+      if(hackHistory.length <= 1) return; // 시작 노드(1개)만 남았으면 불가
+      
+      let lastNode = hackHistory.pop(); // 현재 하늘색 헤드 꺼냄
+      lastNode.userData.isHacked = false; // 해킹 취소 (일반 투명 블록화)
+      
       if(lastNode.userData.type === 'key') { keysFound--; updateKeyUI(); }
-      applyNodeStyle(lastNode);
+      applyNodeStyle(lastNode); 
+      
+      // 바로 이전 보라색 노드를 다시 하늘색 헤드로 부활
+      currentActiveNode = hackHistory[hackHistory.length - 1];
+      applyNodeStyle(currentActiveNode); 
     } 
     else if(id === 'scan') {
       window.answerPathMeshes.forEach(node => {
@@ -484,17 +516,15 @@
   canvas.addEventListener('pointerdown', handleInteract); canvas.addEventListener('click', handleInteract);
 
   function processHackAttempt(node) {
-    if (node.userData.isHacked) return;
+    if (node.userData.isHacked) return; // 🌟 이미 지나온 보라색 궤적 재클릭 완벽 차단
     if (node.userData.type === 'firewall') { applyPenalty(); flashError(node); return; }
 
-    let isAdjacent = false;
-    for (let other of gridGroup.children) {
-      if (other.type === 'Mesh' && other.userData.isHacked) {
-        const dx = Math.abs(node.userData.gx - other.userData.gx); const dy = Math.abs(node.userData.gy - other.userData.gy); const dz = Math.abs(node.userData.gz - other.userData.gz);
-        if (dx + dy + dz === 1) { isAdjacent = true; break; }
-      }
-    }
-    if (!isAdjacent) { flashError(node); return; }
+    // 🌟 V2.1: 오직 "현재 하늘색 헤드(currentActiveNode)"의 상하좌우만 클릭 가능하게 수정
+    const dx = Math.abs(node.userData.gx - currentActiveNode.userData.gx); 
+    const dy = Math.abs(node.userData.gy - currentActiveNode.userData.gy); 
+    const dz = Math.abs(node.userData.gz - currentActiveNode.userData.gz);
+    
+    if (dx + dy + dz !== 1) { flashError(node); return; } // 거리가 1칸 초과면 에러
 
     const reqKeys = STAGE_CONFIG[currentStage].keys;
 
@@ -506,17 +536,22 @@
         keysFound++; 
         updateKeyUI(); 
         
-        // 🌟 수정됨: 키 획득 시 스테이지 단계별 골드 지급 (1단계:10G, 2단계:20G, 3단계:30G)
         const keyReward = currentStage * 10;
         playerGold += keyReward;
         localStorage.setItem('ng_gold', playerGold);
         document.getElementById('gold-ui').innerText = `${playerGold} G`;
-        showCustomAlert(`KEY FOUND: +${keyReward} G`, "success"); // 골드 획득 알림
+        showCustomAlert(`KEY FOUND: +${keyReward} G`, "success"); 
       }
 
+      // 🌟 V2.1: 뱀 꼬리처럼 헤드 이동 및 궤적 색상 처리
+      let prevActive = currentActiveNode;
       node.userData.isHacked = true;
-      hackHistory.push(node); 
-      applyNodeStyle(node);
+      currentActiveNode = node; // 클릭한 곳이 새 하늘색 헤드로 지정
+      hackHistory.push(node);
+      
+      applyNodeStyle(prevActive); // 과거의 헤드를 보라색 궤적으로 변경
+      applyNodeStyle(currentActiveNode); // 새 헤드를 하늘색으로 강조
+      
       const bs = node.userData.baseScale; node.scale.set(bs*1.5, bs*1.5, bs*1.5);
       setTimeout(() => node.scale.set(bs*0.9, bs*0.9, bs*0.9), 150);
     }
@@ -577,7 +612,6 @@
     document.getElementById('guide-box').classList.add('fade-out');
     document.getElementById('crosshair').style.display = 'block';
     
-    // UI 교체로 인한 캔버스 크기 재계산
     setTimeout(resizeCanvas, 50);
     renderItemBar(); 
 
