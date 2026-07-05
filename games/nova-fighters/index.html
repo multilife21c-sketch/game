@@ -170,7 +170,7 @@
   canvas.width = 1024;
   canvas.height = 576;
 
-  const GAME_VERSION = 'v1.1';
+  const GAME_VERSION = 'v1.2';
   document.getElementById('ver-num').textContent = GAME_VERSION;
   const GRAVITY = 0.7;
   let gameMode = 'arcade';
@@ -185,7 +185,7 @@
       this.position = position; this.width = 50; this.height = 150;
       this.image = new Image(); this.image.src = imageSrc;
       this.scale = scale; this.framesMax = framesMax;
-      this.framesCurrent = 0; this.framesElapsed = 0; this.framesHold = 6;
+      this.framesCurrent = 0; this.framesElapsed = 0; this.framesHold = 5;
       this.offset = offset;
     }
     draw() {
@@ -223,7 +223,7 @@
         fall: { src: './assets/1%20Biker/Biker_jump.png', framesMax: 4 },
         attack1: { src: './assets/1%20Biker/Biker_attack1.png', framesMax: 6 }
       },
-      attackBox: { offset: { x: 65, y: 50 }, width: 120, height: 50 }, hitFrame: 2
+      attackBox: { offset: { x: 0, y: 45 }, width: 95, height: 60 }, hitFrame: 2
     },
     {
       name: 'SEOA', id: 'seoa', color: '#ff5c8a', speed: 7, jump: -17, damage: 10, maxHp: 85, width: 50, height: 150,
@@ -235,7 +235,7 @@
         fall: { src: './assets/2%20Punk/Punk_jump.png', framesMax: 4 },
         attack1: { src: './assets/2%20Punk/Punk_attack1.png', framesMax: 6 }
       },
-      attackBox: { offset: { x: 65, y: 50 }, width: 120, height: 50 }, hitFrame: 2
+      attackBox: { offset: { x: 0, y: 45 }, width: 95, height: 60 }, hitFrame: 2
     },
     {
       name: 'TITAN', id: 'titan', color: '#00e5a0', speed: 3, jump: -12, damage: 25, maxHp: 130, width: 60, height: 170,
@@ -247,7 +247,7 @@
         fall: { src: './assets/3%20Cyborg/Cyborg_jump.png', framesMax: 4 },
         attack1: { src: './assets/3%20Cyborg/Cyborg_attack1.png', framesMax: 6 }
       },
-      attackBox: { offset: { x: 70, y: 50 }, width: 140, height: 60 }, hitFrame: 2
+      attackBox: { offset: { x: 0, y: 45 }, width: 110, height: 70 }, hitFrame: 2
     }
   ];
 
@@ -286,28 +286,16 @@
     }
 
     draw() {
-      if(!this.image.complete) return;
+      if(!this.image.complete || !this.image.width) return;
+      const isLeft = (this.lastKey === 'a' || this.lastKey === 'ArrowLeft');
+      const flip = (this.nativeFacing === 'right' && isLeft) || (this.nativeFacing === 'left' && !isLeft);
+      const fw = this.image.width / this.framesMax;
+      const dw = fw * this.scale, dh = this.image.height * this.scale;
+      const drawX = this.position.x - this.offset.x;   // 비반전 기준(기존과 동일)
+      const drawY = this.position.y - this.offset.y;
       c.save();
-      let isLeft = (this.lastKey === 'a' || this.lastKey === 'ArrowLeft');
-      let shouldFlip = false;
-      if (this.nativeFacing === 'right' && isLeft) shouldFlip = true;
-      if (this.nativeFacing === 'left' && !isLeft) shouldFlip = true;
-
-      let drawX = this.position.x - this.offset.x;
-      let drawY = this.position.y - this.offset.y;
-      let frameWidth = this.image.width / this.framesMax;
-
-      if (shouldFlip) {
-         c.translate(this.position.x + this.width / 2, this.position.y);
-         c.scale(-1, 1);
-         drawX = - (frameWidth * this.scale) / 2 - this.offset.x + (this.width / 2);
-         drawY = - this.offset.y;
-      }
-
-      c.drawImage(
-        this.image, this.framesCurrent * frameWidth, 0, frameWidth, this.image.height,
-        drawX, drawY, frameWidth * this.scale, this.image.height * this.scale
-      )
+      if (flip) { const xc = drawX + dw / 2; c.translate(2 * xc, 0); c.scale(-1, 1); } // 같은 박스에서 제자리 미러 → 순간이동 없음
+      c.drawImage(this.image, this.framesCurrent * fw, 0, fw, this.image.height, drawX, drawY, dw, dh);
       c.restore();
     }
 
@@ -316,8 +304,8 @@
       if(gameActive) this.animateFrames();
 
       let isLeft = (this.lastKey === 'a' || this.lastKey === 'ArrowLeft');
-      if (isLeft) this.attackBox.position.x = this.position.x - this.attackBox.width + this.width - this.attackBox.offset.x;
-      else this.attackBox.position.x = this.position.x + this.attackBox.offset.x;
+      if (isLeft) this.attackBox.position.x = this.position.x + this.width / 2 - this.attackBox.width;
+      else this.attackBox.position.x = this.position.x + this.width / 2;
       this.attackBox.position.y = this.position.y + this.attackBox.offset.y;
 
       this.position.x += this.velocity.x; this.position.y += this.velocity.y;
@@ -546,10 +534,15 @@
     const groundY = canvas.height - 96;
     const isEnemyInAir = (enemy.position.y + enemy.height) < groundY;
     
-    if (absDist > 120) {
+    if (absDist > 150) {
       if (distance > 0) { enemy.velocity.x = enemy.speed - 1; enemy.lastKey = 'ArrowRight'; }
       else { enemy.velocity.x = -(enemy.speed - 1); enemy.lastKey = 'ArrowLeft'; }
+    } else if (absDist < 110) {
+      // 너무 붙으면 살짝 물러나며 방향 유지 (오실레이션 방지)
+      enemy.lastKey = distance > 0 ? 'ArrowRight' : 'ArrowLeft';
+      if (Math.random() < (enemy.aiSkill || 0.08)) enemy.attack();
     } else {
+      enemy.lastKey = distance > 0 ? 'ArrowRight' : 'ArrowLeft';
       if (Math.random() < (enemy.aiSkill || 0.08)) enemy.attack();
     }
     if (Math.random() < 0.01 && !isEnemyInAir) enemy.velocity.y = enemy.jumpPower;
