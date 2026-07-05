@@ -9,91 +9,121 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <style>
   :root {
-    --bg0: #04070a; --panel: rgba(17, 29, 49, 0.75); --border2: #2c4060;
+    --bg0: #04070a; --panel: rgba(17, 29, 49, 0.8); --border2: #2c4060;
     --txt: #e6ecf7; --amber: #ffb547; --cyan: #22d3ee; --magenta: #ff5c8a; --red: #ff003c;
     --fdisp: 'Orbitron', sans-serif; --fkr: 'Noto Sans KR', sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-  body { background: var(--bg0); color: var(--txt); font-family: var(--fkr); display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+  body { 
+    background: var(--bg0); color: var(--txt); font-family: var(--fkr); 
+    display: flex; justify-content: center; align-items: center; 
+    height: 100dvh; overflow: hidden; padding: 20px; 
+  }
   
-  #game-container { position: relative; width: 1024px; height: 576px; background: #000; border: 2px solid var(--cyan); box-shadow: 0 0 50px rgba(34, 211, 238, 0.2); border-radius: 8px; overflow: hidden; }
+  /* 앱 전체를 감싸는 래퍼 (상단 UI - 게임 화면 - 하단 UI 분리) */
+  #app-wrapper {
+    display: flex; flex-direction: column; gap: 15px;
+    width: 1024px; max-width: 100%; height: 100%; max-height: 850px;
+  }
+
+  /* 1. 상단 영역 (게임 화면 밖) */
+  .header { display: flex; justify-content: space-between; align-items: stretch; width: 100%; gap: 15px; }
+  .title-box { 
+    flex: 1; position: relative; background: var(--panel); border: 1px solid var(--border2); 
+    border-left: 4px solid var(--cyan); padding: 15px 25px; border-radius: 4px; transition: all 0.3s; 
+  }
+  .version { position: absolute; top: 8px; right: 12px; font-family: var(--fdisp); font-size: 11px; color: var(--cyan); font-weight: 700; letter-spacing: 1px; }
+  .title { font-family: var(--fdisp); font-size: 26px; font-weight: 900; color: #fff; letter-spacing: 2px; text-shadow: 0 0 10px var(--cyan); }
+  .subtitle { font-size: 12px; color: var(--cyan); letter-spacing: 4px; margin-top: 4px; }
+  
+  .status-box { 
+    flex: 1; background: var(--panel); border: 1px solid var(--border2); 
+    border-right: 4px solid var(--magenta); padding: 15px 25px; border-radius: 4px; text-align: right; 
+  }
+  .timer { font-family: var(--fdisp); font-size: 34px; font-weight: 900; color: var(--amber); text-shadow: 0 0 15px var(--amber); font-variant-numeric: tabular-nums; transition: color 0.2s, transform 0.2s; }
+  .timer.damage { color: var(--red); transform: scale(1.05) translateX(-5px); text-shadow: 0 0 20px var(--red); }
+  .status-label { font-size: 12px; color: var(--magenta); letter-spacing: 1px; font-weight: 700; margin-bottom: 2px; }
+  .stage-label { font-family: var(--fdisp); font-size: 16px; color: #fff; font-weight: 900; margin-bottom: 5px; letter-spacing: 2px; }
+
+  /* 2. 게임 화면 (중앙 네모) */
+  #game-container { 
+    flex: 1; position: relative; background: #000; border: 2px solid var(--cyan); 
+    box-shadow: 0 0 40px rgba(34, 211, 238, 0.15); border-radius: 8px; overflow: hidden; min-height: 300px;
+  }
   #webgl-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
-
   #damage-overlay { position: absolute; inset: 0; background: rgba(255, 0, 60, 0.4); pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 15; mix-blend-mode: overlay; }
+  #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; display: none; z-index: 25; }
 
-  #ui-layer { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 30px; z-index: 20; }
-  
-  .header { display: flex; justify-content: space-between; align-items: flex-start; }
-  .title-box { position: relative; background: var(--panel); border: 1px solid var(--cyan); padding: 15px 30px; border-radius: 4px; backdrop-filter: blur(10px); box-shadow: 0 0 20px rgba(34,211,238,0.2); transition: all 0.3s; }
-  .version { position: absolute; top: 5px; right: 8px; font-family: var(--fdisp); font-size: 10px; color: var(--cyan); letter-spacing: 1px; font-weight: 700; }
-  .title { font-family: var(--fdisp); font-size: 28px; font-weight: 900; color: #fff; letter-spacing: 2px; text-shadow: 0 0 10px var(--cyan); }
-  .subtitle { font-size: 12px; color: var(--cyan); letter-spacing: 5px; margin-top: 5px; }
-  
-  .status-box { background: var(--panel); border: 1px solid var(--magenta); padding: 15px 25px; border-radius: 4px; backdrop-filter: blur(10px); text-align: right; }
-  .timer { font-family: var(--fdisp); font-size: 36px; font-weight: 900; color: var(--amber); text-shadow: 0 0 15px var(--amber); font-variant-numeric: tabular-nums; transition: color 0.2s, transform 0.2s; }
-  .timer.damage { color: var(--red); transform: scale(1.1); text-shadow: 0 0 20px var(--red); }
-  .status-label { font-size: 13px; color: var(--magenta); letter-spacing: 1px; font-weight: 700; margin-bottom: 5px; }
-  .stage-label { font-family: var(--fdisp); font-size: 18px; color: #fff; font-weight: 900; margin-bottom: 8px; letter-spacing: 2px; text-shadow: 0 0 5px #fff; }
-
-  .footer { display: flex; justify-content: space-between; align-items: flex-end; pointer-events: auto; }
-  .avatar-select { display: flex; gap: 15px; }
-  .avatar-btn { background: rgba(0,0,0,0.6); border: 1px solid var(--border2); padding: 10px 20px; color: var(--txt); font-family: var(--fdisp); font-size: 14px; font-weight: 700; cursor: pointer; border-radius: 4px; transition: all 0.2s; }
-  .avatar-btn:hover, .avatar-btn.active { background: rgba(34,211,238,0.2); border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 15px rgba(34,211,238,0.4); }
-  .action-btn { background: var(--cyan); color: #000; border: none; padding: 15px 40px; font-family: var(--fdisp); font-size: 20px; font-weight: 900; cursor: pointer; border-radius: 4px; box-shadow: 0 0 20px rgba(34,211,238,0.6); transition: all 0.2s; }
-  .action-btn:hover { transform: scale(1.05); background: #fff; box-shadow: 0 0 30px #fff; }
-  
-  /* 중도 포기 버튼 전용 스타일 */
-  .abort-btn { background: var(--red); color: #fff; font-size: 16px; padding: 10px 30px; box-shadow: 0 0 20px rgba(255,0,60,0.4); }
-  .abort-btn:hover { background: #fff; color: var(--red); box-shadow: 0 0 30px #fff; }
-
-  .guide-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; background: rgba(17, 29, 49, 0.9); padding: 25px; border-radius: 8px; border: 1px solid var(--border2); pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.8); transition: opacity 0.5s ease; }
+  /* 화면 중앙 게임 가이드 박스 */
+  .guide-box {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 90%; max-width: 500px; background: rgba(17, 29, 49, 0.9); padding: 25px;
+    border-radius: 8px; border: 1px solid var(--border2); pointer-events: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8); transition: opacity 0.5s ease; z-index: 20;
+  }
   .guide-title { font-family: var(--fkr); font-size: 18px; font-weight: 900; color: #fff; text-align: center; margin-bottom: 15px; border-bottom: 1px solid var(--border2); padding-bottom: 10px; }
   .guide-list { list-style: none; font-size: 14px; line-height: 1.8; color: #cbd5e1; }
   .guide-list li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
-  .guide-color { width: 14px; height: 14px; display: inline-block; border-radius: 3px; box-shadow: 0 0 8px currentColor; }
+  .guide-color { width: 14px; height: 14px; display: inline-block; border-radius: 3px; box-shadow: 0 0 8px currentColor; flex-shrink: 0; }
   .guide-box.fade-out { opacity: 0; pointer-events: none; }
 
+  /* 결과 화면 */
   #result-screen { position: absolute; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 30; pointer-events: auto; }
-  .result-title { font-family: var(--fdisp); font-size: 50px; font-weight: 900; color: var(--cyan); text-shadow: 0 0 20px var(--cyan); margin-bottom: 10px; text-align: center; }
-  .result-score { font-family: var(--fdisp); font-size: 30px; color: #fff; margin-bottom: 40px; }
+  .result-title { font-family: var(--fdisp); font-size: 45px; font-weight: 900; color: var(--cyan); text-shadow: 0 0 20px var(--cyan); margin-bottom: 10px; text-align: center; }
+  .result-score { font-family: var(--fdisp); font-size: 28px; color: #fff; margin-bottom: 40px; text-align: center; line-height: 1.4; }
   .restart-btn { background: transparent; border: 2px solid var(--amber); color: var(--amber); padding: 15px 40px; font-family: var(--fdisp); font-size: 18px; font-weight: 700; cursor: pointer; border-radius: 4px; transition: all 0.2s; }
   .restart-btn:hover { background: var(--amber); color: #000; box-shadow: 0 0 20px var(--amber); }
-  #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; display: none; }
 
+  /* 3. 하단 영역 (조작 버튼) */
+  .footer { display: flex; justify-content: space-between; align-items: center; width: 100%; pointer-events: auto; }
+  .avatar-select { display: flex; gap: 12px; }
+  .avatar-btn { background: var(--panel); border: 1px solid var(--border2); padding: 12px 25px; color: var(--txt); font-family: var(--fdisp); font-size: 14px; font-weight: 700; cursor: pointer; border-radius: 4px; transition: all 0.2s; }
+  .avatar-btn:hover, .avatar-btn.active { background: rgba(34,211,238,0.15); border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 15px rgba(34,211,238,0.3); }
+  
+  .action-btn { background: var(--cyan); color: #000; border: none; padding: 15px 50px; font-family: var(--fdisp); font-size: 20px; font-weight: 900; cursor: pointer; border-radius: 4px; box-shadow: 0 0 20px rgba(34,211,238,0.5); transition: all 0.2s; }
+  .action-btn:hover { transform: translateY(-2px); background: #fff; box-shadow: 0 0 30px #fff; }
+  
+  .abort-btn { background: transparent; border: 2px solid var(--red); color: var(--red); font-size: 16px; padding: 12px 30px; box-shadow: none; }
+  .abort-btn:hover { background: var(--red); color: #fff; box-shadow: 0 0 20px rgba(255,0,60,0.5); }
+
+  /* 📱 모바일 세로 모드 대응 */
   @media (max-width: 768px) {
-    #game-container { width: 100%; height: 100vh; border: none; border-radius: 0; }
-    #ui-layer { padding: 15px; }
-    .header { flex-direction: column; gap: 10px; }
-    .title-box, .status-box { padding: 10px; width: 100%; text-align: center; }
+    body { padding: 10px; }
+    #app-wrapper { gap: 10px; }
+    .header { flex-direction: column; gap: 8px; }
+    .title-box { border-left: none; border-bottom: 3px solid var(--cyan); padding: 10px; text-align: center; }
+    .status-box { border-right: none; border-bottom: 3px solid var(--magenta); padding: 10px; text-align: center; }
+    .version { top: 5px; right: 10px; }
     .title { font-size: 22px; } .timer { font-size: 30px; }
-    .footer { flex-direction: column; gap: 15px; align-items: center; padding-bottom: 20px; }
-    .avatar-select { flex-wrap: wrap; justify-content: center; }
-    .action-btn { width: 100%; font-size: 18px; padding: 15px; }
-    .guide-box { width: 95%; font-size: 12px; }
-    .result-title { font-size: 32px; } .result-score { font-size: 24px; }
+    .footer { flex-direction: column; gap: 10px; }
+    .avatar-select { width: 100%; display: flex; gap: 8px; }
+    .avatar-btn { flex: 1; padding: 12px 5px; font-size: 13px; text-align: center; }
+    .action-btn, .abort-btn { width: 100%; padding: 15px; font-size: 18px; }
+    .guide-box { width: 95%; font-size: 13px; padding: 20px 15px; }
+    .result-title { font-size: 32px; } .result-score { font-size: 20px; }
   }
 </style>
 </head>
 <body>
 
-<div id="game-container">
-  <canvas id="webgl-canvas"></canvas>
-  <div id="crosshair"></div>
-  <div id="damage-overlay"></div> 
-
-  <div id="ui-layer">
-    <div class="header">
-      <div class="title-box" id="title-box">
-        <div class="version">v1.4</div>
-        <div class="title">NEURAL GRID</div>
-        <div class="subtitle">PROJECT: ZERO HOUR</div>
-      </div>
-      <div class="status-box">
-        <div class="stage-label" id="stage-ui">STAGE 1</div>
-        <div class="status-label" id="keys-ui">SECURITY KEYS: 0 / 2</div>
-        <div class="timer" id="timer-ui">02:00:00</div>
-      </div>
+<div id="app-wrapper">
+  <div class="header">
+    <div class="title-box" id="title-box">
+      <div class="version">v1.5</div>
+      <div class="title">NEURAL GRID</div>
+      <div class="subtitle">PROJECT: ZERO HOUR</div>
     </div>
+    <div class="status-box">
+      <div class="stage-label" id="stage-ui">STAGE 1</div>
+      <div class="status-label" id="keys-ui">SECURITY KEYS: 0 / 2</div>
+      <div class="timer" id="timer-ui">02:00:00</div>
+    </div>
+  </div>
+
+  <div id="game-container">
+    <canvas id="webgl-canvas"></canvas>
+    <div id="crosshair"></div>
+    <div id="damage-overlay"></div> 
     
     <div class="guide-box" id="guide-box">
       <div class="guide-title">해킹 침투 가이드 (How to Play)</div>
@@ -101,34 +131,37 @@
         <li>👉 마우스/터치로 맵을 회전하며 경로를 찾으세요.</li>
         <li><span class="guide-color" style="background:var(--cyan); color:var(--cyan)"></span> 인접한 큐브(노드)를 차례대로 클릭해 이동합니다.</li>
         <li><span class="guide-color" style="background:var(--amber); color:var(--amber)"></span> <b>[필수]</b> 노란색 보안키를 모두 찾아야 코어가 열립니다.</li>
-        <li><span class="guide-color" style="background:var(--red); color:var(--red)"></span> <b>[주의]</b> 빨간색 방어벽을 건드리면 <b>시간이 10초 깎입니다.</b></li>
-        <li><span class="guide-color" style="background:#fff; color:#fff"></span> 하얀색 코어를 장악하면 다음 단계(총 3단계)로 넘어갑니다.</li>
+        <li><span class="guide-color" style="background:var(--red); color:var(--red)"></span> <b>[주의]</b> 방어벽을 건드리면 <b>시간이 10초 깎입니다.</b></li>
+        <li><span class="guide-color" style="background:#fff; color:#fff"></span> 하얀색 코어를 장악하면 다음 단계로 진행됩니다.</li>
       </ul>
-      <div style="text-align:center; color:var(--amber); font-weight:bold; margin-top:15px;" id="start-msg">아바타를 고르고 [INFILTRATE]를 누르세요.</div>
+      <div style="text-align:center; color:var(--amber); font-weight:bold; margin-top:15px;">아바타를 고르고 [INFILTRATE]를 누르세요.</div>
     </div>
 
-    <div class="footer" id="footer-menu">
-      <div class="avatar-select">
-        <button class="avatar-btn active" onclick="selectAvatar(this, 0x22d3ee)">CIPHER</button>
-        <button class="avatar-btn" onclick="selectAvatar(this, 0xff5c8a)">GLITCH</button>
-        <button class="avatar-btn" onclick="selectAvatar(this, 0x00e5a0)">ECHO</button>
-      </div>
-      <button class="action-btn" onclick="startGame()">INFILTRATE</button>
-    </div>
-
-    <div class="footer" id="ingame-footer" style="display:none; justify-content: flex-end;">
-      <button class="action-btn abort-btn" onclick="quitGame()">ABORT</button>
+    <div id="result-screen">
+      <div class="result-title" id="result-msg">SYSTEM COMPROMISED</div>
+      <div class="result-score" id="result-score">SCORE: 0</div>
+      <button class="restart-btn" onclick="location.reload()">RETURN TO LOBBY</button>
     </div>
   </div>
 
-  <div id="result-screen">
-    <div class="result-title" id="result-msg">SYSTEM COMPROMISED</div>
-    <div class="result-score" id="result-score">SCORE: 0</div>
-    <button class="restart-btn" onclick="location.reload()">RETURN TO LOBBY</button>
+  <div class="footer" id="footer-menu">
+    <div class="avatar-select">
+      <button class="avatar-btn active" onclick="selectAvatar(this, 0x22d3ee)">CIPHER</button>
+      <button class="avatar-btn" onclick="selectAvatar(this, 0xff5c8a)">GLITCH</button>
+      <button class="avatar-btn" onclick="selectAvatar(this, 0x00e5a0)">ECHO</button>
+    </div>
+    <button class="action-btn" onclick="startGame()">INFILTRATE</button>
+  </div>
+
+  <div class="footer" id="ingame-footer" style="display:none; justify-content: flex-end;">
+    <button class="action-btn abort-btn" onclick="quitGame()">ABORT INFILTRATION</button>
   </div>
 </div>
 
 <script>
+  // ==========================================
+  // 1. 코어 엔진 및 렌더러 설정
+  // ==========================================
   const canvas = document.getElementById('webgl-canvas');
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   
@@ -156,7 +189,10 @@
   pointLight.position.set(0, 0, 0);
   scene.add(pointLight);
 
-  let gameStatus = 'menu'; // menu, playing, showing_answer, ended
+  // ==========================================
+  // 2. 게임 변수 설정
+  // ==========================================
+  let gameStatus = 'menu'; 
   let currentGridColor = 0x22d3ee;
   let timeRemaining = 120;
   let timerInterval;
@@ -175,12 +211,10 @@
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
   const nodeGeometry = new THREE.BoxGeometry(1, 1, 1);
-
-  // 게임의 정답(경로)를 담을 전역 배열
   window.answerPathMeshes = [];
 
   // ==========================================
-  // 🧠 길찾기(BFS) 알고리즘 (버그 원천 차단)
+  // 3. 무결점 정답 보장 로직 (A* BFS)
   // ==========================================
   function findSafePath(start, target, avoid, s) {
     let q = [{ c: start, p: [start.join(',')] }];
@@ -196,7 +230,6 @@
         [c[0], c[1]+1, c[2]], [c[0], c[1]-1, c[2]],
         [c[0], c[1], c[2]+1], [c[0], c[1], c[2]-1]
       ];
-      // 맵이 일직선이 되지 않도록 무작위 셔플
       neighbors.sort(() => Math.random() - 0.5); 
 
       for (let n of neighbors) {
@@ -208,7 +241,7 @@
         }
       }
     }
-    return [start.join(','), target.join(',')]; // 예비용
+    return [start.join(','), target.join(',')];
   }
 
   function generateGrid() {
@@ -217,7 +250,6 @@
     const config = STAGE_CONFIG[currentStage];
     const s = config.size;
     
-    // 1. 보안키 좌표 무작위 배정 (코어와 시작점 제외)
     let keyCoords = [];
     while(keyCoords.length < config.keys) {
       let kx = Math.floor(Math.random() * (s * 2 + 1)) - s;
@@ -228,28 +260,24 @@
       if (!keyCoords.includes(str)) keyCoords.push(str);
     }
 
-    // 2. 보장된 정답 경로(Safe Path) 생성
     let safePathSet = new Set();
     let orderedPathCoords = [];
     let curr = [-s, -s, -s];
     safePathSet.add(`${curr[0]},${curr[1]},${curr[2]}`);
     orderedPathCoords.push(`${curr[0]},${curr[1]},${curr[2]}`);
 
-    // 시작점 -> 키1 -> 키2 ...
     for (let i = 0; i < keyCoords.length; i++) {
       let target = keyCoords[i].split(',').map(Number);
-      let pathSegment = findSafePath(curr, target, ['0,0,0'], s); // 코어는 마지막에만 가도록 회피
+      let pathSegment = findSafePath(curr, target, ['0,0,0'], s);
       if (i === 0) orderedPathCoords.push(...pathSegment.slice(1));
       else orderedPathCoords.push(...pathSegment.slice(1));
       pathSegment.forEach(p => safePathSet.add(p));
       curr = target;
     }
-    // 마지막 키 -> 중앙 코어
     let pathToCore = findSafePath(curr, [0,0,0], [], s);
     orderedPathCoords.push(...pathToCore.slice(1));
     pathToCore.forEach(p => safePathSet.add(p));
 
-    // 3. 실제 3D 그리드 생성
     let nodeMap = {};
     for (let x = -s; x <= s; x++) {
       for (let y = -s; y <= s; y++) {
@@ -258,7 +286,7 @@
           let isCore = (str === `0,0,0`);
           let isStart = (str === `${-s},${-s},${-s}`);
           let isKey = keyCoords.includes(str);
-          let isSafe = safePathSet.has(str); // 정답 길 여부
+          let isSafe = safePathSet.has(str);
 
           let nodeType = 'normal';
           if (isCore) nodeType = 'core';
@@ -266,8 +294,8 @@
           else if (isKey) nodeType = 'key';
           else if (!isSafe) {
             let r = Math.random();
-            if (r < 0.15) continue; // 15% 빈공간 (정답길은 절대 안 비워짐)
-            else if (r < 0.35) nodeType = 'firewall'; // 방어벽
+            if (r < 0.15) continue; 
+            else if (r < 0.35) nodeType = 'firewall';
           }
 
           const nodeMaterial = new THREE.MeshPhysicalMaterial({ transparent: true });
@@ -281,8 +309,6 @@
         }
       }
     }
-
-    // 4. 정답 시연을 위한 Mesh 매핑
     window.answerPathMeshes = orderedPathCoords.map(str => nodeMap[str]).filter(n => n);
   }
 
@@ -310,9 +336,13 @@
     }
   }
 
-  resizeCanvas(); 
+  // 초기 렌더링 호출
+  setTimeout(resizeCanvas, 50); 
   generateGrid(); 
 
+  // ==========================================
+  // 4. 클릭 및 인터랙션 로직
+  // ==========================================
   function handleInteract(e) {
     if (gameStatus !== 'playing') return;
     const isTouch = e.pointerType === 'touch';
@@ -326,7 +356,6 @@
     mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    // 선(Line)을 클릭하는 것을 방지하기 위해 Mesh만 필터링
     const intersects = raycaster.intersectObjects(gridGroup.children).filter(ix => ix.object.type === 'Mesh');
 
     if (intersects.length > 0) processHackAttempt(intersects[0].object);
@@ -427,6 +456,9 @@
   }
   animate();
 
+  // ==========================================
+  // 5. 게임 흐름 제어 및 UI
+  // ==========================================
   function selectAvatar(btn, hexColor) {
     if(gameStatus !== 'menu') return;
     document.querySelectorAll('.avatar-btn').forEach(el => el.classList.remove('active'));
@@ -449,6 +481,9 @@
     
     document.getElementById('footer-menu').style.display = 'none';
     document.getElementById('ingame-footer').style.display = 'flex';
+    
+    // UI 교체로 인한 캔버스 크기 재계산
+    setTimeout(resizeCanvas, 50);
     
     const guideBox = document.getElementById('guide-box');
     guideBox.classList.add('fade-out');
@@ -479,24 +514,22 @@
     generateGrid();
   }
 
-  // ==========================================
-  // 💡 실패 시 정답(해킹 최적 경로) 시연 로직
-  // ==========================================
   function showAnswerAndEnd(failMsg) {
     gameStatus = 'showing_answer';
     clearInterval(timerInterval);
     document.getElementById('crosshair').style.display = 'none';
     document.getElementById('ingame-footer').style.display = 'none';
+    setTimeout(resizeCanvas, 50);
+    
     controls.autoRotateSpeed = 2.0;
 
     const guideBox = document.getElementById('guide-box');
-    guideBox.innerHTML = `<div class="guide-title" style="color:var(--amber)">접속 끊어짐. 최적의 정답 경로 스캔 중...</div>`;
+    guideBox.innerHTML = `<div class="guide-title" style="color:var(--amber)">접속 해제됨. 최적의 해킹 경로 스캔 중...</div>`;
     guideBox.classList.remove('fade-out');
 
     let delay = 0;
     window.answerPathMeshes.forEach((node, i) => {
       setTimeout(() => {
-        // 노드를 초록색으로 밝힘
         node.material.color.setHex(0x00e5a0);
         node.material.emissive.setHex(0x00e5a0);
         node.material.opacity = 0.95;
@@ -504,7 +537,6 @@
         const bs = node.userData.baseScale || 1;
         node.scale.set(bs*1.2, bs*1.2, bs*1.2);
         
-        // 이전 노드와 선(Line)으로 연결
         if (i > 0) {
           const prevNode = window.answerPathMeshes[i-1];
           const lineMat = new THREE.LineBasicMaterial({ color: 0x00e5a0, linewidth: 2 });
@@ -513,10 +545,9 @@
           gridGroup.add(line);
         }
       }, delay);
-      delay += 120; // 0.12초마다 경로를 그림
+      delay += 120; 
     });
 
-    // 정답 시연이 끝난 후 결과창 표시
     setTimeout(() => {
         guideBox.classList.add('fade-out');
         showResultScreen(false, failMsg);
@@ -528,6 +559,7 @@
     clearInterval(timerInterval);
     document.getElementById('crosshair').style.display = 'none';
     document.getElementById('ingame-footer').style.display = 'none';
+    setTimeout(resizeCanvas, 50);
     showResultScreen(true);
   }
 
