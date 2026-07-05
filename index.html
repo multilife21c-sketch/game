@@ -82,6 +82,25 @@ img{display:block;max-width:100%;}
 .hero .sub{font-size:16px;color:var(--txt);margin-top:6px;font-weight:500;}
 .hero p{color:var(--muted);font-size:14.5px;line-height:1.6;margin:14px 0 22px;}
 .hero-cta{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+/* ===== 브랜드 배너 ===== */
+.hero.brand{min-height:300px;display:flex;align-items:center;justify-content:center;text-align:center;background:linear-gradient(135deg,#0a1428,#0d1830 55%,#140e2a);}
+.hero.brand .hero-body{max-width:720px;text-align:center;padding:44px 30px;position:relative;z-index:2;}
+.brand-title{font-family:var(--fdisp);font-weight:900;font-size:clamp(38px,7vw,72px);letter-spacing:2px;line-height:1;
+  background:linear-gradient(90deg,#22d3ee,#a855f7,#ff5c8a);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 26px rgba(168,85,247,.35));}
+.brand-desc{color:#c9d4e5;font-size:clamp(14px,2vw,17px);line-height:1.7;margin:16px 0 24px;}
+.brand-desc b{color:var(--cyan);}
+.brand-stats{display:flex;gap:20px;align-items:center;justify-content:center;margin-bottom:26px;flex-wrap:wrap;}
+.bstat{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.bnum{font-family:var(--fdisp);font-weight:900;font-size:26px;color:#fff;}
+.blabel{font-size:11.5px;color:var(--muted);letter-spacing:1px;}
+.bdivider{width:1px;height:32px;background:var(--border2);}
+.hero-orb{position:absolute;border-radius:50%;filter:blur(50px);opacity:.5;z-index:0;pointer-events:none;}
+.hero-orb.o1{width:260px;height:260px;background:#22d3ee;top:-80px;left:-40px;}
+.hero-orb.o2{width:300px;height:300px;background:#a855f7;bottom:-120px;right:-60px;}
+.hero-orb.o3{width:200px;height:200px;background:#ff5c8a;top:40%;left:50%;opacity:.3;}
+.hero.brand .hero-play{display:inline-flex;align-items:center;gap:9px;padding:13px 26px;border-radius:12px;font-weight:700;font-size:15px;
+  background:linear-gradient(90deg,#22d3ee,#a855f7);color:#08111f;border:none;cursor:pointer;}
 .hero-play{display:inline-flex;align-items:center;gap:9px;padding:13px 26px;border-radius:12px;font-weight:700;font-size:15px;
   color:#0a0a0a;box-shadow:0 8px 30px rgba(0,0,0,.4);}
 
@@ -170,16 +189,6 @@ img{display:block;max-width:100%;}
   display:flex;gap:16px;align-items:center;border-top:1px solid var(--border);}
 .foot a:hover{color:var(--amber);}
 
-/* 닉네임 모달 */
-.nick-body{padding:20px 22px;display:flex;flex-direction:column;gap:12px;}
-.nick-body input{background:var(--bg0);border:1px solid var(--border2);border-radius:10px;color:var(--txt);
-  padding:12px 14px;font-size:15px;outline:none;width:100%;font-family:inherit;}
-.nick-body input:focus{border-color:var(--amber);}
-.nick-msg{font-size:12.5px;color:var(--dim);min-height:17px;}
-.nick-msg.err{color:var(--red);} .nick-msg.ok{color:var(--green);}
-.nick-save{background:var(--amber);color:#1a1206;border:none;border-radius:10px;padding:12px;
-  font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;}
-.nick-save:disabled{opacity:.45;cursor:not-allowed;}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;
   background:var(--panel);border:1px solid var(--border2);border-radius:12px;padding:12px 20px;font-size:13.5px;
   z-index:200;transition:all .25s;box-shadow:0 12px 30px rgba(0,0,0,.5);pointer-events:none;}
@@ -215,25 +224,24 @@ img{display:block;max-width:100%;}
   <div class="banner-in">⚙️ <span><b>데모 모드</b> — Firebase 설정 전입니다. 갤러리는 보이지만 로그인·즐겨찾기·랭킹은 비활성 상태예요. <code>firebase-config.js</code>를 채우면 모두 켜집니다.</span></div>
 </div>
 
-<div class="banner" id="inappBanner" style="display:none">
-  <div class="banner-in" style="border-color:rgba(255,181,71,.45);background:rgba(255,181,71,.08);color:#ffe3b0">
-    ⚠️ <span><b>앱 내 브라우저 감지</b> — 카카오톡·인스타 등 앱 안에서는 구글 로그인이 차단됩니다.
-    <button id="inappOpen" style="margin-left:8px;padding:6px 14px;border-radius:8px;border:none;background:var(--amber);color:#1a1206;font-weight:700;font-size:12.5px;cursor:pointer">외부 브라우저로 열기</button></span>
-  </div>
-</div>
-
 <main class="wrap">
-  <section class="hero" id="hero" style="display:none">
+  <section class="hero brand" id="hero">
     <div class="hero-grid"></div>
     <div class="hero-glow" id="heroGlow"></div>
+    <div class="hero-orb o1"></div><div class="hero-orb o2"></div><div class="hero-orb o3"></div>
     <div class="hero-body">
-      <div class="hero-eyebrow" id="heroEyebrow">FEATURED</div>
-      <h1 id="heroTitle"></h1>
-      <div class="sub" id="heroSub"></div>
-      <p id="heroDesc"></p>
+      <div class="hero-eyebrow">◆ NOVA ARCADE · GAME HUB</div>
+      <h1 class="brand-title">NOVA&nbsp;ARCADE</h1>
+      <p class="brand-desc">한 번의 구글 로그인으로 <b>모든 게임</b>을 즐기고,<br>게임별 <b>통합 랭킹 🏆</b>에서 친구들과 경쟁하세요.</p>
+      <div class="brand-stats">
+        <div class="bstat"><span class="bnum" id="statGames">0</span><span class="blabel">게임</span></div>
+        <div class="bdivider"></div>
+        <div class="bstat"><span class="bnum">🏆</span><span class="blabel">통합 랭킹</span></div>
+        <div class="bdivider"></div>
+        <div class="bstat"><span class="bnum">📱</span><span class="blabel">PC · 모바일</span></div>
+      </div>
       <div class="hero-cta">
-        <button class="hero-play" id="heroPlay">▶ 플레이</button>
-        <button class="btn btn-ghost" id="heroRank">🏆 랭킹</button>
+        <button class="hero-play" id="heroBrowse">▼ 게임 둘러보기</button>
       </div>
     </div>
   </section>
@@ -274,42 +282,6 @@ img{display:block;max-width:100%;}
   </div>
 </div>
 
-<!-- Nickname modal -->
-<div class="modal-bg" id="nickBg">
-  <div class="modal" style="max-width:380px">
-    <div class="modal-head">
-      <div><div class="tt">✏️ 랭킹 닉네임</div><div class="ss">모든 게임 랭킹에 이 이름이 표시됩니다</div></div>
-      <button class="x" id="nickClose">✕</button>
-    </div>
-    <div class="nick-body">
-      <input id="nickInput" maxlength="12" placeholder="2~12자 (한글/영문/숫자/_-)" autocomplete="off">
-      <div class="nick-msg" id="nickMsg"></div>
-      <button class="nick-save" id="nickSave">저장</button>
-    </div>
-  </div>
-</div>
-
-<!-- Portal shop modal -->
-<div class="modal-bg" id="pshopBg">
-  <div class="modal" style="max-width:400px">
-    <div class="modal-head">
-      <div><div class="tt">🛒 포탈 상점</div><div class="ss">계정 아이템</div></div>
-      <button class="x" id="pshopClose">✕</button>
-    </div>
-    <div class="nick-body">
-      <div style="display:flex;gap:13px;align-items:center;background:var(--bg0);border:1px solid var(--border2);border-radius:13px;padding:15px">
-        <div style="font-size:32px">✏️</div>
-        <div style="flex:1">
-          <div style="font-weight:700;font-size:15px">닉네임 변경권</div>
-          <div style="font-size:12px;color:var(--dim);line-height:1.5">랭킹 닉네임을 1회 변경할 수 있어요.<br>보유: <b id="ticketCnt" style="color:var(--cyan)">0</b>개</div>
-        </div>
-      </div>
-      <button class="nick-save" id="claimBtn">이번 달 무료 받기 (월 1회)</button>
-      <div class="nick-msg" id="pshopMsg" style="text-align:center"></div>
-    </div>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -317,16 +289,14 @@ import {
   DEMO, auth, db, isAdmin,
   GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged,
   collection, doc, getDoc, setDoc, getDocs, updateDoc, query, where, orderBy, limit, onSnapshot,
-  serverTimestamp, increment, arrayUnion, arrayRemove, deleteDoc, writeBatch,
+  serverTimestamp, increment, arrayUnion, arrayRemove,
 } from "./firebase-config.js";
 
 const SITE = { name:"NOVA ARCADE" };
 const $ = (s)=>document.querySelector(s);
 const esc = (s)=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-const state = { games:[], favs:new Set(), user:null, admin:false, nickname:null,
-  tickets:0, freeMonth:null, filter:"all", q:"", sort:"order" };
-const monthKey=()=>{ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); };
+const state = { games:[], favs:new Set(), user:null, admin:false, filter:"all", q:"", sort:"order" };
 
 // ---------- toast ----------
 let toastT;
@@ -363,66 +333,20 @@ function renderAcct(){
     el.innerHTML=`<div class="menu">
       <img class="avatar" id="avBtn" src="${esc(u.photoURL||'')}" alt="${esc(u.displayName||'')}" referrerpolicy="no-referrer">
       <div class="menu-pop" id="menuPop">
-        <div class="who"><b>${esc(state.nickname||u.displayName||'플레이어')}</b><span>${esc(u.email||'')}</span></div>
-        <button id="nickBtn">✏️ 랭킹 닉네임 ${state.nickname?'변경':'설정'}</button>
-        <button id="pshopBtn">🛒 포탈 상점</button>
+        <div class="who"><b>${esc(u.displayName||'플레이어')}</b><span>${esc(u.email||'')}</span></div>
         ${state.admin?'<a href="admin.html">⚙ 관리자 페이지</a>':''}
         <button id="logoutBtn">로그아웃</button>
       </div></div>`;
     $("#avBtn").onclick=(e)=>{e.stopPropagation();$("#menuPop").classList.toggle("open");};
-    $("#nickBtn").onclick=(e)=>{e.stopPropagation();$("#menuPop").classList.remove("open");openNick();};
-    $("#pshopBtn").onclick=(e)=>{e.stopPropagation();$("#menuPop").classList.remove("open");openPShop();};
     $("#logoutBtn").onclick=()=>signOut(auth);
   }
 }
 document.addEventListener("click",()=>{const m=$("#menuPop"); if(m)m.classList.remove("open");});
 
-// ---------- 인앱 브라우저 대응 (카카오톡 등에서 구글 로그인 차단 회피) ----------
-const UA=navigator.userAgent||"";
-const INAPP={ kakao:/KAKAOTALK/i.test(UA), line:/\bLine\//i.test(UA),
-  naver:/NAVER\(inapp|NaverSearch/i.test(UA), insta:/Instagram/i.test(UA),
-  fb:/FBAN|FBAV|FB_IAB/i.test(UA), daum:/DaumApps/i.test(UA), everytime:/everytimeApp/i.test(UA) };
-const IS_INAPP=Object.values(INAPP).some(Boolean);
-const IS_ANDROID=/android/i.test(UA), IS_IOS=/iphone|ipad|ipod/i.test(UA);
-function escapeInApp(){
-  const url=location.href;
-  if(INAPP.kakao){ location.href="kakaotalk://web/openExternal?url="+encodeURIComponent(url); return true; }
-  if(INAPP.line){ location.href=url+(url.includes("?")?"&":"?")+"openExternalBrowser=1"; return true; }
-  if(IS_ANDROID){ // 크롬으로 강제 오픈 (인텐트)
-    location.href="intent://"+location.host+location.pathname+location.search+"#Intent;scheme=https;package=com.android.chrome;end";
-    return true; }
-  return false; // iOS 기타 인앱: 스킴 강제 불가 → 수동 안내
-}
-if(IS_INAPP){
-  const b=document.getElementById("inappBanner"); b.style.display="block";
-  document.getElementById("inappOpen").onclick=()=>{
-    if(!escapeInApp()) toast("우측 하단 메뉴에서 'Safari로 열기'를 눌러주세요"); };
-  // 카카오톡은 신뢰성 높게 자동 탈출
-  if(INAPP.kakao) setTimeout(escapeInApp, 600);
-}
-
-const IS_MOBILE = IS_ANDROID || IS_IOS || /Mobi|Tablet/i.test(UA) || ('ontouchstart' in window && Math.min(screen.width,screen.height)<820);
 async function login(){
-  if(IS_INAPP){ // 인앱에서는 구글이 로그인 자체를 차단 → 외부로 유도
-    if(!escapeInApp()) toast("앱 브라우저에서는 로그인이 안 돼요. 'Safari로 열기'를 이용해주세요");
-    return;
-  }
   const provider=new GoogleAuthProvider();
-  provider.setCustomParameters({ prompt:'select_account' });
-  // 팝업 우선 (모바일 포함) — 리다이렉트는 서드파티 저장소 차단으로 복귀 실패가 잦아 최후수단
   try{ await signInWithPopup(auth,provider); }
-  catch(e){
-    console.warn("popup login:",e.code,e.message);
-    // 사용자가 직접 닫음 → 조용히 종료
-    if(e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request') return;
-    // 팝업이 브라우저에 막힘 → 리다이렉트로 폴백
-    if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'){
-      try{ toast("구글 로그인으로 이동합니다…"); await signInWithRedirect(auth,provider); }
-      catch(e2){ console.error(e2.code); toast("로그인 실패: "+(e2.code||'')); }
-      return;
-    }
-    toast("로그인 실패: "+(e.code||''));
-  }
+  catch(e){ try{ await signInWithRedirect(auth,provider); }catch(e2){ toast("로그인 실패"); } }
 }
 
 async function loadFavs(uid){
@@ -432,27 +356,12 @@ async function loadFavs(uid){
 }
 
 if(!DEMO){
-  getRedirectResult(auth).catch(e=>{
-    if(e && e.code && e.code!=='auth/no-auth-event'){
-      console.error("redirect result:",e.code,e.message); toast("로그인 오류: "+e.code);
-    }
-  });
+  getRedirectResult(auth).catch(()=>{});
   onAuthStateChanged(auth, async(u)=>{
     state.user=u||null;
     state.admin=u?isAdmin(u.uid):false;
-    if(u){ await loadFavs(u.uid);
-      try{ const us=await getDoc(doc(db,"users",u.uid));
-        const d=us.exists()?us.data():{};
-        state.nickname=d.nickname||null;
-        state.tickets=d.nickChangeTickets||0;
-        state.freeMonth=d.lastFreeTicketMonth||null;
-      }catch(e){ state.nickname=null; state.tickets=0; state.freeMonth=null; }
-      await setDoc(doc(db,"users",u.uid),
-        {displayName:u.displayName||"",photoURL:u.photoURL||"",email:u.email||"",lastSeen:serverTimestamp()},{merge:true});
-      if(!state.nickname && !localStorage.getItem("nickPrompted")){
-        localStorage.setItem("nickPrompted","1");
-        setTimeout(()=>{ toast("랭킹에 쓸 닉네임을 설정해보세요! (프로필 메뉴)"); openNick(); }, 800); } }
-    else { state.nickname=null; }
+    if(u){ await loadFavs(u.uid); await setDoc(doc(db,"users",u.uid),
+        {displayName:u.displayName||"",photoURL:u.photoURL||"",email:u.email||"",lastSeen:serverTimestamp()},{merge:true}); }
     $("#adminLink").style.display=state.admin?"inline":"none";
     renderAcct(); render();
   });
@@ -497,95 +406,6 @@ async function openLeaderboard(g){
     body.innerHTML=html+'</div>';
   }catch(e){ console.error(e); body.innerHTML=`<div class="lb-note">랭킹을 불러오지 못했어요.<br>(Firestore 색인이 필요할 수 있어요 — 콘솔 안내 링크로 생성)</div>`; }
 }
-// ---------- 포탈 상점 (닉네임 변경권: 월 1회 무료) ----------
-function openPShop(){
-  if(DEMO||!state.user){ toast("로그인 후 이용할 수 있어요"); return; }
-  renderPShop(); $("#pshopBg").classList.add("open");
-}
-function renderPShop(){
-  $("#ticketCnt").textContent=state.tickets;
-  const claimed = state.freeMonth===monthKey();
-  const btn=$("#claimBtn");
-  btn.disabled=claimed;
-  btn.style.opacity=claimed?0.45:1;
-  btn.textContent = claimed? "이번 달 수령 완료 — 다음 달에 또!" : "이번 달 무료 받기 (월 1회)";
-  $("#pshopMsg").textContent = claimed? "" : "지금은 무료 지급 중이에요 🎁";
-  $("#pshopMsg").className="nick-msg";
-}
-$("#pshopClose").onclick=()=>$("#pshopBg").classList.remove("open");
-$("#pshopBg").onclick=(e)=>{ if(e.target===$("#pshopBg")) $("#pshopBg").classList.remove("open"); };
-$("#claimBtn").onclick=async()=>{
-  if(state.freeMonth===monthKey()) return;
-  try{
-    await setDoc(doc(db,"users",state.user.uid),
-      { nickChangeTickets: increment(1), lastFreeTicketMonth: monthKey() },{merge:true});
-    state.tickets+=1; state.freeMonth=monthKey();
-    renderPShop(); toast("✏️ 닉네임 변경권 +1 획득!");
-  }catch(e){ console.error(e); $("#pshopMsg").textContent="수령 실패 — 잠시 후 다시 시도해주세요"; $("#pshopMsg").className="nick-msg err"; }
-};
-
-// ---------- 닉네임 설정 ----------
-const NICK_RE=/^[A-Za-z0-9가-힣_-]{2,12}$/;
-function openNick(){
-  if(DEMO||!state.user){ toast("로그인 후 설정할 수 있어요"); return; }
-  $("#nickInput").value=state.nickname||"";
-  if(state.nickname){
-    $("#nickMsg").textContent="✏️ 변경권 1개가 사용됩니다 (보유 "+state.tickets+"개)";
-    $("#nickMsg").className="nick-msg";
-  } else {
-    $("#nickMsg").textContent="첫 설정은 무료예요 🎉"; $("#nickMsg").className="nick-msg ok";
-  }
-  $("#nickBg").classList.add("open");
-  setTimeout(()=>$("#nickInput").focus(),80);
-}
-$("#nickClose").onclick=()=>$("#nickBg").classList.remove("open");
-$("#nickBg").onclick=(e)=>{ if(e.target===$("#nickBg")) $("#nickBg").classList.remove("open"); };
-$("#nickSave").onclick=saveNick;
-$("#nickInput").addEventListener("keydown",e=>{ if(e.key==="Enter") saveNick(); });
-async function saveNick(){
-  const msg=$("#nickMsg"), btn=$("#nickSave");
-  const nick=$("#nickInput").value.trim();
-  if(!NICK_RE.test(nick)){ msg.textContent="2~12자, 한글/영문/숫자/_/- 만 가능해요"; msg.className="nick-msg err"; return; }
-  if(nick===state.nickname){ $("#nickBg").classList.remove("open"); return; }
-  const isChange=!!state.nickname;   // 최초 설정은 무료, 변경은 변경권 필요
-  if(isChange && state.tickets<1){
-    msg.innerHTML='변경권이 없어요 — <b style="color:var(--amber);cursor:pointer" id="goShop">🛒 상점에서 받기 (월 1회 무료)</b>';
-    msg.className="nick-msg err";
-    const g=document.getElementById("goShop");
-    if(g) g.onclick=()=>{ $("#nickBg").classList.remove("open"); openPShop(); };
-    return; }
-  btn.disabled=true; msg.textContent="확인 중…"; msg.className="nick-msg";
-  const key=nick.toLowerCase();
-  try{
-    // 1) 중복 확인
-    const ex=await getDoc(doc(db,"nicknames",key));
-    if(ex.exists() && ex.data().uid!==state.user.uid){
-      msg.textContent="이미 사용 중인 닉네임이에요 😢"; msg.className="nick-msg err"; btn.disabled=false; return; }
-    // 2) 닉네임 등록 + 예전 닉네임 해제
-    await setDoc(doc(db,"nicknames",key),{uid:state.user.uid,nick});
-    if(state.nickname && state.nickname.toLowerCase()!==key){
-      try{ await deleteDoc(doc(db,"nicknames",state.nickname.toLowerCase())); }catch(e){} }
-    // 3) 프로필 저장
-    await setDoc(doc(db,"users",state.user.uid),{nickname:nick},{merge:true});
-    // 4) 내 기존 랭킹 기록 이름도 일괄 갱신
-    try{
-      const mine=await getDocs(query(collection(db,"scores"),where("uid","==",state.user.uid)));
-      if(!mine.empty){ const b=writeBatch(db);
-        mine.docs.forEach(d=>b.update(d.ref,{name:nick})); await b.commit(); }
-    }catch(e){ console.warn("scores rename",e); }
-    if(isChange){
-      try{ await setDoc(doc(db,"users",state.user.uid),{nickChangeTickets:increment(-1)},{merge:true});
-        state.tickets=Math.max(0,state.tickets-1); }catch(e){}
-    }
-    state.nickname=nick;
-    msg.textContent="저장 완료! 모든 랭킹에 적용됩니다 ✔"+(isChange?" (변경권 -1)":""); msg.className="nick-msg ok";
-    renderAcct();
-    setTimeout(()=>$("#nickBg").classList.remove("open"),700);
-    toast("닉네임 설정: "+nick);
-  }catch(e){ console.error(e); msg.textContent="저장 실패 — 잠시 후 다시 시도해주세요"; msg.className="nick-msg err"; }
-  btn.disabled=false;
-}
-
 $("#lbClose").onclick=()=>$("#modalBg").classList.remove("open");
 $("#modalBg").onclick=(e)=>{if(e.target===$("#modalBg"))$("#modalBg").classList.remove("open");};
 
@@ -638,9 +458,13 @@ function render(){
   chips.innerHTML=ch;
   chips.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{state.filter=b.dataset.f;render();});
 
-  // hero (featured = first featured else top of default order)
+  // 브랜드 배너: 게임 수만 갱신 (특정 게임 히어로 제거)
+  const sg=$("#statGames"); if(sg) sg.textContent=state.games.length;
+  const hero=$("#hero"); hero.style.display="flex";
+  const hb=$("#heroBrowse"); if(hb) hb.onclick=()=>{ const t=$("#gridLabel")||$("#grid"); if(t) t.scrollIntoView({behavior:"smooth",block:"start"}); };
+  const _skipHero=true;
+  if(!_skipHero){
   const feat=state.games.find(g=>g.featured)||state.games.slice().sort((a,b)=>(a.order||99)-(b.order||99))[0];
-  const hero=$("#hero");
   if(feat && state.filter==="all" && !state.q){
     hero.style.display="flex";
     $("#heroGlow").style.background=`radial-gradient(80% 120% at 80% 50%, ${feat.accent||'#ffb547'}22, transparent 60%),linear-gradient(110deg, ${feat.accent2||'#22d3ee'}14, transparent 55%)`;
@@ -648,9 +472,9 @@ function render(){
     $("#heroTitle").textContent=feat.title;
     $("#heroSub").textContent=feat.subtitle||"";
     $("#heroDesc").textContent=feat.description||"";
-    const hp=$("#heroPlay"); hp.style.background=feat.accent||"#ffb547"; hp.onclick=()=>play(feat);
-    $("#heroRank").onclick=()=>openLeaderboard(feat);
-  }else hero.style.display="none";
+    const hp=$("#heroPlay"); if(hp){ hp.style.background=feat.accent||"#ffb547"; hp.onclick=()=>play(feat); }
+    const hr=$("#heroRank"); if(hr) hr.onclick=()=>openLeaderboard(feat);
+  } }
 
   // grid
   const list=visible();
