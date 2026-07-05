@@ -19,7 +19,6 @@
   #game-container { position: relative; width: 1024px; height: 576px; background: #000; border: 2px solid var(--cyan); box-shadow: 0 0 50px rgba(34, 211, 238, 0.2); border-radius: 8px; overflow: hidden; }
   #webgl-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 
-  /* 페널티 피드백 화면 */
   #damage-overlay { position: absolute; inset: 0; background: rgba(255, 0, 60, 0.4); pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 15; mix-blend-mode: overlay; }
 
   #ui-layer { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 30px; z-index: 20; }
@@ -42,14 +41,12 @@
   .avatar-btn:hover, .avatar-btn.active { background: rgba(34,211,238,0.2); border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 15px rgba(34,211,238,0.4); }
   .action-btn { background: var(--cyan); color: #000; border: none; padding: 15px 40px; font-family: var(--fdisp); font-size: 20px; font-weight: 900; cursor: pointer; border-radius: 4px; box-shadow: 0 0 20px rgba(34,211,238,0.6); transition: all 0.2s; }
   .action-btn:hover { transform: scale(1.05); background: #fff; box-shadow: 0 0 30px #fff; }
+  
+  /* 중도 포기 버튼 전용 스타일 */
+  .abort-btn { background: var(--red); color: #fff; font-size: 16px; padding: 10px 30px; box-shadow: 0 0 20px rgba(255,0,60,0.4); }
+  .abort-btn:hover { background: #fff; color: var(--red); box-shadow: 0 0 30px #fff; }
 
-  /* 게임 시작 전 가이드 (크게 확장) */
-  .guide-box {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    width: 90%; max-width: 500px; background: rgba(17, 29, 49, 0.9); padding: 25px;
-    border-radius: 8px; border: 1px solid var(--border2); pointer-events: none;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8); transition: opacity 0.5s ease;
-  }
+  .guide-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; background: rgba(17, 29, 49, 0.9); padding: 25px; border-radius: 8px; border: 1px solid var(--border2); pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.8); transition: opacity 0.5s ease; }
   .guide-title { font-family: var(--fkr); font-size: 18px; font-weight: 900; color: #fff; text-align: center; margin-bottom: 15px; border-bottom: 1px solid var(--border2); padding-bottom: 10px; }
   .guide-list { list-style: none; font-size: 14px; line-height: 1.8; color: #cbd5e1; }
   .guide-list li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
@@ -82,10 +79,12 @@
 <div id="game-container">
   <canvas id="webgl-canvas"></canvas>
   <div id="crosshair"></div>
-  <div id="damage-overlay"></div> <div id="ui-layer">
+  <div id="damage-overlay"></div> 
+
+  <div id="ui-layer">
     <div class="header">
       <div class="title-box" id="title-box">
-        <div class="version">v1.3</div>
+        <div class="version">v1.4</div>
         <div class="title">NEURAL GRID</div>
         <div class="subtitle">PROJECT: ZERO HOUR</div>
       </div>
@@ -105,7 +104,7 @@
         <li><span class="guide-color" style="background:var(--red); color:var(--red)"></span> <b>[주의]</b> 빨간색 방어벽을 건드리면 <b>시간이 10초 깎입니다.</b></li>
         <li><span class="guide-color" style="background:#fff; color:#fff"></span> 하얀색 코어를 장악하면 다음 단계(총 3단계)로 넘어갑니다.</li>
       </ul>
-      <div style="text-align:center; color:var(--amber); font-weight:bold; margin-top:15px;">아바타를 고르고 [INFILTRATE]를 누르세요.</div>
+      <div style="text-align:center; color:var(--amber); font-weight:bold; margin-top:15px;" id="start-msg">아바타를 고르고 [INFILTRATE]를 누르세요.</div>
     </div>
 
     <div class="footer" id="footer-menu">
@@ -115,6 +114,10 @@
         <button class="avatar-btn" onclick="selectAvatar(this, 0x00e5a0)">ECHO</button>
       </div>
       <button class="action-btn" onclick="startGame()">INFILTRATE</button>
+    </div>
+
+    <div class="footer" id="ingame-footer" style="display:none; justify-content: flex-end;">
+      <button class="action-btn abort-btn" onclick="quitGame()">ABORT</button>
     </div>
   </div>
 
@@ -153,22 +156,17 @@
   pointLight.position.set(0, 0, 0);
   scene.add(pointLight);
 
-  // ==========================================
-  // 게임 데이터 및 스테이지 (1~3단계) 설정
-  // ==========================================
-  let gameStatus = 'menu'; 
+  let gameStatus = 'menu'; // menu, playing, showing_answer, ended
   let currentGridColor = 0x22d3ee;
-  let timeRemaining = 120; // 3단계를 깨기 위해 120초로 증가
+  let timeRemaining = 120;
   let timerInterval;
-  
   let currentStage = 1;
   let keysFound = 0;
   
-  // 단계별 맵 크기, 큐브 간격, 큐브 크기, 필요 키 갯수
   const STAGE_CONFIG = {
-    1: { size: 2, spacing: 2.5, scale: 1.0, keys: 2 }, // 5x5x5
-    2: { size: 3, spacing: 1.8, scale: 0.7, keys: 3 }, // 7x7x7
-    3: { size: 4, spacing: 1.4, scale: 0.5, keys: 4 }  // 9x9x9
+    1: { size: 2, spacing: 2.5, scale: 1.0, keys: 2 }, 
+    2: { size: 3, spacing: 1.8, scale: 0.7, keys: 3 }, 
+    3: { size: 4, spacing: 1.4, scale: 0.5, keys: 4 }  
   };
 
   const gridGroup = new THREE.Group();
@@ -178,54 +176,114 @@
   const mouse = new THREE.Vector2();
   const nodeGeometry = new THREE.BoxGeometry(1, 1, 1);
 
-  function generateGrid() {
-    // 맵 초기화 및 메모리 관리
-    while(gridGroup.children.length > 0){ 
-      gridGroup.remove(gridGroup.children[0]); 
+  // 게임의 정답(경로)를 담을 전역 배열
+  window.answerPathMeshes = [];
+
+  // ==========================================
+  // 🧠 길찾기(BFS) 알고리즘 (버그 원천 차단)
+  // ==========================================
+  function findSafePath(start, target, avoid, s) {
+    let q = [{ c: start, p: [start.join(',')] }];
+    let visited = new Set(avoid);
+    visited.add(start.join(','));
+
+    while(q.length > 0) {
+      let { c, p } = q.shift();
+      if (c[0] === target[0] && c[1] === target[1] && c[2] === target[2]) return p;
+
+      let neighbors = [
+        [c[0]+1, c[1], c[2]], [c[0]-1, c[1], c[2]],
+        [c[0], c[1]+1, c[2]], [c[0], c[1]-1, c[2]],
+        [c[0], c[1], c[2]+1], [c[0], c[1], c[2]-1]
+      ];
+      // 맵이 일직선이 되지 않도록 무작위 셔플
+      neighbors.sort(() => Math.random() - 0.5); 
+
+      for (let n of neighbors) {
+        if (n[0] < -s || n[0] > s || n[1] < -s || n[1] > s || n[2] < -s || n[2] > s) continue;
+        let nStr = n.join(',');
+        if (!visited.has(nStr)) {
+          visited.add(nStr);
+          q.push({ c: n, p: [...p, nStr] });
+        }
+      }
     }
+    return [start.join(','), target.join(',')]; // 예비용
+  }
+
+  function generateGrid() {
+    while(gridGroup.children.length > 0){ gridGroup.remove(gridGroup.children[0]); }
     
     const config = STAGE_CONFIG[currentStage];
-    const gridSize = config.size;
-    const spacing = config.spacing;
-    let normalNodes = [];
+    const s = config.size;
+    
+    // 1. 보안키 좌표 무작위 배정 (코어와 시작점 제외)
+    let keyCoords = [];
+    while(keyCoords.length < config.keys) {
+      let kx = Math.floor(Math.random() * (s * 2 + 1)) - s;
+      let ky = Math.floor(Math.random() * (s * 2 + 1)) - s;
+      let kz = Math.floor(Math.random() * (s * 2 + 1)) - s;
+      let str = `${kx},${ky},${kz}`;
+      if (str === `0,0,0` || str === `${-s},${-s},${-s}`) continue;
+      if (!keyCoords.includes(str)) keyCoords.push(str);
+    }
 
-    // 노드 생성
-    for (let x = -gridSize; x <= gridSize; x++) {
-      for (let y = -gridSize; y <= gridSize; y++) {
-        for (let z = -gridSize; z <= gridSize; z++) {
-          const isCore = (x === 0 && y === 0 && z === 0);
-          const isStart = (x === -gridSize && y === -gridSize && z === -gridSize);
-          
+    // 2. 보장된 정답 경로(Safe Path) 생성
+    let safePathSet = new Set();
+    let orderedPathCoords = [];
+    let curr = [-s, -s, -s];
+    safePathSet.add(`${curr[0]},${curr[1]},${curr[2]}`);
+    orderedPathCoords.push(`${curr[0]},${curr[1]},${curr[2]}`);
+
+    // 시작점 -> 키1 -> 키2 ...
+    for (let i = 0; i < keyCoords.length; i++) {
+      let target = keyCoords[i].split(',').map(Number);
+      let pathSegment = findSafePath(curr, target, ['0,0,0'], s); // 코어는 마지막에만 가도록 회피
+      if (i === 0) orderedPathCoords.push(...pathSegment.slice(1));
+      else orderedPathCoords.push(...pathSegment.slice(1));
+      pathSegment.forEach(p => safePathSet.add(p));
+      curr = target;
+    }
+    // 마지막 키 -> 중앙 코어
+    let pathToCore = findSafePath(curr, [0,0,0], [], s);
+    orderedPathCoords.push(...pathToCore.slice(1));
+    pathToCore.forEach(p => safePathSet.add(p));
+
+    // 3. 실제 3D 그리드 생성
+    let nodeMap = {};
+    for (let x = -s; x <= s; x++) {
+      for (let y = -s; y <= s; y++) {
+        for (let z = -s; z <= s; z++) {
+          let str = `${x},${y},${z}`;
+          let isCore = (str === `0,0,0`);
+          let isStart = (str === `${-s},${-s},${-s}`);
+          let isKey = keyCoords.includes(str);
+          let isSafe = safePathSet.has(str); // 정답 길 여부
+
           let nodeType = 'normal';
           if (isCore) nodeType = 'core';
           else if (isStart) nodeType = 'start';
-          // 빈 공간 10%, 방어벽 25%
-          else if (Math.random() < 0.10) continue; 
-          else if (Math.random() < 0.25) nodeType = 'firewall';
+          else if (isKey) nodeType = 'key';
+          else if (!isSafe) {
+            let r = Math.random();
+            if (r < 0.15) continue; // 15% 빈공간 (정답길은 절대 안 비워짐)
+            else if (r < 0.35) nodeType = 'firewall'; // 방어벽
+          }
 
           const nodeMaterial = new THREE.MeshPhysicalMaterial({ transparent: true });
           const node = new THREE.Mesh(nodeGeometry, nodeMaterial);
-          
-          node.position.set(x * spacing, y * spacing, z * spacing);
+          node.position.set(x * config.spacing, y * config.spacing, z * config.spacing);
           node.userData = { gx: x, gy: y, gz: z, type: nodeType, isHacked: false, baseScale: config.scale };
-          
-          if(nodeType === 'normal') normalNodes.push(node);
           
           applyNodeStyle(node);
           gridGroup.add(node);
+          nodeMap[str] = node;
         }
       }
     }
 
-    // 보안 키 무작위 배치
-    for(let i=0; i<config.keys; i++) {
-      if(normalNodes.length > 0) {
-        const idx = Math.floor(Math.random() * normalNodes.length);
-        const keyNode = normalNodes.splice(idx, 1)[0];
-        keyNode.userData.type = 'key';
-        applyNodeStyle(keyNode);
-      }
-    }
+    // 4. 정답 시연을 위한 Mesh 매핑
+    window.answerPathMeshes = orderedPathCoords.map(str => nodeMap[str]).filter(n => n);
   }
 
   function applyNodeStyle(node) {
@@ -255,7 +313,6 @@
   resizeCanvas(); 
   generateGrid(); 
 
-  // 클릭 / 터치 이벤트
   function handleInteract(e) {
     if (gameStatus !== 'playing') return;
     const isTouch = e.pointerType === 'touch';
@@ -269,7 +326,8 @@
     mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(gridGroup.children);
+    // 선(Line)을 클릭하는 것을 방지하기 위해 Mesh만 필터링
+    const intersects = raycaster.intersectObjects(gridGroup.children).filter(ix => ix.object.type === 'Mesh');
 
     if (intersects.length > 0) processHackAttempt(intersects[0].object);
   }
@@ -277,23 +335,16 @@
   canvas.addEventListener('pointerdown', handleInteract);
   canvas.addEventListener('click', handleInteract);
 
-  // ==========================================
-  // 노드 클릭 및 페널티/클리어 로직
-  // ==========================================
   function processHackAttempt(node) {
     if (node.userData.isHacked) return;
 
-    // 1. 방어벽(빨간색) 클릭 시 즉각 페널티 (-10초)
     if (node.userData.type === 'firewall') {
-      applyPenalty();
-      flashError(node);
-      return; 
+      applyPenalty(); flashError(node); return; 
     }
 
-    // 2. 인접성 체크 (이미 해킹된 노드 주변만 가능)
     let isAdjacent = false;
     for (let other of gridGroup.children) {
-      if (other.userData.isHacked) {
+      if (other.type === 'Mesh' && other.userData.isHacked) {
         const dx = Math.abs(node.userData.gx - other.userData.gx);
         const dy = Math.abs(node.userData.gy - other.userData.gy);
         const dz = Math.abs(node.userData.gz - other.userData.gz);
@@ -305,53 +356,38 @@
 
     const reqKeys = STAGE_CONFIG[currentStage].keys;
 
-    // 3. 코어 해킹 및 다음 스테이지 넘어가기
     if (node.userData.type === 'core') {
       if (keysFound >= reqKeys) {
         if (currentStage < 3) {
-          // 다음 스테이지 진입
-          currentStage++;
-          startStageLogic();
+          currentStage++; startStageLogic();
         } else {
-          // 게임 올 클리어
-          endGame(true);
+          showFinalWin();
         }
-      } else {
-        flashError(node); 
-      }
+      } else { flashError(node); }
     } else {
-      if (node.userData.type === 'key') {
-        keysFound++;
-        updateKeyUI();
-      }
-      
+      if (node.userData.type === 'key') { keysFound++; updateKeyUI(); }
       node.userData.isHacked = true;
       applyNodeStyle(node);
-      
       const bs = node.userData.baseScale;
       node.scale.set(bs * 1.5, bs * 1.5, bs * 1.5);
       setTimeout(() => node.scale.set(bs * 0.9, bs * 0.9, bs * 0.9), 150);
     }
   }
 
-  // 타임 페널티 함수 (-10초 및 붉은색 점멸)
   function applyPenalty() {
     timeRemaining -= 10;
     if (timeRemaining < 0) timeRemaining = 0;
     
     const timerUI = document.getElementById('timer-ui');
     timerUI.innerText = `00:00:${timeRemaining.toString().padStart(2, '0')}`;
-    
-    // UI 텍스트 붉게 강조
     timerUI.classList.add('damage');
     setTimeout(() => timerUI.classList.remove('damage'), 300);
 
-    // 전체 화면 붉은 오버레이
     const overlay = document.getElementById('damage-overlay');
     overlay.style.opacity = '1';
     setTimeout(() => { overlay.style.opacity = '0'; }, 200);
 
-    if (timeRemaining === 0) endGame(false);
+    if (timeRemaining === 0) showAnswerAndEnd("TIME OUT");
   }
 
   function flashError(node) {
@@ -374,12 +410,16 @@
     requestAnimationFrame(animate);
     const time = clock.getElapsedTime();
 
-    gridGroup.position.y = Math.sin(time * 1.5) * 0.2;
+    if(gameStatus !== 'showing_answer') {
+        gridGroup.position.y = Math.sin(time * 1.5) * 0.2;
+    }
     pointLight.intensity = 1.5 + Math.sin(time * 3) * 0.5;
 
     gridGroup.children.forEach(node => {
-      if(node.userData.type === 'core') { node.rotation.x += 0.01; node.rotation.y += 0.01; }
-      if(node.userData.type === 'key' && !node.userData.isHacked) { node.rotation.z = Math.sin(time * 5) * 0.5; }
+      if(node.type === 'Mesh') {
+          if(node.userData.type === 'core') { node.rotation.x += 0.01; node.rotation.y += 0.01; }
+          if(node.userData.type === 'key' && !node.userData.isHacked) { node.rotation.z = Math.sin(time * 5) * 0.5; }
+      }
     });
 
     controls.update();
@@ -398,38 +438,40 @@
     document.getElementById('title-box').style.borderColor = '#' + hexColor.toString(16).padStart(6, '0');
 
     gridGroup.children.forEach(node => {
-      if (node.userData.type === 'normal' || node.userData.isHacked) applyNodeStyle(node);
+      if (node.type==='Mesh' && (node.userData.type === 'normal' || node.userData.isHacked)) applyNodeStyle(node);
     });
   }
 
   function startGame() {
     gameStatus = 'playing';
-    timeRemaining = 120; // 2분
+    timeRemaining = 120; 
     currentStage = 1;
     
     document.getElementById('footer-menu').style.display = 'none';
+    document.getElementById('ingame-footer').style.display = 'flex';
     
-    // 시작 시 가이드 박스 숨김
     const guideBox = document.getElementById('guide-box');
     guideBox.classList.add('fade-out');
-
     document.getElementById('crosshair').style.display = 'block';
 
     timerInterval = setInterval(() => {
       timeRemaining--;
       document.getElementById('timer-ui').innerText = `00:00:${timeRemaining.toString().padStart(2, '0')}`;
-      if (timeRemaining <= 0) endGame(false);
+      if (timeRemaining <= 0) showAnswerAndEnd("TIME OUT / SECURITY LOCKDOWN");
     }, 1000);
 
     startStageLogic();
   }
 
+  function quitGame() {
+    if(gameStatus !== 'playing') return;
+    showAnswerAndEnd("ABORTED BY USER");
+  }
+
   function startStageLogic() {
-    keysFound = 0;
-    updateKeyUI();
+    keysFound = 0; updateKeyUI();
     document.getElementById('stage-ui').innerText = `STAGE ${currentStage}`;
     
-    // 스케일 축소로 인한 카메라 줌인 보정
     if(currentStage === 2) camera.position.set(10, 8, 12);
     if(currentStage === 3) camera.position.set(8, 6, 10);
     
@@ -437,11 +479,59 @@
     generateGrid();
   }
 
-  function endGame(isWin) {
+  // ==========================================
+  // 💡 실패 시 정답(해킹 최적 경로) 시연 로직
+  // ==========================================
+  function showAnswerAndEnd(failMsg) {
+    gameStatus = 'showing_answer';
+    clearInterval(timerInterval);
+    document.getElementById('crosshair').style.display = 'none';
+    document.getElementById('ingame-footer').style.display = 'none';
+    controls.autoRotateSpeed = 2.0;
+
+    const guideBox = document.getElementById('guide-box');
+    guideBox.innerHTML = `<div class="guide-title" style="color:var(--amber)">접속 끊어짐. 최적의 정답 경로 스캔 중...</div>`;
+    guideBox.classList.remove('fade-out');
+
+    let delay = 0;
+    window.answerPathMeshes.forEach((node, i) => {
+      setTimeout(() => {
+        // 노드를 초록색으로 밝힘
+        node.material.color.setHex(0x00e5a0);
+        node.material.emissive.setHex(0x00e5a0);
+        node.material.opacity = 0.95;
+        node.material.wireframe = false;
+        const bs = node.userData.baseScale || 1;
+        node.scale.set(bs*1.2, bs*1.2, bs*1.2);
+        
+        // 이전 노드와 선(Line)으로 연결
+        if (i > 0) {
+          const prevNode = window.answerPathMeshes[i-1];
+          const lineMat = new THREE.LineBasicMaterial({ color: 0x00e5a0, linewidth: 2 });
+          const lineGeo = new THREE.BufferGeometry().setFromPoints([prevNode.position, node.position]);
+          const line = new THREE.Line(lineGeo, lineMat);
+          gridGroup.add(line);
+        }
+      }, delay);
+      delay += 120; // 0.12초마다 경로를 그림
+    });
+
+    // 정답 시연이 끝난 후 결과창 표시
+    setTimeout(() => {
+        guideBox.classList.add('fade-out');
+        showResultScreen(false, failMsg);
+    }, delay + 2000);
+  }
+
+  function showFinalWin() {
     gameStatus = 'ended';
     clearInterval(timerInterval);
     document.getElementById('crosshair').style.display = 'none';
-    
+    document.getElementById('ingame-footer').style.display = 'none';
+    showResultScreen(true);
+  }
+
+  function showResultScreen(isWin, failMsg) {
     const resultScreen = document.getElementById('result-screen');
     const resultMsg = document.getElementById('result-msg');
     const resultScore = document.getElementById('result-score');
@@ -459,7 +549,7 @@
       resultMsg.innerText = "INFILTRATION FAILED";
       resultMsg.style.color = "var(--magenta)";
       resultMsg.style.textShadow = "0 0 20px var(--magenta)";
-      resultScore.innerText = `REACHED STAGE ${currentStage}`;
+      resultScore.innerHTML = `${failMsg}<br><span style="font-size:20px; color:#cbd5e1">REACHED STAGE ${currentStage}</span>`;
     }
   }
 </script>
