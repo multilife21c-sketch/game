@@ -14,13 +14,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 #game{position:fixed;inset:0;width:100%;height:100%;display:block;}
 .fdisp{font-family:'Orbitron',sans-serif;}
 .ui{position:fixed;inset:0;pointer-events:none;}
-#ver{position:fixed;top:7px;left:10px;font-family:'Orbitron',sans-serif;font-size:12px;color:#6a7f9c;letter-spacing:1.5px;z-index:6;}
-#muteBtn{position:fixed;top:5px;right:12px;width:34px;height:34px;border-radius:9px;border:1px solid var(--border2);
-  background:rgba(17,29,49,.7);color:var(--muted);font-size:15px;pointer-events:auto;cursor:pointer;z-index:6;}
+#ver{position:fixed;top:6px;left:10px;font-family:'Orbitron',sans-serif;font-size:11px;color:#5a6f8c;letter-spacing:1.2px;z-index:7;pointer-events:none;}
+#muteBtn{position:fixed;top:4px;right:10px;width:32px;height:32px;z-index:7;border-radius:9px;border:1px solid var(--border2);
+  background:rgba(17,29,49,.7);color:var(--muted);font-size:15px;pointer-events:auto;cursor:pointer;}
 
 /* ===== HUD ===== */
-#hud{position:fixed;top:0;left:0;right:0;padding:12px 14px 0;display:none;z-index:4;}
-.hud-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}
+#hud{position:fixed;top:26px;left:0;right:0;padding:6px 14px 0;display:none;z-index:4;}
+.hud-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:0 4px;}
 .side{flex:1;max-width:44%;}
 .side.r{display:flex;flex-direction:column;align-items:flex-end;}
 .pname{font-family:'Orbitron',sans-serif;font-weight:900;font-size:15px;margin-bottom:4px;letter-spacing:.5px;}
@@ -38,7 +38,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 .iitem{font-size:12px;color:#fff;background:rgba(17,29,49,.82);border:1px solid var(--border2);
   border-radius:6px;padding:2px 8px;display:inline-flex;gap:6px;align-items:center;white-space:nowrap;}
 .iitem .tm{font-family:'Orbitron',sans-serif;color:var(--cyan);font-size:11px;font-weight:700;}
-#center-hud{position:fixed;top:12px;left:50%;transform:translateX(-50%);text-align:center;z-index:4;display:none;}
+#center-hud{position:fixed;top:26px;left:50%;transform:translateX(-50%);text-align:center;z-index:4;display:none;}
 #stage-tag{font-family:'Orbitron',sans-serif;font-weight:900;font-size:15px;color:var(--amber);text-shadow:0 0 10px rgba(255,181,71,.6);}
 #streak-tag{font-family:'Orbitron',sans-serif;font-size:12px;color:var(--grn);margin-top:2px;}
 #round-timer{font-family:'Orbitron',sans-serif;font-weight:900;font-size:22px;color:#fff;margin-top:1px;}
@@ -150,7 +150,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 <!-- MENU -->
 <div class="screen" id="menu">
   <div class="logo">NEON DUEL</div>
-  <div style="font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:2px;color:#5a6f8c;margin-top:-6px;" id="menu-ver">v1.5</div>
+  <div style="font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:2px;color:#5a6f8c;margin-top:-6px;" id="menu-ver">v1.6</div>
   <div class="tagline">좌우 비행체의 <b>미사일 대결</b>! 가운데 아이템을 먹고,<br>정확히 <b>한가운데</b> 맞춰 크리티컬 → 궁극기로 폭발시켜라 ⚡</div>
   <div id="acct" style="font-size:13.5px;padding:8px 16px;border-radius:10px;border:1px solid var(--border2);background:rgba(17,29,49,.6);color:#93a4bb;">계정 확인 중…</div>
   <div class="modes">
@@ -187,7 +187,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
    모드: 랭킹(연승) / 스테이지 / AI 1:1
    랭킹: 연승 수 (동률 시 짧은 클리어시간 우선 → score 인코딩)
    ============================================================ */
-const GAME_VERSION='v1.5';
+const GAME_VERSION='v1.6';
 document.getElementById('vernum').textContent=GAME_VERSION;
 const _mv=document.getElementById('menu-ver'); if(_mv)_mv.textContent=GAME_VERSION;
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
