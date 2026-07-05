@@ -2,7 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#070b14">
 <title>Nova Fighters - NOVA ARCADE</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
@@ -51,6 +52,23 @@
   .result-text { font-family: var(--fdisp); font-size: 60px; font-weight: 900; color: var(--amber); margin-bottom: 20px; text-shadow: 0 0 20px rgba(255,181,71,0.5); }
   .controls-hint { margin-top: 25px; font-size: 13px; color: #cbd5e1; font-family: var(--fkr); line-height: 1.8; text-align: center; background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 1px solid var(--border2); }
   .key { display: inline-block; padding: 2px 6px; background: #334155; border-radius: 4px; font-family: var(--fdisp); font-size: 11px; margin: 0 2px; border-bottom: 2px solid #1e293b; color: #fff;}
+
+  /* 반응형 스케일 래퍼 */
+  html,body{ width:100%; height:100%; }
+  #game-container{ transform-origin:center center; }
+  /* 모바일 터치 컨트롤 */
+  #touch-controls{ position:fixed; inset:auto 0 0 0; z-index:30; display:none;
+    justify-content:space-between; align-items:flex-end; padding:0 18px 22px;
+    padding-bottom:max(22px, env(safe-area-inset-bottom)); pointer-events:none; }
+  #touch-controls .pad{ display:flex; gap:14px; pointer-events:auto; }
+  .tbtn{ width:66px; height:66px; border-radius:50%; border:2px solid var(--border2);
+    background:rgba(17,29,49,.6); color:var(--txt); font-size:26px; font-family:var(--fdisp);
+    display:flex; align-items:center; justify-content:center; backdrop-filter:blur(3px);
+    user-select:none; touch-action:none; }
+  .tbtn:active{ background:rgba(255,181,71,.3); border-color:var(--amber); }
+  .tbtn.atk{ width:80px; height:80px; background:rgba(255,92,138,.28); border-color:var(--magenta); color:#fff; }
+  .tbtn.jmp{ background:rgba(34,211,238,.22); border-color:var(--cyan); }
+  body.touch .controls-hint{ display:none; }
 </style>
 </head>
 <body>
@@ -62,7 +80,10 @@
       <div class="health-bg"><div id="player-health"></div></div>
       <div class="energy-bg"><div id="player-energy"></div></div>
     </div>
-    <div id="timer">120</div>
+    <div style="display:flex;flex-direction:column;align-items:center;">
+      <div id="timer">60</div>
+      <div id="streak-hud" style="display:none;font-family:var(--fdisp);font-weight:900;color:var(--amber);font-size:16px;text-shadow:0 0 10px rgba(255,181,71,.6);margin-top:2px;">🔥 연승 <span id="streak-num">0</span></div>
+    </div>
     <div class="status-wrapper" style="align-items: flex-end;">
       <div class="player-name" id="p2-name" style="right:0;">P2</div>
       <div class="health-bg"><div id="enemy-health"></div></div>
@@ -73,7 +94,8 @@
   <div id="main-menu" class="menu-screen">
     <div class="menu-title">NOVA FIGHTERS</div>
     <div class="btn-group">
-      <button class="btn active" id="mode-cpu" data-mode="cpu">1P vs CPU</button>
+      <button class="btn active" id="mode-arcade" data-mode="arcade">🏆 아케이드 (연승)</button>
+      <button class="btn" id="mode-cpu" data-mode="cpu">1P vs CPU</button>
       <button class="btn" id="mode-p2" data-mode="p2">1P vs 2P</button>
     </div>
     
@@ -105,12 +127,40 @@
     </div>
   </div>
 
+  <div id="round-clear" class="menu-screen" style="display:none;background:rgba(4,7,13,.45);">
+    <div class="result-text" id="rc-text" style="font-size:48px;">ROUND CLEAR!</div>
+    <div style="font-family:var(--fdisp);color:var(--cyan);font-size:20px;">🔥 <span id="rc-streak">0</span> 연승</div>
+  </div>
+
   <div id="game-over" class="menu-screen">
     <div class="result-text" id="result-text">PLAYER 1 WINS!</div>
-    <button class="btn" id="restart-btn">메인으로 (MAIN MENU)</button>
+    <div id="arcade-result" style="display:none;">
+      <div style="font-family:var(--fdisp);font-size:22px;color:var(--amber);margin-bottom:6px;">🔥 최고 연승 <span id="final-streak" style="font-size:34px;">0</span></div>
+      <div id="ao-save" style="font-size:13px;color:#8194ad;margin-bottom:14px;"></div>
+      <div id="ao-lb" style="width:min(90vw,340px);margin:0 auto 16px;background:rgba(13,22,38,.9);border:1px solid var(--border2);border-radius:12px;overflow:hidden;">
+        <div style="font-family:var(--fdisp);font-size:11px;letter-spacing:2px;color:var(--amber);padding:9px;border-bottom:1px solid #1e2c43;">🏆 TOP 10 · 통합 랭킹</div>
+        <div id="ao-lb-body"><div style="padding:14px;color:#516581;font-size:12px;">불러오는 중…</div></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+      <button class="btn" id="again-btn" style="background:var(--amber);color:#000;">↻ 다시 도전</button>
+      <button class="btn" id="restart-btn">메인으로</button>
+    </div>
+    <button class="btn" style="margin-top:10px;background:transparent;border-color:#2c4060;" onclick="location.href='../../'">🏠 포탈로</button>
   </div>
 
   <canvas id="game-canvas"></canvas>
+</div>
+
+<div id="touch-controls">
+  <div class="pad">
+    <div class="tbtn" id="t-left">◀</div>
+    <div class="tbtn" id="t-right">▶</div>
+  </div>
+  <div class="pad">
+    <div class="tbtn jmp" id="t-jump">▲</div>
+    <div class="tbtn atk" id="t-attack">✊</div>
+  </div>
 </div>
 
 <script>
@@ -120,10 +170,12 @@
   canvas.height = 576;
 
   const GRAVITY = 0.7;
-  let gameMode = 'cpu'; 
-  let timer = 120;
+  let gameMode = 'arcade';
+  let timer = 60;
   let timerId;
   let gameActive = false;
+  let streak = 0;              // 아케이드 연승
+  const ROUND_TIME = 60;
 
   class Sprite {
     constructor({ position, imageSrc, scale = 1, framesMax = 1, offset = { x: 0, y: 0 } }) {
@@ -162,37 +214,37 @@
       name: 'VANGUARD', id: 'vanguard', color: '#22d3ee', speed: 5, jump: -15, damage: 15, maxHp: 100, width: 50, height: 150,
       scale: 2.5, offset: { x: 80, y: 70 }, nativeFacing: 'right',
       sprites: {
-        idle: { src: './assets/Biker/Idle.png', framesMax: 4 },
-        run: { src: './assets/Biker/Run.png', framesMax: 6 },
-        jump: { src: './assets/Biker/Jump.png', framesMax: 4 },
-        fall: { src: './assets/Biker/Jump.png', framesMax: 4 },
-        attack1: { src: './assets/Biker/Attack2.png', framesMax: 6 }
+        idle: { src: './assets/Biker/Biker_idle.png', framesMax: 4 },
+        run: { src: './assets/Biker/Biker_run.png', framesMax: 6 },
+        jump: { src: './assets/Biker/Biker_jump.png', framesMax: 4 },
+        fall: { src: './assets/Biker/Biker_jump.png', framesMax: 4 },
+        attack1: { src: './assets/Biker/Biker_attack1.png', framesMax: 6 }
       },
-      attackBox: { offset: { x: 65, y: 50 }, width: 120, height: 50 }, hitFrame: 3
+      attackBox: { offset: { x: 65, y: 50 }, width: 120, height: 50 }, hitFrame: 2
     },
     {
       name: 'SEOA', id: 'seoa', color: '#ff5c8a', speed: 7, jump: -17, damage: 10, maxHp: 85, width: 50, height: 150,
       scale: 2.5, offset: { x: 80, y: 70 }, nativeFacing: 'right',
       sprites: {
-        idle: { src: './assets/Punk/Idle.png', framesMax: 4 },
-        run: { src: './assets/Punk/Run.png', framesMax: 6 },
-        jump: { src: './assets/Punk/Jump.png', framesMax: 4 },
-        fall: { src: './assets/Punk/Jump.png', framesMax: 4 },
-        attack1: { src: './assets/Punk/Attack2.png', framesMax: 6 }
+        idle: { src: './assets/Punk/Punk_idle.png', framesMax: 4 },
+        run: { src: './assets/Punk/Punk_run.png', framesMax: 6 },
+        jump: { src: './assets/Punk/Punk_jump.png', framesMax: 4 },
+        fall: { src: './assets/Punk/Punk_jump.png', framesMax: 4 },
+        attack1: { src: './assets/Punk/Punk_attack1.png', framesMax: 6 }
       },
-      attackBox: { offset: { x: 65, y: 50 }, width: 120, height: 50 }, hitFrame: 3
+      attackBox: { offset: { x: 65, y: 50 }, width: 120, height: 50 }, hitFrame: 2
     },
     {
       name: 'TITAN', id: 'titan', color: '#00e5a0', speed: 3, jump: -12, damage: 25, maxHp: 130, width: 60, height: 170,
       scale: 2.5, offset: { x: 80, y: 70 }, nativeFacing: 'right',
       sprites: {
-        idle: { src: './assets/Cyborg/Idle.png', framesMax: 4 },
-        run: { src: './assets/Cyborg/Run.png', framesMax: 6 },
-        jump: { src: './assets/Cyborg/Jump.png', framesMax: 4 },
-        fall: { src: './assets/Cyborg/Jump.png', framesMax: 4 },
-        attack1: { src: './assets/Cyborg/Attack2.png', framesMax: 6 }
+        idle: { src: './assets/Cyborg/Cyborg_idle.png', framesMax: 4 },
+        run: { src: './assets/Cyborg/Cyborg_run.png', framesMax: 6 },
+        jump: { src: './assets/Cyborg/Cyborg_jump.png', framesMax: 4 },
+        fall: { src: './assets/Cyborg/Cyborg_jump.png', framesMax: 4 },
+        attack1: { src: './assets/Cyborg/Cyborg_attack1.png', framesMax: 6 }
       },
-      attackBox: { offset: { x: 70, y: 50 }, width: 140, height: 60 }, hitFrame: 3
+      attackBox: { offset: { x: 70, y: 50 }, width: 140, height: 60 }, hitFrame: 2
     }
   ];
 
@@ -217,9 +269,15 @@
       this.isAttacking = false; this.hasHit = false;
       this.sprites = {};
       for (const sprite in charData.sprites) {
-        this.sprites[sprite] = new Image();
-        this.sprites[sprite].src = charData.sprites[sprite].src;
-        this.sprites[sprite].framesMax = charData.sprites[sprite].framesMax;
+        const img = new Image();
+        img.framesMax = charData.sprites[sprite].framesMax || 1;
+        img.onload = () => {  // 가로 스트립 = 정사각 프레임 가정 → 프레임 수 자동 계산
+          const f = Math.max(1, Math.round(img.width / img.height));
+          img.framesMax = f;
+          if (this.image === img) this.framesMax = f;
+        };
+        img.src = charData.sprites[sprite].src;
+        this.sprites[sprite] = img;
       }
       this.nativeFacing = charData.nativeFacing;
     }
@@ -299,6 +357,7 @@
   let player, enemy;
   const keys = { a: { pressed: false }, d: { pressed: false }, ArrowLeft: { pressed: false }, ArrowRight: { pressed: false } };
 
+  document.getElementById('mode-arcade').addEventListener('click', () => setMode('arcade'));
   document.getElementById('mode-cpu').addEventListener('click', () => setMode('cpu'));
   document.getElementById('mode-p2').addEventListener('click', () => setMode('p2'));
   
@@ -311,30 +370,55 @@
     });
   });
   
-  document.getElementById('start-btn').addEventListener('click', startGame);
+  document.getElementById('start-btn').addEventListener('click', () => startGame(true));
   document.getElementById('restart-btn').addEventListener('click', () => location.reload());
+  document.getElementById('again-btn').addEventListener('click', () => {
+    document.getElementById('game-over').style.display='none';
+    startGame(true);
+  });
   
   function setMode(mode) {
     gameMode = mode;
-    document.getElementById('mode-cpu').classList.remove('active');
-    document.getElementById('mode-p2').classList.remove('active');
+    ['arcade','cpu','p2'].forEach(m=>document.getElementById('mode-'+m).classList.remove('active'));
     document.getElementById(`mode-${mode}`).classList.add('active');
   }
 
-  function startGame() {
+  function startGame(fresh) {
     document.getElementById('main-menu').style.display = 'none';
+    document.getElementById('game-over').style.display = 'none';
     document.getElementById('hud').style.display = 'flex';
-    
+    if (fresh) streak = 0;
+    const arcade = (gameMode === 'arcade');
+    document.getElementById('streak-hud').style.display = arcade ? 'block' : 'none';
+    document.getElementById('streak-num').innerText = streak;
+
     const p1Char = CHARACTERS[selectedCharIndex];
     document.getElementById('p1-name').innerText = p1Char.name;
     player = new Fighter({ position: { x: 150, y: 0 }, velocity: { x: 0, y: 0 }, charData: p1Char });
 
-    const p2Char = CHARACTERS[gameMode === 'cpu' ? Math.floor(Math.random() * CHARACTERS.length) : 2];
-    document.getElementById('p2-name').innerText = gameMode === 'cpu' ? `CPU (${p2Char.name})` : `P2 (${p2Char.name})`;
-    enemy = new Fighter({ position: { x: 800, y: 0 }, velocity: { x: 0, y: 0 }, charData: p2Char, isEnemy: true });
-
-    gameActive = true; timer = 120;
+    spawnEnemy();
+    document.body.classList.toggle('touch', isTouch);
+    document.getElementById('touch-controls').style.display = isTouch ? 'flex' : 'none';
+    gameActive = true; timer = ROUND_TIME;
     decreaseTimer(); animate();
+  }
+
+  function spawnEnemy() {
+    const arcade = (gameMode === 'arcade');
+    const p2Char = CHARACTERS[gameMode === 'p2' ? 2 : Math.floor(Math.random() * CHARACTERS.length)];
+    let label = arcade ? `CPU Lv.${streak+1} (${p2Char.name})`
+              : (gameMode === 'cpu' ? `CPU (${p2Char.name})` : `P2 (${p2Char.name})`);
+    document.getElementById('p2-name').innerText = label;
+    enemy = new Fighter({ position: { x: 800, y: 0 }, velocity: { x: 0, y: 0 }, charData: p2Char, isEnemy: true });
+    if (arcade) {  // 연승할수록 강해짐
+      const hpMul = 1 + streak * 0.14, dmgMul = 1 + streak * 0.09;
+      enemy.maxHealth = Math.round(enemy.maxHealth * hpMul);
+      enemy.health = enemy.maxHealth;
+      enemy.damage = Math.round(enemy.damage * dmgMul);
+      enemy.speed += Math.floor(streak / 3);
+      enemy.aiSkill = Math.min(0.22, 0.08 + streak * 0.015);  // 공격 빈도↑
+    }
+    document.getElementById('enemy-health').style.width = '100%';
   }
 
   function rectangularCollision(rect1, rect2) {
@@ -396,13 +480,60 @@
 
   function determineWinner({ player, enemy, timerId }) {
     clearTimeout(timerId); gameActive = false;
-    document.getElementById('game-over').style.display = 'flex';
-    const resText = document.getElementById('result-text');
     const p1HpRatio = player.health / player.maxHealth;
     const p2HpRatio = enemy.health / enemy.maxHealth;
-    if (p1HpRatio === p2HpRatio) resText.innerText = 'TIE!';
-    else if (p1HpRatio > p2HpRatio) resText.innerText = 'PLAYER 1 WINS!';
-    else resText.innerText = gameMode === 'cpu' ? 'CPU WINS!' : 'PLAYER 2 WINS!';
+    const playerWon = enemy.health <= 0 ? true : (player.health <= 0 ? false : p1HpRatio > p2HpRatio);
+
+    if (gameMode === 'arcade' && playerWon) { nextRound(); return; }
+
+    document.getElementById('game-over').style.display = 'flex';
+    const resText = document.getElementById('result-text');
+    const arcadeBox = document.getElementById('arcade-result');
+    if (gameMode === 'arcade') {
+      resText.innerText = 'GAME OVER';
+      arcadeBox.style.display = 'block';
+      document.getElementById('final-streak').innerText = streak;
+      reportArcade(streak);
+    } else {
+      arcadeBox.style.display = 'none';
+      if (p1HpRatio === p2HpRatio) resText.innerText = 'TIE!';
+      else if (playerWon) resText.innerText = 'PLAYER 1 WINS!';
+      else resText.innerText = gameMode === 'cpu' ? 'CPU WINS!' : 'PLAYER 2 WINS!';
+    }
+  }
+
+  function nextRound() {
+    streak++;
+    document.getElementById('streak-num').innerText = streak;
+    // 라운드 클리어 보상: 플레이어 체력 40% 회복
+    player.health = Math.min(player.maxHealth, player.health + player.maxHealth * 0.4);
+    document.getElementById('player-health').style.width = (player.health / player.maxHealth * 100) + '%';
+    player.position = { x: 150, y: 0 }; player.velocity = { x: 0, y: 0 };
+    // 라운드 클리어 연출 (전용 오버레이)
+    const rc = document.getElementById('round-clear');
+    document.getElementById('rc-text').innerText = `ROUND ${streak} CLEAR!`;
+    document.getElementById('rc-streak').innerText = streak;
+    rc.style.display = 'flex';
+    gameActive = false;
+    setTimeout(() => {
+      rc.style.display = 'none';
+      spawnEnemy();
+      gameActive = true; timer = ROUND_TIME;
+      document.getElementById('timer').innerText = timer;
+      decreaseTimer(); animate();
+    }, 1100);
+  }
+
+  async function reportArcade(sc) {
+    const note = document.getElementById('ao-save'); note.style.color = '#8194ad';
+    if (window.NF && window.NF.ready) {
+      if (window.NF.user) {
+        const ok = await window.NF.report(sc);
+        note.innerText = ok ? '🏆 통합 랭킹에 기록됨!' : '최고 연승만 랭킹에 반영돼요';
+        if (ok) note.style.color = 'var(--green)';
+      } else note.innerText = '포탈에서 로그인하면 랭킹에 기록돼요';
+      window.NF.loadTop();
+    }
   }
 
   function cpuAI() {
@@ -416,7 +547,7 @@
       if (distance > 0) { enemy.velocity.x = enemy.speed - 1; enemy.lastKey = 'ArrowRight'; }
       else { enemy.velocity.x = -(enemy.speed - 1); enemy.lastKey = 'ArrowLeft'; }
     } else {
-      if (Math.random() < 0.08) enemy.attack();
+      if (Math.random() < (enemy.aiSkill || 0.08)) enemy.attack();
     }
     if (Math.random() < 0.01 && !isEnemyInAir) enemy.velocity.y = enemy.jumpPower;
   }
@@ -447,6 +578,64 @@
       case 'arrowleft': keys.ArrowLeft.pressed = false; break;
     }
   });
+
+  // ===== 반응형 스케일 =====
+  const gc = document.getElementById('game-container');
+  function fitScale(){
+    const pad = 8;
+    const sc = Math.min((window.innerWidth-pad)/1024, (window.innerHeight-pad)/576);
+    gc.style.transform = 'scale(' + Math.min(1.4, sc) + ')';
+  }
+  window.addEventListener('resize', fitScale); fitScale();
+
+  // ===== 모바일 터치 조작 =====
+  const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  function bindHold(id, onDown, onUp){
+    const el = document.getElementById(id);
+    el.addEventListener('pointerdown', e=>{ e.preventDefault(); onDown(); });
+    el.addEventListener('pointerup', e=>{ e.preventDefault(); onUp && onUp(); });
+    el.addEventListener('pointerleave', ()=>{ onUp && onUp(); });
+    el.addEventListener('pointercancel', ()=>{ onUp && onUp(); });
+  }
+  bindHold('t-left',  ()=>{ if(!gameActive)return; keys.a.pressed=true; player.lastKey='a'; },
+                      ()=>{ keys.a.pressed=false; });
+  bindHold('t-right', ()=>{ if(!gameActive)return; keys.d.pressed=true; player.lastKey='d'; },
+                      ()=>{ keys.d.pressed=false; });
+  bindHold('t-jump',  ()=>{ if(!gameActive)return; if(player.position.y >= canvas.height-96-player.height) player.velocity.y = player.jumpPower; });
+  bindHold('t-attack',()=>{ if(!gameActive)return; player.attack(); });
+</script>
+<!-- 🌐 NOVA ARCADE 포탈 통합 (SSO + 연승 랭킹) -->
+<script type="module">
+import { Nova } from "../../portal-sdk.js";
+import { DEMO, db, collection, query, where, orderBy, limit, getDocs } from "../../firebase-config.js";
+const GAME_ID = "nova-fighters";
+Nova.init(GAME_ID);
+window.NF = {
+  ready:true, user:null,
+  async report(streak){ try{ return await Nova.reportScore(streak); }catch(e){ console.warn('[NF]',e); return false; } },
+  async loadTop(){
+    const body=document.getElementById('ao-lb-body');
+    if(DEMO){ body.innerHTML='<div style="padding:14px;color:#516581;font-size:12px">Firebase 연결 후 표시됩니다</div>'; return; }
+    try{
+      const snap=await getDocs(query(collection(db,'scores'),where('gameId','==',GAME_ID),orderBy('score','desc'),limit(10)));
+      if(snap.empty){ body.innerHTML='<div style="padding:14px;color:#516581;font-size:12px">첫 도전자가 되어보세요!</div>'; return; }
+      const uid=this.user&&this.user.uid;
+      const esc=(t)=>String(t??'').replace(/[&<>"\']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      body.innerHTML=snap.docs.map((d,i)=>{ const s=d.data();
+        const me = s.uid===uid;
+        return `<div style="display:flex;gap:10px;padding:7px 13px;font-size:13px;${i>0?'border-top:1px solid #16233a;':''}${me?'background:rgba(255,181,71,.08);':''}">
+          <span style="font-family:var(--fdisp);font-weight:700;width:22px;color:${i===0?'var(--amber)':i<3?'#cfd8e6':'#516581'}">${i+1}</span>
+          <span style="flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(s.name||'익명')}</span>
+          <span style="font-family:var(--fdisp);color:var(--cyan);font-weight:700;">${Number(s.score||0)}연승</span></div>`;
+      }).join('');
+    }catch(e){ console.warn('[NF] top',e); body.innerHTML='<div style="padding:14px;color:#516581;font-size:12px">랭킹을 불러오지 못했어요</div>'; }
+  }
+};
+Nova.onUser(u=>{ window.NF.user=u;
+  if(u){ const el=document.getElementById('p1-name');
+    /* 이름표는 캐릭터명 유지, 랭킹만 닉네임 사용 */ }
+});
+console.log('[NOVA FIGHTERS] NOVA ARCADE 통합 연동됨');
 </script>
 </body>
 </html>
