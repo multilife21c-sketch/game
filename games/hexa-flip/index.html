@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>헥사 플립 (Hexa-Flip: Dynamic Defense) v1.1</title>
+    <title>헥사 플립 (Hexa-Flip: Dynamic Defense) v1.3</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <style>
         * {
             box-sizing: border-box;
@@ -17,7 +18,9 @@
             height: 100%;
             overflow: hidden;
             background-color: #060913;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            /* 폰트 최적화 */
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+            letter-spacing: 0.3px;
             color: #ffffff;
         }
         #game-container {
@@ -37,7 +40,7 @@
             border-radius: 12px;
             box-shadow: 0 0 30px rgba(0, 242, 254, 0.1);
             max-width: 100%;
-            max-height: calc(100vh - 140px);
+            max-height: calc(100vh - 160px);
             aspect-ratio: 1 / 1;
             image-rendering: -webkit-optimize-contrast;
             image-rendering: crisp-edges;
@@ -63,14 +66,15 @@
             align-items: center;
         }
         .ui-stat .label {
-            font-size: 10px;
+            font-size: 11px;
+            font-weight: 600;
             text-transform: uppercase;
             color: #94a3b8;
             letter-spacing: 1px;
             margin-bottom: 2px;
         }
         .ui-stat .value {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 800;
             text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
         }
@@ -78,51 +82,72 @@
         .value.lives { color: #ff4757; text-shadow: 0 0 10px rgba(255, 71, 87, 0.4); }
         .value.wave { color: #00f2fe; text-shadow: 0 0 10px rgba(0, 242, 254, 0.4); }
 
-        /* 하단 타워 선택 바 */
+        /* 하단 타워/아이템 선택 바 */
         #bottom-ui {
             width: 100%;
             max-width: 600px;
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-around;
-            gap: 10px;
+            gap: 8px;
             margin-top: 10px;
         }
-        .tower-btn {
-            flex: 1;
+        .action-btn {
+            flex: 1 1 18%;
+            min-width: 65px;
             background: rgba(30, 41, 59, 0.7);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
-            padding: 8px;
+            padding: 8px 4px;
             display: flex;
             flex-direction: column;
             align-items: center;
             cursor: pointer;
             transition: all 0.2s ease;
         }
-        .tower-btn:active, .tower-btn.selected {
+        /* 타워 버튼 스타일 */
+        .action-btn.tower-btn:active, .action-btn.tower-btn.selected {
             background: rgba(0, 242, 254, 0.2);
             border-color: #00f2fe;
             box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
             transform: scale(0.95);
         }
-        .tower-btn .icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 5px;
-            margin-bottom: 4px;
+        /* 아이템 버튼 스타일 (즉시 사용) */
+        .action-btn.item-btn {
+            background: rgba(45, 27, 46, 0.8);
+            border: 1px dashed rgba(255, 71, 87, 0.4);
         }
-        .tower-btn.plasma .icon { background: #00f2fe; box-shadow: 0 0 8px #00f2fe; }
-        .tower-btn.blaster .icon { background: #ff4757; box-shadow: 0 0 8px #ff4757; }
-        .tower-btn.tesla .icon { background: #ffa500; box-shadow: 0 0 8px #ffa500; }
-        .tower-btn .name {
-            font-size: 11px;
-            font-weight: 600;
+        .action-btn.item-btn:active {
+            background: rgba(255, 71, 87, 0.3);
+            border-color: #ff4757;
+            box-shadow: 0 0 15px rgba(255, 71, 87, 0.4);
+            transform: scale(0.92);
         }
-        .tower-btn .cost {
-            font-size: 11px;
-            color: #ffd700;
+
+        .action-btn .icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .action-btn.plasma .icon { background: #00f2fe; box-shadow: 0 0 8px #00f2fe; }
+        .action-btn.blaster .icon { background: #ff4757; box-shadow: 0 0 8px #ff4757; }
+        .action-btn.tesla .icon { background: #ffa500; box-shadow: 0 0 8px #ffa500; }
+        .action-btn.item-btn .icon { background: transparent; }
+
+        .action-btn .name {
+            font-size: 12px;
             font-weight: 700;
-            margin-top: 2px;
+        }
+        .action-btn .cost {
+            font-size: 12px;
+            color: #ffd700;
+            font-weight: 800;
+            margin-top: 4px;
         }
 
         /* 컨트롤 및 모달 오버레이 */
@@ -154,31 +179,34 @@
             box-shadow: 0 0 40px rgba(0, 242, 254, 0.2);
         }
         h1 {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: 900;
             background: linear-gradient(45deg, #00f2fe, #4facfe);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             letter-spacing: 1px;
         }
         p {
-            color: #94a3b8;
-            font-size: 13px;
+            color: #e2e8f0;
+            font-size: 14px;
+            font-weight: 500;
             line-height: 1.6;
             margin-bottom: 25px;
+            word-break: keep-all;
         }
         .btn-main {
             background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
             color: #020617;
             border: none;
-            padding: 12px 35px;
-            font-size: 15px;
-            font-weight: 700;
+            padding: 14px 35px;
+            font-size: 16px;
+            font-weight: 800;
             border-radius: 30px;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0, 242, 254, 0.4);
             transition: transform 0.1s, box-shadow 0.2s;
+            font-family: inherit;
         }
         .btn-main:active {
             transform: scale(0.95);
@@ -188,13 +216,13 @@
         #toast {
             position: absolute;
             top: 80px;
-            background: rgba(255, 71, 87, 0.9);
+            background: rgba(255, 71, 87, 0.95);
             color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
             opacity: 0;
             transition: opacity 0.2s ease;
             pointer-events: none;
@@ -211,7 +239,7 @@
             <span id="ui-wave" class="value wave">1</span>
         </div>
         <div class="ui-stat">
-            <span class="label">Energy (Gold)</span>
+            <span class="label">Energy</span>
             <span id="ui-gold" class="value gold">250</span>
         </div>
         <div class="ui-stat">
@@ -223,20 +251,31 @@
     <canvas id="gameCanvas" width="800" height="800"></canvas>
 
     <div id="bottom-ui">
-        <div class="tower-btn plasma selected" onclick="selectTower('plasma', 100)">
+        <div class="action-btn tower-btn plasma selected" onclick="selectTower('plasma', 100)">
             <div class="icon"></div>
             <span class="name">플라즈마</span>
             <span class="cost">⚡ 100</span>
         </div>
-        <div class="tower-btn blaster" onclick="selectTower('blaster', 150)">
+        <div class="action-btn tower-btn blaster" onclick="selectTower('blaster', 150)">
             <div class="icon"></div>
             <span class="name">블래스터</span>
             <span class="cost">⚡ 150</span>
         </div>
-        <div class="tower-btn tesla" onclick="selectTower('tesla', 200)">
+        <div class="action-btn tower-btn tesla" onclick="selectTower('tesla', 200)">
             <div class="icon"></div>
             <span class="name">테슬라</span>
             <span class="cost">⚡ 200</span>
+        </div>
+        
+        <div class="action-btn item-btn" onclick="buyItem('emp', 200)">
+            <div class="icon">❄️</div>
+            <span class="name">EMP 정지</span>
+            <span class="cost">⚡ 200</span>
+        </div>
+        <div class="action-btn item-btn" onclick="buyItem('nuke', 350)">
+            <div class="icon">🚀</div>
+            <span class="name">폭격 지원</span>
+            <span class="cost">⚡ 350</span>
         </div>
     </div>
 
@@ -245,10 +284,11 @@
     <div id="start-overlay" class="overlay">
         <div class="modal-content">
             <h1>HEXA-FLIP</h1>
-            <p>실시간으로 지형을 밀어내어 적을 물리치는 신개념 디펜스!<br><br>
-               1. 하단 타워 선택 후 <b>설정 가능 구역(타워 라인)</b>을 터치해 배치하세요.<br>
-               2. 각 타워 라인 좌우의 <b>화살표[◀ ▶]</b>를 누르면 라인 전체가 회전하며 실시간 전략 이동이 가능합니다.<br>
-               3. 웨이브 도중 실시간 갱신 효과를 느껴보세요!
+            <p>실시간 지형 조작과 전술 아이템을 활용하는 전략 디펜스!<br><br>
+               1. 빈 타워 라인을 터치해 방어탑을 건설하세요.<br>
+               2. 기존 타워를 다시 터치하면 <b>MAX(Lv.3)</b>까지 강력하게 업그레이드 됩니다.<br>
+               3. <b>[◀ ▶] 버튼</b>으로 진형을 즉시 회전시키세요.<br>
+               4. 위급할 땐 <b>전술 아이템(EMP/폭격)</b>을 사용하세요!
             </p>
             <button class="btn-main" onclick="startGame()">작전 개시</button>
         </div>
@@ -268,13 +308,18 @@
     const ctx = canvas.getContext('2d');
 
     // 게임 상태 상수
-    let gameState = 'START'; // START, PLAYING, GAMEOVER
+    let gameState = 'START'; 
     let gold = 250;
     let lives = 20;
     let wave = 1;
     let waveInProgress = false;
     let selectedTowerType = 'plasma';
     let selectedTowerCost = 100;
+
+    // 아이템 전역 효과 상태
+    let freezeTimer = 0;
+    let globalEffectColor = null;
+    let globalEffectAlpha = 0;
 
     // 그리드 설정 (6x6)
     const cols = 6;
@@ -286,13 +331,13 @@
 
     // 경로 노드 생성
     const pathNodes = [
-        {x: 0.5, y: 0.5}, // 시작 (Row 0, Col 0 중앙)
-        {x: 5.5, y: 0.5}, // Row 0 끝
-        {x: 5.5, y: 2.5}, // 우측 통로 다운 (Row 2 끝으로)
-        {x: 0.5, y: 2.5}, // Row 2 끝 (좌측으로 이동)
-        {x: 0.5, y: 4.5}, // 좌측 통로 다운 (Row 4 시작으로)
-        {x: 5.5, y: 4.5}, // Row 4 끝
-        {x: 5.5, y: 5.5}  // 최종 코어 진입
+        {x: 0.5, y: 0.5}, // 시작
+        {x: 5.5, y: 0.5}, 
+        {x: 5.5, y: 2.5}, 
+        {x: 0.5, y: 2.5}, 
+        {x: 0.5, y: 4.5}, 
+        {x: 5.5, y: 4.5}, 
+        {x: 5.5, y: 5.5}  // 코어
     ];
 
     // 엔티티 배열
@@ -306,7 +351,7 @@
     let shakeDuration = 0;
     let shakeIntensity = 0;
 
-    // 오디오 대용 타이머/루프 관리 변수
+    // 타이머/루프 관리 변수
     let lastTime = performance.now();
     let spawnTimer = 0;
     let enemiesToSpawn = 0;
@@ -328,10 +373,8 @@
         const mouseX = ((e.clientX - rect.left) / rect.width) * canvas.width;
         const mouseY = ((e.clientY - rect.top) / rect.height) * canvas.height;
 
-        // 화살표 조작 클릭 감지 (좌우 끝 여백 부분)
         if (checkArrowClicks(mouseX, mouseY)) return;
 
-        // 그리드 좌표 계산
         const c = Math.floor(mouseX / cellSize);
         const r = Math.floor(mouseY / cellSize);
 
@@ -340,7 +383,7 @@
         }
     });
 
-    // 상점 타워 선택 변경
+    // 타워 선택
     function selectTower(type, cost) {
         selectedTowerType = type;
         selectedTowerCost = cost;
@@ -348,15 +391,44 @@
         document.querySelector(`.tower-btn.${type}`).classList.add('selected');
     }
 
-    // 알림 스낵바 출력 (상점 토스트 알림)
+    // 아이템 구매 및 즉시 발동
+    function buyItem(type, cost) {
+        if (gameState !== 'PLAYING') return;
+
+        if (gold >= cost) {
+            gold -= cost;
+            if (type === 'emp') {
+                freezeTimer = 180; // 약 3초 정지 (60fps 기준)
+                showToast("❄️ EMP 발동! 적 시스템 마비!");
+                triggerGlobalEffect('rgba(0, 242, 254, 0.4)');
+            } else if (type === 'nuke') {
+                const nukeDamage = 150 + (wave * 25); // 웨이브 스케일링 데미지
+                enemies.forEach(e => e.hp -= nukeDamage);
+                showToast(`🚀 전술 핵 폭격! (${nukeDamage} 피해)`);
+                triggerGlobalEffect('rgba(255, 71, 87, 0.5)');
+                shakeDuration = 30;
+                shakeIntensity = 15;
+            }
+            updateUI();
+        } else {
+            showToast("에너지가 부족합니다!");
+        }
+    }
+
+    // 전역 시각 효과 트리거
+    function triggerGlobalEffect(color) {
+        globalEffectColor = color;
+        globalEffectAlpha = 1.0;
+    }
+
+    // 알림 스낵바
     function showToast(msg) {
         const toast = document.getElementById('toast');
         toast.innerText = msg;
         toast.style.opacity = '1';
-        setTimeout(() => toast.style.opacity = '0', 1500);
+        setTimeout(() => toast.style.opacity = '0', 1800);
     }
 
-    // 게임 시작 버튼 제어
     function startGame() {
         document.getElementById('start-overlay').classList.add('hidden');
         gameState = 'PLAYING';
@@ -379,6 +451,7 @@
         projectiles = [];
         particles = [];
         floatingTexts = [];
+        freezeTimer = 0;
         waveInProgress = false;
         nextWaveTimer = 3000;
         
@@ -392,7 +465,7 @@
         document.getElementById('ui-wave').innerText = wave;
     }
 
-    // 그리드 클릭 시 타워 배치 처리
+    // 그리드 클릭 처리 (배치 및 강화된 업그레이드)
     function handleGridClick(r, c) {
         if (r !== 1 && r !== 3) {
             showToast("타워 라인(배경 점선 구역)에만 설치 가능합니다!");
@@ -401,21 +474,39 @@
 
         if (grid[r][c] !== null) {
             const t = grid[r][c];
-            const upgradeCost = Math.floor(t.cost * 0.8);
+            
+            // MAX 레벨 제한 체크 (Lv.3)
+            if (t.level >= 3) {
+                showToast("MAX 레벨에 도달한 타워입니다!");
+                return;
+            }
+
+            // 업그레이드 비용 스케일링: 기본가 * 1.5^레벨
+            const upgradeCost = Math.floor(t.cost * Math.pow(1.5, t.level)); 
+            
             if (gold >= upgradeCost) {
                 gold -= upgradeCost;
                 t.level += 1;
-                t.damage = Math.floor(t.damage * 1.5);
-                t.range = Math.floor(t.range * 1.1);
-                spawnFloatingText(c * cellSize + cellSize/2, r * cellSize + 20, `LV ${t.level} UP!`, '#00f2fe');
-                createExplosion(c * cellSize + cellSize/2, r * cellSize + cellSize/2, t.color, 15);
+                t.damage = Math.floor(t.damage * 1.6); // 60% 데미지 증가
+                t.range = Math.floor(t.range * 1.15);  // 사거리 증가
+                
+                if (t.level === 3) {
+                    t.isMax = true;
+                    t.cooldown = Math.floor(t.cooldown * 0.75); // MAX 도달 시 쿨타임 25% 감소 보너스
+                    spawnFloatingText(c * cellSize + cellSize/2, r * cellSize + 10, `MAX LEVEL!`, '#ffd700');
+                    createExplosion(c * cellSize + cellSize/2, r * cellSize + cellSize/2, '#ffd700', 30);
+                } else {
+                    spawnFloatingText(c * cellSize + cellSize/2, r * cellSize + 20, `LV ${t.level} UP!`, '#00f2fe');
+                    createExplosion(c * cellSize + cellSize/2, r * cellSize + cellSize/2, t.color, 15);
+                }
                 updateUI();
             } else {
-                showToast(`업그레이드 비용 부족 (${upgradeCost} 필요)`);
+                showToast(`업그레이드 비용 부족 (${upgradeCost} 에너지 필요)`);
             }
             return;
         }
 
+        // 신규 타워 설치
         if (gold >= selectedTowerCost) {
             gold -= selectedTowerCost;
             const template = towerTemplates[selectedTowerType];
@@ -434,6 +525,7 @@
                 color: template.color,
                 bulletSpeed: template.bulletSpeed,
                 level: 1,
+                isMax: false,
                 cost: selectedTowerCost
             };
 
@@ -446,7 +538,7 @@
         }
     }
 
-    // 행 밀기 플립 메커니즘 (Shift Row)
+    // 진형 라인 밀어내기 (Shift Row)
     function shiftRow(r, direction) {
         if (r !== 1 && r !== 3) return;
 
@@ -556,6 +648,7 @@
 
     function update(dt) {
         if (shakeDuration > 0) shakeDuration--;
+        if (freezeTimer > 0) freezeTimer--;
 
         if (waveInProgress) {
             spawnTimer += dt;
@@ -583,6 +676,7 @@
             }
         }
 
+        // 타워 업데이트
         towers.forEach(t => {
             const targetX = t.gridX * cellSize + cellSize / 2;
             t.x += (targetX - t.x) * 0.2;
@@ -611,47 +705,55 @@
             }
         });
 
+        // 적 업데이트
         for (let i = enemies.length - 1; i >= 0; i--) {
             const e = enemies[i];
-            const nextNode = pathNodes[e.nodeIndex + 1];
-
-            if (!nextNode) {
-                lives -= (e.size > 15 ? 3 : 1);
-                shakeDuration = 15;
-                shakeIntensity = 8;
-                createExplosion(e.x, e.y, '#ff4757', 25);
-                enemies.splice(i, 1);
-                updateUI();
-
-                if (lives <= 0) {
-                    lives = 0;
-                    gameState = 'GAMEOVER';
-                    document.getElementById('final-wave').innerText = wave;
-                    document.getElementById('gameover-overlay').classList.remove('hidden');
-                }
-                continue;
-            }
-
-            const targetX = nextNode.x * cellSize;
-            const targetY = nextNode.y * cellSize;
-            const angle = Math.atan2(targetY - e.y, targetX - e.x);
-
-            e.x += Math.cos(angle) * e.speed;
-            e.y += Math.sin(angle) * e.speed;
-
-            if (Math.hypot(targetX - e.x, targetY - e.y) < e.speed * 1.5) {
-                e.nodeIndex++;
-            }
-
+            
+            // 핵 폭발 등으로 체력 고갈 확인
             if (e.hp <= 0) {
                 gold += e.reward;
                 createExplosion(e.x, e.y, e.color, 15);
                 spawnFloatingText(e.x, e.y - 10, `+${e.reward}`, '#ffd700');
                 enemies.splice(i, 1);
                 updateUI();
+                continue;
+            }
+
+            // EMP 정지 중일 때는 이동 안함
+            if (freezeTimer <= 0) {
+                const nextNode = pathNodes[e.nodeIndex + 1];
+
+                if (!nextNode) {
+                    lives -= (e.size > 15 ? 3 : 1);
+                    shakeDuration = 15;
+                    shakeIntensity = 8;
+                    createExplosion(e.x, e.y, '#ff4757', 25);
+                    enemies.splice(i, 1);
+                    updateUI();
+
+                    if (lives <= 0) {
+                        lives = 0;
+                        gameState = 'GAMEOVER';
+                        document.getElementById('final-wave').innerText = wave;
+                        document.getElementById('gameover-overlay').classList.remove('hidden');
+                    }
+                    continue;
+                }
+
+                const targetX = nextNode.x * cellSize;
+                const targetY = nextNode.y * cellSize;
+                const angle = Math.atan2(targetY - e.y, targetX - e.x);
+
+                e.x += Math.cos(angle) * e.speed;
+                e.y += Math.sin(angle) * e.speed;
+
+                if (Math.hypot(targetX - e.x, targetY - e.y) < e.speed * 1.5) {
+                    e.nodeIndex++;
+                }
             }
         }
 
+        // 투사체 업데이트
         for (let i = projectiles.length - 1; i >= 0; i--) {
             const p = projectiles[i];
             
@@ -708,15 +810,16 @@
                 target: target,
                 speed: t.bulletSpeed,
                 damage: t.damage,
-                splashRadius: 70,
+                splashRadius: 70 + (t.isMax ? 30 : 0), // MAX시 폭발 범위 증가
                 color: t.color,
                 type: 'bomb'
             });
         } 
         else if (t.type === 'tesla') {
             let chainTargets = [target];
+            const maxChains = t.isMax ? 5 : 3; // MAX시 연쇄 횟수 증가
             enemies.forEach(e => {
-                if (e !== target && chainTargets.length < 3 && Math.hypot(e.x - target.x, e.y - target.y) < 90) {
+                if (e !== target && chainTargets.length < maxChains && Math.hypot(e.x - target.x, e.y - target.y) < 100) {
                     chainTargets.push(e);
                 }
             });
@@ -746,22 +849,33 @@
         }
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // 아이템 글로벌 이펙트 렌더링
+        if (globalEffectAlpha > 0) {
+            ctx.fillStyle = globalEffectColor;
+            ctx.globalAlpha = globalEffectAlpha;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.globalAlpha = 1.0;
+            globalEffectAlpha -= 0.02; // 서서히 페이드 아웃
+        }
+
         drawMapBackground();
         drawPath();
 
         towers.forEach(t => {
-            ctx.shadowBlur = 10 + t.level * 2;
-            ctx.shadowColor = t.color;
+            const baseColor = t.isMax ? '#ffd700' : t.color; // MAX 레벨 시 황금색
+            ctx.shadowBlur = (10 + t.level * 3) + (t.isMax ? 10 : 0);
+            ctx.shadowColor = baseColor;
 
             ctx.fillStyle = '#1e293b';
-            ctx.strokeStyle = t.color;
-            ctx.lineWidth = 3;
+            ctx.strokeStyle = baseColor;
+            ctx.lineWidth = t.isMax ? 4 : 3;
             ctx.beginPath();
             ctx.arc(t.x, t.y, 22, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            ctx.fillStyle = t.color;
+            ctx.fillStyle = t.color; // 내부 코어는 원래 속성색 유지
             ctx.beginPath();
             if (t.type === 'plasma') {
                 ctx.arc(t.x, t.y, 10, 0, Math.PI*2);
@@ -775,30 +889,34 @@
             }
             ctx.fill();
 
+            // 가독성 높은 폰트 렌더링
             ctx.shadowBlur = 0;
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 11px sans-serif';
+            ctx.fillStyle = baseColor;
+            ctx.font = 'bold 13px Pretendard, sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(`Lv.${t.level}`, t.x, t.y + 35);
+            const levelText = t.isMax ? 'MAX' : `Lv.${t.level}`;
+            ctx.fillText(levelText, t.x, t.y + 38);
         });
 
         enemies.forEach(e => {
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = e.color;
-            ctx.fillStyle = e.color;
+            // 정지 상태일 경우 파란색 필터 효과
+            ctx.shadowBlur = freezeTimer > 0 ? 15 : 12;
+            ctx.shadowColor = freezeTimer > 0 ? '#00f2fe' : e.color;
+            ctx.fillStyle = freezeTimer > 0 ? '#00f2fe' : e.color;
+            
             ctx.beginPath();
             ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
             ctx.fill();
 
             ctx.shadowBlur = 0;
             const barW = e.size * 2;
-            const barH = 4;
-            ctx.fillStyle = 'rgba(0,0,0,0.5)';
-            ctx.fillRect(e.x - barW/2, e.y - e.size - 8, barW, barH);
+            const barH = 5;
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(e.x - barW/2, e.y - e.size - 10, barW, barH);
             
             const hpRatio = Math.max(0, e.hp / e.maxHp);
             ctx.fillStyle = '#00ff88';
-            ctx.fillRect(e.x - barW/2, e.y - e.size - 8, barW * hpRatio, barH);
+            ctx.fillRect(e.x - barW/2, e.y - e.size - 10, barW * hpRatio, barH);
         });
 
         projectiles.forEach(p => {
@@ -852,7 +970,7 @@
         floatingTexts.forEach(f => {
             ctx.fillStyle = f.color;
             ctx.globalAlpha = f.alpha;
-            ctx.font = 'bold 14px sans-serif';
+            ctx.font = 'bold 15px Pretendard, sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(f.text, f.x, f.y);
             ctx.globalAlpha = 1.0;
@@ -860,7 +978,7 @@
 
         if (!waveInProgress && nextWaveTimer > 0) {
             ctx.fillStyle = 'rgba(0, 242, 254, 0.15)';
-            ctx.fillRect(0, 0, canvas.width * (nextWaveTimer / 4000), 4);
+            ctx.fillRect(0, 0, canvas.width * (nextWaveTimer / 4000), 5);
         }
 
         drawRowControlArrows();
@@ -868,7 +986,7 @@
     }
 
     function drawMapBackground() {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
         ctx.lineWidth = 1;
         for (let i = 0; i <= cols; i++) {
             ctx.beginPath(); ctx.moveTo(i * cellSize, 0); ctx.lineTo(i * cellSize, canvas.height); ctx.stroke();
@@ -904,8 +1022,8 @@
     }
 
     function drawPath() {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-        ctx.lineWidth = 12;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 14;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.beginPath();
@@ -933,7 +1051,7 @@
             ctx.fill(); ctx.stroke();
             
             ctx.fillStyle = '#00f2fe';
-            ctx.font = 'bold 16px sans-serif';
+            ctx.font = 'bold 16px Pretendard, sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('◀', 8 + arrowW/2, y);
