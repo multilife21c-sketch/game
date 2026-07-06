@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>헥사 플립 (Hexa-Flip: Dynamic Defense) v1.4</title>
+    <title>헥사 플립 (Hexa-Flip: Dynamic Defense) v1.5</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <style>
         * {
@@ -80,6 +80,15 @@
         .value.gold { color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.4); }
         .value.lives { color: #ff4757; text-shadow: 0 0 10px rgba(255, 71, 87, 0.4); }
         .value.wave { color: #00f2fe; text-shadow: 0 0 10px rgba(0, 242, 254, 0.4); }
+        .value.speed { color: #00ff88; text-shadow: 0 0 10px rgba(0, 255, 136, 0.4); cursor: pointer; }
+        
+        .speed-btn-container {
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .speed-btn-container:active {
+            transform: scale(0.9);
+        }
 
         /* 하단 타워/아이템 선택 바 */
         #bottom-ui {
@@ -157,7 +166,6 @@
             pointer-events: none;
         }
         
-        /* 모달 패널 공통 */
         .panel {
             text-align: center;
             max-width: 90%;
@@ -183,7 +191,6 @@
         }
         .subtitle { color: #94a3b8; font-size: 14px; margin-bottom: 10px; }
         
-        /* 메인 로비 전용 UI */
         .resource-bar {
             background: rgba(0,0,0,0.5);
             padding: 12px;
@@ -199,7 +206,6 @@
             margin-bottom: 15px;
         }
 
-        /* 카드 UI (캐릭터/상점) */
         .card-list {
             display: flex;
             flex-direction: column;
@@ -264,13 +270,8 @@
             margin-top: 5px;
         }
         .btn-main:active { transform: scale(0.95); }
-        .btn-secondary {
-            background: transparent;
-            color: #94a3b8;
-            border: 1px solid #94a3b8;
-        }
+        .btn-secondary { background: transparent; color: #94a3b8; border: 1px solid #94a3b8; }
         
-        /* 알림 메시지 스낵바 */
         #toast {
             position: absolute;
             top: 80px;
@@ -291,6 +292,7 @@
 <body>
 
 <div id="game-container">
+    <!-- 상단 통계 수치 -->
     <div id="top-ui">
         <div class="ui-stat">
             <span class="label">Wave</span>
@@ -301,13 +303,20 @@
             <span id="ui-gold" class="value gold">250</span>
         </div>
         <div class="ui-stat">
-            <span class="label">Core Shield</span>
+            <span class="label">Shield</span>
             <span id="ui-lives" class="value lives">20</span>
+        </div>
+        <!-- 배속 설정 버튼 -->
+        <div class="ui-stat speed-btn-container" onclick="toggleGameSpeed()">
+            <span class="label">Speed ▶</span>
+            <span id="ui-speed" class="value speed">x1</span>
         </div>
     </div>
 
+    <!-- 메인 캔버스 -->
     <canvas id="gameCanvas" width="800" height="800"></canvas>
 
+    <!-- 하단 타워/아이템 목록 -->
     <div id="bottom-ui">
         <div class="action-btn tower-btn plasma selected" onclick="selectTower('plasma', 100)">
             <div class="icon"></div>
@@ -336,8 +345,10 @@
         </div>
     </div>
 
+    <!-- 스낵바 알림 -->
     <div id="toast">에너지가 부족합니다!</div>
 
+    <!-- 1. 메인 로비 오버레이 -->
     <div id="lobby-overlay" class="overlay">
         <div class="panel">
             <h1>HEXA-FLIP</h1>
@@ -354,18 +365,19 @@
         </div>
     </div>
 
+    <!-- 2. 캐릭터 선택 오버레이 -->
     <div id="character-overlay" class="overlay hidden">
         <div class="panel">
             <h1 style="font-size: 24px;">사령관 선택</h1>
             <p class="subtitle">고유 패시브 스킬로 전략을 구상하세요.</p>
             
-            <div class="card-list" id="character-list">
-                </div>
+            <div class="card-list" id="character-list"></div>
 
             <button class="btn-main btn-secondary" onclick="openMenu('lobby')">뒤로 가기</button>
         </div>
     </div>
 
+    <!-- 3. 연구소(상점) 오버레이 -->
     <div id="shop-overlay" class="overlay hidden">
         <div class="panel">
             <h1 style="font-size: 24px;">연구소</h1>
@@ -373,13 +385,13 @@
                 ⭐ 보유 코인: <span id="shop-starcoin">0</span>
             </div>
             
-            <div class="card-list" id="shop-list">
-                </div>
+            <div class="card-list" id="shop-list"></div>
 
             <button class="btn-main btn-secondary" onclick="openMenu('lobby')">뒤로 가기</button>
         </div>
     </div>
 
+    <!-- 4. 게임오버 오버레이 -->
     <div id="gameover-overlay" class="overlay hidden">
         <div class="panel">
             <h1 style="background: linear-gradient(45deg, #ff4757, #ff6b81); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">CORE DESTROYED</h1>
@@ -393,51 +405,35 @@
 </div>
 
 <script>
-    // --- 메타 데이터 (저장소) 관리 ---
     let metaData = {
         starCoin: 0,
         character: 'tech',
-        upgrades: {
-            coreLife: 0,   // MAX 5
-            startEnergy: 0,// MAX 5
-            towerDamage: 0 // MAX 5
-        }
+        upgrades: { coreLife: 0, startEnergy: 0, towerDamage: 0 }
     };
 
-    // 로컬 스토리지 데이터 로드
     function loadData() {
         try {
             const saved = localStorage.getItem('hexaFlipData');
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                metaData = { ...metaData, ...parsed };
-            }
-        } catch(e) { console.error("데이터 로드 실패", e); }
+            if (saved) { const parsed = JSON.parse(saved); metaData = { ...metaData, ...parsed }; }
+        } catch(e) {}
     }
 
-    // 로컬 스토리지 데이터 저장
     function saveData() {
-        try {
-            localStorage.setItem('hexaFlipData', JSON.stringify(metaData));
-            updateMenuUI();
-        } catch(e) { console.error("데이터 저장 실패", e); }
+        try { localStorage.setItem('hexaFlipData', JSON.stringify(metaData)); updateMenuUI(); } catch(e) {}
     }
 
-    // 사령관 데이터
     const commanders = {
         tech: { id: 'tech', name: '테크 (Tech)', desc: '시작 에너지가 50 증가합니다.', icon: '👩‍💻' },
         heavy: { id: 'heavy', name: '헤비 (Heavy)', desc: '코어 최대 쉴드가 10 증가합니다.', icon: '🛡️' },
         speed: { id: 'speed', name: '스피드 (Speed)', desc: '모든 타워의 공격 쿨타임 10% 감소.', icon: '⚡' }
     };
 
-    // 업그레이드 데이터
     const upgradeDefs = {
         coreLife: { id: 'coreLife', name: '코어 강화', desc: '코어 쉴드 +5 (최대 5레벨)', maxLevel: 5, baseCost: 100, icon: '❤️' },
         startEnergy: { id: 'startEnergy', name: '초기 자본', desc: '시작 에너지 +25 (최대 5레벨)', maxLevel: 5, baseCost: 150, icon: '🔋' },
         towerDamage: { id: 'towerDamage', name: '무기 개조', desc: '타워 기본 데미지 +10% (최대 5레벨)', maxLevel: 5, baseCost: 200, icon: '⚔️' }
     };
 
-    // --- 게임 캔버스 변수 ---
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
@@ -448,14 +444,15 @@
     let waveInProgress = false;
     let selectedTowerType = 'plasma';
     let selectedTowerCost = 100;
+    
+    // 배속 관리 변수
+    let gameSpeed = 1;
 
     let freezeTimer = 0;
     let globalEffectColor = null;
     let globalEffectAlpha = 0;
 
-    const cols = 6;
-    const rows = 6;
-    const cellSize = canvas.width / cols;
+    const cols = 6; const rows = 6; const cellSize = canvas.width / cols;
     let grid = Array(rows).fill(null).map(() => Array(cols).fill(null));
 
     const pathNodes = [
@@ -463,41 +460,32 @@
         {x: 0.5, y: 2.5}, {x: 0.5, y: 4.5}, {x: 5.5, y: 4.5}, {x: 5.5, y: 5.5}
     ];
 
-    let enemies = [];
-    let towers = [];
-    let projectiles = [];
-    let particles = [];
-    let floatingTexts = [];
+    let enemies = []; let towers = []; let projectiles = []; let particles = []; let floatingTexts = [];
 
-    let shakeDuration = 0;
-    let shakeIntensity = 0;
-    let lastTime = performance.now();
-    let spawnTimer = 0;
-    let enemiesToSpawn = 0;
-    let spawnInterval = 1000;
-    let nextWaveTimer = 3000;
+    let shakeDuration = 0; let shakeIntensity = 0; let lastTime = performance.now();
+    let spawnTimer = 0; let enemiesToSpawn = 0; let spawnInterval = 1000; let nextWaveTimer = 3000;
 
     const towerTemplates = {
         plasma: { name: '플라즈마', range: 160, damage: 2, cooldown: 12, color: '#00f2fe', bulletSpeed: 0 },
         blaster: { name: '블래스터', range: 220, damage: 35, cooldown: 60, color: '#ff4757', bulletSpeed: 7 },
         tesla: { name: '테슬라', range: 130, damage: 15, cooldown: 40, color: '#ffa500', bulletSpeed: 0 }
     };
+    
+    // 배속 조절 함수
+    function toggleGameSpeed() {
+        if (gameSpeed === 1) gameSpeed = 1.5;
+        else if (gameSpeed === 1.5) gameSpeed = 2;
+        else if (gameSpeed === 2) gameSpeed = 3;
+        else gameSpeed = 1;
+        
+        document.getElementById('ui-speed').innerText = `x${gameSpeed}`;
+    }
 
-    // --- UI 메뉴 제어 함수 ---
     function openMenu(menuName) {
         document.querySelectorAll('.overlay').forEach(el => el.classList.add('hidden'));
-        
-        if (menuName === 'lobby') {
-            document.getElementById('lobby-overlay').classList.remove('hidden');
-            gameState = 'LOBBY';
-            updateMenuUI();
-        } else if (menuName === 'character') {
-            document.getElementById('character-overlay').classList.remove('hidden');
-            renderCharacterList();
-        } else if (menuName === 'shop') {
-            document.getElementById('shop-overlay').classList.remove('hidden');
-            renderShopList();
-        }
+        if (menuName === 'lobby') { document.getElementById('lobby-overlay').classList.remove('hidden'); gameState = 'LOBBY'; updateMenuUI(); }
+        else if (menuName === 'character') { document.getElementById('character-overlay').classList.remove('hidden'); renderCharacterList(); }
+        else if (menuName === 'shop') { document.getElementById('shop-overlay').classList.remove('hidden'); renderShopList(); }
     }
 
     function updateMenuUI() {
@@ -506,88 +494,49 @@
     }
 
     function renderCharacterList() {
-        const container = document.getElementById('character-list');
-        container.innerHTML = '';
+        const container = document.getElementById('character-list'); container.innerHTML = '';
         Object.values(commanders).forEach(cmd => {
             const isActive = metaData.character === cmd.id;
-            const div = document.createElement('div');
-            div.className = `card ${isActive ? 'active' : ''}`;
-            div.onclick = () => {
-                metaData.character = cmd.id;
-                saveData();
-                renderCharacterList();
-            };
-            div.innerHTML = `
-                <div class="emoji">${cmd.icon}</div>
-                <div class="info">
-                    <h3>${cmd.name} ${isActive ? '<span style="color:#00f2fe">(선택됨)</span>' : ''}</h3>
-                    <p>${cmd.desc}</p>
-                </div>
-            `;
+            const div = document.createElement('div'); div.className = `card ${isActive ? 'active' : ''}`;
+            div.onclick = () => { metaData.character = cmd.id; saveData(); renderCharacterList(); };
+            div.innerHTML = `<div class="emoji">${cmd.icon}</div>
+                <div class="info"><h3>${cmd.name} ${isActive ? '<span style="color:#00f2fe">(선택됨)</span>' : ''}</h3><p>${cmd.desc}</p></div>`;
             container.appendChild(div);
         });
     }
 
     function renderShopList() {
-        const container = document.getElementById('shop-list');
-        container.innerHTML = '';
+        const container = document.getElementById('shop-list'); container.innerHTML = '';
         Object.values(upgradeDefs).forEach(upg => {
-            const currentLevel = metaData.upgrades[upg.id];
-            const cost = upg.baseCost * (currentLevel + 1);
-            const isMax = currentLevel >= upg.maxLevel;
-            const canBuy = !isMax && metaData.starCoin >= cost;
-
-            const div = document.createElement('div');
-            div.className = `card`;
-            div.innerHTML = `
-                <div class="emoji">${upg.icon}</div>
-                <div class="info">
-                    <h3>${upg.name} (Lv.${currentLevel}/${upg.maxLevel})</h3>
-                    <p>${upg.desc}</p>
-                </div>
-                <div class="action">
-                    ${isMax ? '<span style="color:#00f2fe; font-weight:bold; font-size:12px;">MAX</span>' : 
-                    `<button class="buy-btn" ${canBuy ? '' : 'disabled'} onclick="purchaseUpgrade('${upg.id}', ${cost})">
-                        ⭐ ${cost}
-                    </button>`}
-                </div>
-            `;
+            const currentLevel = metaData.upgrades[upg.id]; const cost = upg.baseCost * (currentLevel + 1);
+            const isMax = currentLevel >= upg.maxLevel; const canBuy = !isMax && metaData.starCoin >= cost;
+            const div = document.createElement('div'); div.className = `card`;
+            div.innerHTML = `<div class="emoji">${upg.icon}</div>
+                <div class="info"><h3>${upg.name} (Lv.${currentLevel}/${upg.maxLevel})</h3><p>${upg.desc}</p></div>
+                <div class="action">${isMax ? '<span style="color:#00f2fe; font-weight:bold; font-size:12px;">MAX</span>' : 
+                `<button class="buy-btn" ${canBuy ? '' : 'disabled'} onclick="purchaseUpgrade('${upg.id}', ${cost})">⭐ ${cost}</button>`}</div>`;
             container.appendChild(div);
         });
     }
 
     function purchaseUpgrade(id, cost) {
         if (metaData.starCoin >= cost && metaData.upgrades[id] < upgradeDefs[id].maxLevel) {
-            metaData.starCoin -= cost;
-            metaData.upgrades[id] += 1;
-            saveData();
-            renderShopList();
-            updateMenuUI();
-            showToast("업그레이드 완료!");
+            metaData.starCoin -= cost; metaData.upgrades[id] += 1; saveData(); renderShopList(); updateMenuUI(); showToast("업그레이드 완료!");
         }
     }
 
-    // --- 게임 플레이 함수 ---
     canvas.addEventListener('pointerdown', function(e) {
         if (gameState !== 'PLAYING') return;
-
         const rect = canvas.getBoundingClientRect();
         const mouseX = ((e.clientX - rect.left) / rect.width) * canvas.width;
         const mouseY = ((e.clientY - rect.top) / rect.height) * canvas.height;
-
         if (checkArrowClicks(mouseX, mouseY)) return;
-
-        const c = Math.floor(mouseX / cellSize);
-        const r = Math.floor(mouseY / cellSize);
-
-        if (c >= 0 && c < cols && r >= 0 && r < rows) {
-            handleGridClick(r, c);
-        }
+        const c = Math.floor(mouseX / cellSize); const r = Math.floor(mouseY / cellSize);
+        if (c >= 0 && c < cols && r >= 0 && r < rows) handleGridClick(r, c);
     });
 
     function selectTower(type, cost) {
-        selectedTowerType = type;
-        selectedTowerCost = cost;
+        selectedTowerType = type; selectedTowerCost = cost;
         document.querySelectorAll('.tower-btn').forEach(btn => btn.classList.remove('selected'));
         document.querySelector(`.tower-btn.${type}`).classList.add('selected');
     }
@@ -597,49 +546,33 @@
         if (gold >= cost) {
             gold -= cost;
             if (type === 'emp') {
-                freezeTimer = 180;
-                showToast("❄️ EMP 발동! 적 시스템 마비!");
-                triggerGlobalEffect('rgba(0, 242, 254, 0.4)');
+                freezeTimer = 180; showToast("❄️ EMP 발동! 적 시스템 마비!"); triggerGlobalEffect('rgba(0, 242, 254, 0.4)');
             } else if (type === 'nuke') {
-                const nukeDamage = 150 + (wave * 25);
-                enemies.forEach(e => e.hp -= nukeDamage);
-                showToast(`🚀 전술 핵 폭격! (${nukeDamage} 피해)`);
-                triggerGlobalEffect('rgba(255, 71, 87, 0.5)');
-                shakeDuration = 30;
-                shakeIntensity = 15;
+                const nukeDamage = 150 + (wave * 25); enemies.forEach(e => e.hp -= nukeDamage);
+                showToast(`🚀 전술 핵 폭격! (${nukeDamage} 피해)`); triggerGlobalEffect('rgba(255, 71, 87, 0.5)');
+                shakeDuration = 30; shakeIntensity = 15;
             }
             updateUI();
         } else { showToast("에너지가 부족합니다!"); }
     }
 
-    function triggerGlobalEffect(color) {
-        globalEffectColor = color;
-        globalEffectAlpha = 1.0;
-    }
+    function triggerGlobalEffect(color) { globalEffectColor = color; globalEffectAlpha = 1.0; }
 
     function showToast(msg) {
-        const toast = document.getElementById('toast');
-        toast.innerText = msg;
-        toast.style.opacity = '1';
+        const toast = document.getElementById('toast'); toast.innerText = msg; toast.style.opacity = '1';
         setTimeout(() => toast.style.opacity = '0', 1800);
     }
 
     function startGame() {
         document.querySelectorAll('.overlay').forEach(el => el.classList.add('hidden'));
-        gameState = 'PLAYING';
-        initGame();
-        if(wave === 1) animate(); // 최초 1회만 호출 보장
+        gameState = 'PLAYING'; initGame(); if(wave === 1) animate();
     }
 
     function initGame() {
-        // 사령관 및 연구소 패시브 적용
-        const cmd = metaData.character;
-        const upg = metaData.upgrades;
-
+        const cmd = metaData.character; const upg = metaData.upgrades;
         gold = 250 + (cmd === 'tech' ? 50 : 0) + (upg.startEnergy * 25);
         lives = 20 + (cmd === 'heavy' ? 10 : 0) + (upg.coreLife * 5);
         wave = 1;
-        
         enemies = []; towers = []; projectiles = []; particles = []; floatingTexts = [];
         freezeTimer = 0; waveInProgress = false; nextWaveTimer = 3000;
         grid = Array(rows).fill(null).map(() => Array(cols).fill(null));
@@ -654,21 +587,14 @@
 
     function handleGridClick(r, c) {
         if (r !== 1 && r !== 3) { showToast("타워 라인에만 설치 가능!"); return; }
-
         if (grid[r][c] !== null) {
             const t = grid[r][c];
             if (t.level >= 3) { showToast("MAX 레벨에 도달한 타워입니다!"); return; }
             const upgradeCost = Math.floor(t.cost * Math.pow(1.5, t.level)); 
-            
             if (gold >= upgradeCost) {
-                gold -= upgradeCost;
-                t.level += 1;
-                t.damage = Math.floor(t.damage * 1.6);
-                t.range = Math.floor(t.range * 1.15);
-                
+                gold -= upgradeCost; t.level += 1; t.damage = Math.floor(t.damage * 1.6); t.range = Math.floor(t.range * 1.15);
                 if (t.level === 3) {
-                    t.isMax = true;
-                    t.cooldown = Math.floor(t.cooldown * 0.75);
+                    t.isMax = true; t.cooldown = Math.floor(t.cooldown * 0.75);
                     spawnFloatingText(c * cellSize + cellSize/2, r * cellSize + 10, `MAX LEVEL!`, '#ffd700');
                     createExplosion(c * cellSize + cellSize/2, r * cellSize + cellSize/2, '#ffd700', 30);
                 } else {
@@ -681,42 +607,28 @@
         }
 
         if (gold >= selectedTowerCost) {
-            gold -= selectedTowerCost;
-            const template = towerTemplates[selectedTowerType];
-            
-            // 데미지 및 쿨타임 패시브 적용
+            gold -= selectedTowerCost; const template = towerTemplates[selectedTowerType];
             const damageMult = 1 + (metaData.upgrades.towerDamage * 0.10);
             const cooldownMult = metaData.character === 'speed' ? 0.9 : 1.0;
-
             const newTower = {
-                id: Date.now() + Math.random(),
-                type: selectedTowerType,
-                gridX: c, gridY: r,
+                id: Date.now() + Math.random(), type: selectedTowerType, gridX: c, gridY: r,
                 x: c * cellSize + cellSize / 2, y: r * cellSize + cellSize / 2,
-                range: template.range,
-                damage: Math.floor(template.damage * damageMult),
-                cooldown: Math.floor(template.cooldown * cooldownMult),
-                currentCooldown: 0,
-                color: template.color,
-                bulletSpeed: template.bulletSpeed,
-                level: 1, isMax: false, cost: selectedTowerCost
+                range: template.range, damage: Math.floor(template.damage * damageMult),
+                cooldown: Math.floor(template.cooldown * cooldownMult), currentCooldown: 0,
+                color: template.color, bulletSpeed: template.bulletSpeed, level: 1, isMax: false, cost: selectedTowerCost
             };
-            grid[r][c] = newTower;
-            towers.push(newTower);
-            createExplosion(newTower.x, newTower.y, newTower.color, 20);
-            updateUI();
+            grid[r][c] = newTower; towers.push(newTower);
+            createExplosion(newTower.x, newTower.y, newTower.color, 20); updateUI();
         } else { showToast("에너지가 부족합니다!"); }
     }
 
     function shiftRow(r, direction) {
         if (r !== 1 && r !== 3) return;
         if (direction === 'right') {
-            const last = grid[r][cols - 1];
-            for (let c = cols - 1; c > 0; c--) { grid[r][c] = grid[r][c - 1]; if (grid[r][c]) grid[r][c].gridX = c; }
+            const last = grid[r][cols - 1]; for (let c = cols - 1; c > 0; c--) { grid[r][c] = grid[r][c - 1]; if (grid[r][c]) grid[r][c].gridX = c; }
             grid[r][0] = last; if (last) last.gridX = 0;
         } else {
-            const first = grid[r][0];
-            for (let c = 0; c < cols - 1; c++) { grid[r][c] = grid[r][c + 1]; if (grid[r][c]) grid[r][c].gridX = c; }
+            const first = grid[r][0]; for (let c = 0; c < cols - 1; c++) { grid[r][c] = grid[r][c + 1]; if (grid[r][c]) grid[r][c].gridX = c; }
             grid[r][cols - 1] = first; if (first) first.gridX = cols - 1;
         }
         triggerRowBlurEffect(r);
@@ -738,70 +650,51 @@
     }
 
     function startNextWave() {
-        waveInProgress = true;
-        enemiesToSpawn = 5 + wave * 3;
-        spawnInterval = Math.max(300, 1000 - wave * 50);
-        spawnTimer = 0;
+        waveInProgress = true; enemiesToSpawn = 5 + wave * 3; spawnInterval = Math.max(300, 1000 - wave * 50); spawnTimer = 0;
     }
 
     function spawnEnemy() {
-        const hp = 30 + Math.pow(wave, 1.7) * 15;
-        const speed = 1.2 + Math.min(1.5, wave * 0.08);
+        const hp = 30 + Math.pow(wave, 1.7) * 15; const speed = 1.2 + Math.min(1.5, wave * 0.08);
         const currentType = wave % 3 === 0 ? 'heavy' : (Math.random() > 0.6 ? 'fast' : 'normal');
-
         let scaleHp = hp; let scaleSpeed = speed; let size = 14; let col = '#ff4757';
         if (currentType === 'fast') { scaleHp *= 0.6; scaleSpeed *= 1.5; col = '#00ff88'; size = 11; } 
         else if (currentType === 'heavy') { scaleHp *= 2.5; scaleSpeed *= 0.6; col = '#8a2be2'; size = 20; }
-
-        enemies.push({
-            x: pathNodes[0].x * cellSize, y: pathNodes[0].y * cellSize,
-            hp: scaleHp, maxHp: scaleHp, speed: scaleSpeed,
-            nodeIndex: 0, size: size, color: col, reward: 15 + wave * 2
-        });
+        enemies.push({ x: pathNodes[0].x * cellSize, y: pathNodes[0].y * cellSize, hp: scaleHp, maxHp: scaleHp, speed: scaleSpeed, nodeIndex: 0, size: size, color: col, reward: 15 + wave * 2 });
     }
 
     function createExplosion(x, y, color, count = 10) {
         for (let i = 0; i < count; i++) {
-            particles.push({
-                x: x, y: y, vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6,
-                radius: Math.random() * 3 + 2, color: color, alpha: 1, decay: Math.random() * 0.03 + 0.02
-            });
+            particles.push({ x: x, y: y, vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6, radius: Math.random() * 3 + 2, color: color, alpha: 1, decay: Math.random() * 0.03 + 0.02 });
         }
     }
 
     function spawnFloatingText(x, y, text, color) { floatingTexts.push({ x: x, y: y, text: text, color: color, alpha: 1, vy: -0.8 }); }
 
     function endGame() {
-        gameState = 'GAMEOVER';
-        const earnedCoins = wave * 10;
-        metaData.starCoin += earnedCoins;
-        saveData();
-
-        document.getElementById('final-wave').innerText = wave;
-        document.getElementById('earned-coin').innerText = earnedCoins;
-        document.getElementById('gameover-overlay').classList.remove('hidden');
+        gameState = 'GAMEOVER'; const earnedCoins = wave * 10; metaData.starCoin += earnedCoins; saveData();
+        document.getElementById('final-wave').innerText = wave; document.getElementById('earned-coin').innerText = earnedCoins; document.getElementById('gameover-overlay').classList.remove('hidden');
     }
 
     function update(dt) {
-        if (shakeDuration > 0) shakeDuration--;
-        if (freezeTimer > 0) freezeTimer--;
+        if (shakeDuration > 0) shakeDuration -= gameSpeed;
+        if (freezeTimer > 0) freezeTimer -= gameSpeed;
 
         if (waveInProgress) {
-            spawnTimer += dt;
+            spawnTimer += (dt * gameSpeed);
             if (spawnTimer >= spawnInterval) { spawnTimer = 0; if (enemiesToSpawn > 0) { spawnEnemy(); enemiesToSpawn--; } }
             if (enemiesToSpawn === 0 && enemies.length === 0) {
                 waveInProgress = false; wave++; nextWaveTimer = 4000; gold += 50 + wave * 10;
                 updateUI(); spawnFloatingText(canvas.width/2, canvas.height/2 - 50, "WAVE CLEAR!", "#ffd700");
             }
         } else {
-            nextWaveTimer -= dt;
+            nextWaveTimer -= (dt * gameSpeed);
             if (nextWaveTimer <= 0) { startNextWave(); updateUI(); }
         }
 
         towers.forEach(t => {
             const targetX = t.gridX * cellSize + cellSize / 2;
-            t.x += (targetX - t.x) * 0.2;
-            if (t.currentCooldown > 0) t.currentCooldown--;
+            t.x += (targetX - t.x) * Math.min(1, 0.2 * gameSpeed);
+            if (t.currentCooldown > 0) t.currentCooldown -= gameSpeed;
             if (t.currentCooldown <= 0) {
                 let target = null; let maxProgress = -1;
                 enemies.forEach(e => {
@@ -818,25 +711,19 @@
         for (let i = enemies.length - 1; i >= 0; i--) {
             const e = enemies[i];
             if (e.hp <= 0) {
-                gold += e.reward;
-                createExplosion(e.x, e.y, e.color, 15);
-                spawnFloatingText(e.x, e.y - 10, `+${e.reward}`, '#ffd700');
-                enemies.splice(i, 1); updateUI(); continue;
+                gold += e.reward; createExplosion(e.x, e.y, e.color, 15); spawnFloatingText(e.x, e.y - 10, `+${e.reward}`, '#ffd700'); enemies.splice(i, 1); updateUI(); continue;
             }
             if (freezeTimer <= 0) {
                 const nextNode = pathNodes[e.nodeIndex + 1];
                 if (!nextNode) {
-                    lives -= (e.size > 15 ? 3 : 1);
-                    shakeDuration = 15; shakeIntensity = 8;
-                    createExplosion(e.x, e.y, '#ff4757', 25);
-                    enemies.splice(i, 1); updateUI();
-                    if (lives <= 0) { lives = 0; endGame(); }
-                    continue;
+                    lives -= (e.size > 15 ? 3 : 1); shakeDuration = 15; shakeIntensity = 8;
+                    createExplosion(e.x, e.y, '#ff4757', 25); enemies.splice(i, 1); updateUI();
+                    if (lives <= 0) { lives = 0; endGame(); } continue;
                 }
                 const targetX = nextNode.x * cellSize; const targetY = nextNode.y * cellSize;
                 const angle = Math.atan2(targetY - e.y, targetX - e.x);
-                e.x += Math.cos(angle) * e.speed; e.y += Math.sin(angle) * e.speed;
-                if (Math.hypot(targetX - e.x, targetY - e.y) < e.speed * 1.5) e.nodeIndex++;
+                e.x += Math.cos(angle) * (e.speed * gameSpeed); e.y += Math.sin(angle) * (e.speed * gameSpeed);
+                if (Math.hypot(targetX - e.x, targetY - e.y) < (e.speed * gameSpeed * 1.5)) e.nodeIndex++;
             }
         }
 
@@ -846,7 +733,7 @@
                 if (enemies.length > 0) p.target = enemies[0]; else { projectiles.splice(i, 1); continue; }
             }
             const angle = Math.atan2(p.target.y - p.y, p.target.x - p.x);
-            p.x += Math.cos(angle) * p.speed; p.y += Math.sin(angle) * p.speed;
+            p.x += Math.cos(angle) * (p.speed * gameSpeed); p.y += Math.sin(angle) * (p.speed * gameSpeed);
             if (Math.hypot(p.target.x - p.x, p.target.y - p.y) < p.target.size) {
                 enemies.forEach(e => { if (Math.hypot(e.x - p.x, e.y - p.y) <= p.splashRadius) e.hp -= p.damage; });
                 createExplosion(p.x, p.y, p.color, 20); projectiles.splice(i, 1);
@@ -855,33 +742,30 @@
 
         for (let i = particles.length - 1; i >= 0; i--) {
             const p = particles[i];
-            p.x += p.vx; p.y += p.vy; p.alpha -= p.decay;
+            p.x += (p.vx * gameSpeed); p.y += (p.vy * gameSpeed); p.alpha -= (p.decay * gameSpeed);
             if (p.alpha <= 0) particles.splice(i, 1);
         }
 
         for (let i = floatingTexts.length - 1; i >= 0; i--) {
             const f = floatingTexts[i];
-            f.y += f.vy; f.alpha -= 0.02;
+            f.y += (f.vy * gameSpeed); f.alpha -= (0.02 * gameSpeed);
             if (f.alpha <= 0) floatingTexts.splice(i, 1);
         }
     }
 
     function fireTower(t, target) {
         if (t.type === 'plasma') {
-            target.hp -= t.damage;
-            particles.push({ type: 'laser', x1: t.x, y1: t.y, x2: target.x, y2: target.y, color: t.color, alpha: 1 });
+            target.hp -= t.damage; particles.push({ type: 'laser', x1: t.x, y1: t.y, x2: target.x, y2: target.y, color: t.color, alpha: 1 });
             if (Math.random() > 0.7) createExplosion(target.x, target.y, t.color, 2);
         } 
         else if (t.type === 'blaster') {
             projectiles.push({ x: t.x, y: t.y, target: target, speed: t.bulletSpeed, damage: t.damage, splashRadius: 70 + (t.isMax ? 30 : 0), color: t.color, type: 'bomb' });
         } 
         else if (t.type === 'tesla') {
-            let chainTargets = [target];
-            const maxChains = t.isMax ? 5 : 3;
+            let chainTargets = [target]; const maxChains = t.isMax ? 5 : 3;
             enemies.forEach(e => { if (e !== target && chainTargets.length < maxChains && Math.hypot(e.x - target.x, e.y - target.y) < 100) chainTargets.push(e); });
             chainTargets.forEach((ct, index) => {
-                ct.hp -= t.damage / (index + 1);
-                const sourceX = index === 0 ? t.x : chainTargets[index - 1].x; const sourceY = index === 0 ? t.y : chainTargets[index - 1].y;
+                ct.hp -= t.damage / (index + 1); const sourceX = index === 0 ? t.x : chainTargets[index - 1].x; const sourceY = index === 0 ? t.y : chainTargets[index - 1].y;
                 particles.push({ type: 'lightning', x1: sourceX, y1: sourceY, x2: ct.x, y2: ct.y, color: t.color, alpha: 1 });
             });
         }
@@ -895,7 +779,7 @@
         if (globalEffectAlpha > 0) {
             ctx.fillStyle = globalEffectColor; ctx.globalAlpha = globalEffectAlpha;
             ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.globalAlpha = 1.0;
-            globalEffectAlpha -= 0.02;
+            globalEffectAlpha -= 0.02 * gameSpeed;
         }
 
         drawMapBackground(); drawPath();
@@ -926,8 +810,8 @@
 
         projectiles.forEach(p => { ctx.shadowBlur = 10; ctx.shadowColor = p.color; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, Math.PI * 2); ctx.fill(); });
         particles.forEach(p => {
-            if (p.type === 'laser') { ctx.strokeStyle = p.color; ctx.lineWidth = 4 * p.alpha; ctx.shadowBlur = 15; ctx.shadowColor = p.color; ctx.beginPath(); ctx.moveTo(p.x1, p.y1); ctx.lineTo(p.x2, p.y2); ctx.stroke(); p.alpha -= 0.15; } 
-            else if (p.type === 'lightning') { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3 * p.alpha; ctx.shadowBlur = 15; ctx.shadowColor = p.color; ctx.beginPath(); ctx.moveTo(p.x1, p.y1); const midX = (p.x1 + p.x2) / 2 + (Math.random() - 0.5) * 30; const midY = (p.y1 + p.y2) / 2 + (Math.random() - 0.5) * 30; ctx.lineTo(midX, midY); ctx.lineTo(p.x2, p.y2); ctx.stroke(); p.alpha -= 0.12; }
+            if (p.type === 'laser') { ctx.strokeStyle = p.color; ctx.lineWidth = 4 * p.alpha; ctx.shadowBlur = 15; ctx.shadowColor = p.color; ctx.beginPath(); ctx.moveTo(p.x1, p.y1); ctx.lineTo(p.x2, p.y2); ctx.stroke(); p.alpha -= 0.15 * gameSpeed; } 
+            else if (p.type === 'lightning') { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3 * p.alpha; ctx.shadowBlur = 15; ctx.shadowColor = p.color; ctx.beginPath(); ctx.moveTo(p.x1, p.y1); const midX = (p.x1 + p.x2) / 2 + (Math.random() - 0.5) * 30; const midY = (p.y1 + p.y2) / 2 + (Math.random() - 0.5) * 30; ctx.lineTo(midX, midY); ctx.lineTo(p.x2, p.y2); ctx.stroke(); p.alpha -= 0.12 * gameSpeed; }
             else { ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha; ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1.0; }
         });
         ctx.shadowBlur = 0;
@@ -972,9 +856,7 @@
         requestAnimationFrame(animate);
     }
 
-    // 초기 실행
-    loadData();
-    openMenu('lobby');
+    loadData(); openMenu('lobby');
 
 </script>
 
