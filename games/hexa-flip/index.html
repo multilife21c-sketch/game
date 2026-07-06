@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>헥사 플립 (Hexa-Flip: Dynamic Defense) v1.1</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #060913;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #ffffff;
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            padding: 10px;
+        }
+        canvas {
+            background-color: rgba(10, 15, 30, 0.7);
+            border: 2px solid rgba(0, 242, 254, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.1);
+            max-width: 100%;
+            max-height: calc(100vh - 140px);
+            aspect-ratio: 1 / 1;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+        }
+        /* 상단 UI 정보 바 */
+        #top-ui {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px 20px;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+        }
+        .ui-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .ui-stat .label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #94a3b8;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+        .ui-stat .value {
+            font-size: 18px;
+            font-weight: 800;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+        .value.gold { color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.4); }
+        .value.lives { color: #ff4757; text-shadow: 0 0 10px rgba(255, 71, 87, 0.4); }
+        .value.wave { color: #00f2fe; text-shadow: 0 0 10px rgba(0, 242, 254, 0.4); }
+
+        /* 하단 타워 선택 바 */
+        #bottom-ui {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            justify-content: space-around;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .tower-btn {
+            flex: 1;
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .tower-btn:active, .tower-btn.selected {
+            background: rgba(0, 242, 254, 0.2);
+            border-color: #00f2fe;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+            transform: scale(0.95);
+        }
+        .tower-btn .icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 5px;
+            margin-bottom: 4px;
+        }
+        .tower-btn.plasma .icon { background: #00f2fe; box-shadow: 0 0 8px #00f2fe; }
+        .tower-btn.blaster .icon { background: #ff4757; box-shadow: 0 0 8px #ff4757; }
+        .tower-btn.tesla .icon { background: #ffa500; box-shadow: 0 0 8px #ffa500; }
+        .tower-btn .name {
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .tower-btn .cost {
+            font-size: 11px;
+            color: #ffd700;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+
+        /* 컨트롤 및 모달 오버레이 */
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 6, 23, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+        .overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .modal-content {
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
+            padding: 30px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid rgba(0, 242, 254, 0.3);
+            border-radius: 20px;
+            box-shadow: 0 0 40px rgba(0, 242, 254, 0.2);
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 900;
+            background: linear-gradient(45deg, #00f2fe, #4facfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        p {
+            color: #94a3b8;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        .btn-main {
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            color: #020617;
+            border: none;
+            padding: 12px 35px;
+            font-size: 15px;
+            font-weight: 700;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.4);
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+        .btn-main:active {
+            transform: scale(0.95);
+        }
+        
+        /* 알림 메시지 스낵바 */
+        #toast {
+            position: absolute;
+            top: 80px;
+            background: rgba(255, 71, 87, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="top-ui">
+        <div class="ui-stat">
+            <span class="label">Wave</span>
+            <span id="ui-wave" class="value wave">1</span>
+        </div>
+        <div class="ui-stat">
+            <span class="label">Energy (Gold)</span>
+            <span id="ui-gold" class="value gold">250</span>
+        </div>
+        <div class="ui-stat">
+            <span class="label">Core Shield</span>
+            <span id="ui-lives" class="value lives">20</span>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="800"></canvas>
+
+    <div id="bottom-ui">
+        <div class="tower-btn plasma selected" onclick="selectTower('plasma', 100)">
+            <div class="icon"></div>
+            <span class="name">플라즈마</span>
+            <span class="cost">⚡ 100</span>
+        </div>
+        <div class="tower-btn blaster" onclick="selectTower('blaster', 150)">
+            <div class="icon"></div>
+            <span class="name">블래스터</span>
+            <span class="cost">⚡ 150</span>
+        </div>
+        <div class="tower-btn tesla" onclick="selectTower('tesla', 200)">
+            <div class="icon"></div>
+            <span class="name">테슬라</span>
+            <span class="cost">⚡ 200</span>
+        </div>
+    </div>
+
+    <div id="toast">에너지가 부족합니다!</div>
+
+    <div id="start-overlay" class="overlay">
+        <div class="modal-content">
+            <h1>HEXA-FLIP</h1>
+            <p>실시간으로 지형을 밀어내어 적을 물리치는 신개념 디펜스!<br><br>
+               1. 하단 타워 선택 후 <b>설정 가능 구역(타워 라인)</b>을 터치해 배치하세요.<br>
+               2. 각 타워 라인 좌우의 <b>화살표[◀ ▶]</b>를 누르면 라인 전체가 회전하며 실시간 전략 이동이 가능합니다.<br>
+               3. 웨이브 도중 실시간 갱신 효과를 느껴보세요!
+            </p>
+            <button class="btn-main" onclick="startGame()">작전 개시</button>
+        </div>
+    </div>
+
+    <div id="gameover-overlay" class="overlay hidden">
+        <div class="modal-content">
+            <h1 style="background: linear-gradient(45deg, #ff4757, #ff6b81); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">CORE DESTROYED</h1>
+            <p>방어벽이 무너졌습니다.<br>당신의 기록: <span id="final-wave" style="color:#00f2fe; font-weight:bold;">1</span> Wave</p>
+            <button class="btn-main" onclick="restartGame()">다시 도전</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // 게임 상태 상수
+    let gameState = 'START'; // START, PLAYING, GAMEOVER
+    let gold = 250;
+    let lives = 20;
+    let wave = 1;
+    let waveInProgress = false;
+    let selectedTowerType = 'plasma';
+    let selectedTowerCost = 100;
+
+    // 그리드 설정 (6x6)
+    const cols = 6;
+    const rows = 6;
+    const cellSize = canvas.width / cols;
+
+    // 타일 구조 정의
+    let grid = Array(rows).fill(null).map(() => Array(cols).fill(null));
+
+    // 경로 노드 생성
+    const pathNodes = [
+        {x: 0.5, y: 0.5}, // 시작 (Row 0, Col 0 중앙)
+        {x: 5.5, y: 0.5}, // Row 0 끝
+        {x: 5.5, y: 2.5}, // 우측 통로 다운 (Row 2 끝으로)
+        {x: 0.5, y: 2.5}, // Row 2 끝 (좌측으로 이동)
+        {x: 0.5, y: 4.5}, // 좌측 통로 다운 (Row 4 시작으로)
+        {x: 5.5, y: 4.5}, // Row 4 끝
+        {x: 5.5, y: 5.5}  // 최종 코어 진입
+    ];
+
+    // 엔티티 배열
+    let enemies = [];
+    let towers = [];
+    let projectiles = [];
+    let particles = [];
+    let floatingTexts = [];
+
+    // 화면 쉐이크 효과
+    let shakeDuration = 0;
+    let shakeIntensity = 0;
+
+    // 오디오 대용 타이머/루프 관리 변수
+    let lastTime = performance.now();
+    let spawnTimer = 0;
+    let enemiesToSpawn = 0;
+    let spawnInterval = 1000;
+    let nextWaveTimer = 3000;
+
+    // 타워 데이터 템플릿
+    const towerTemplates = {
+        plasma: { name: '플라즈마', range: 160, damage: 2, cooldown: 12, color: '#00f2fe', bulletSpeed: 0 },
+        blaster: { name: '블래스터', range: 220, damage: 35, cooldown: 60, color: '#ff4757', bulletSpeed: 7 },
+        tesla: { name: '테슬라', range: 130, damage: 15, cooldown: 40, color: '#ffa500', bulletSpeed: 0 }
+    };
+
+    // 터치/클릭 좌표 보정 처리
+    canvas.addEventListener('pointerdown', function(e) {
+        if (gameState !== 'PLAYING') return;
+
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = ((e.clientX - rect.left) / rect.width) * canvas.width;
+        const mouseY = ((e.clientY - rect.top) / rect.height) * canvas.height;
+
+        // 화살표 조작 클릭 감지 (좌우 끝 여백 부분)
+        if (checkArrowClicks(mouseX, mouseY)) return;
+
+        // 그리드 좌표 계산
+        const c = Math.floor(mouseX / cellSize);
+        const r = Math.floor(mouseY / cellSize);
+
+        if (c >= 0 && c < cols && r >= 0 && r < rows) {
+            handleGridClick(r, c);
+        }
+    });
+
+    // 상점 타워 선택 변경
+    function selectTower(type, cost) {
+        selectedTowerType = type;
+        selectedTowerCost = cost;
+        document.querySelectorAll('.tower-btn').forEach(btn => btn.classList.remove('selected'));
+        document.querySelector(`.tower-btn.${type}`).classList.add('selected');
+    }
+
+    // 알림 스낵바 출력 (상점 토스트 알림)
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.style.opacity = '1';
+        setTimeout(() => toast.style.opacity = '0', 1500);
+    }
+
+    // 게임 시작 버튼 제어
+    function startGame() {
+        document.getElementById('start-overlay').classList.add('hidden');
+        gameState = 'PLAYING';
+        initGame();
+        animate();
+    }
+
+    function restartGame() {
+        document.getElementById('gameover-overlay').classList.add('hidden');
+        gameState = 'PLAYING';
+        initGame();
+    }
+
+    function initGame() {
+        gold = 250;
+        lives = 20;
+        wave = 1;
+        enemies = [];
+        towers = [];
+        projectiles = [];
+        particles = [];
+        floatingTexts = [];
+        waveInProgress = false;
+        nextWaveTimer = 3000;
+        
+        grid = Array(rows).fill(null).map(() => Array(cols).fill(null));
+        updateUI();
+    }
+
+    function updateUI() {
+        document.getElementById('ui-gold').innerText = gold;
+        document.getElementById('ui-lives').innerText = lives;
+        document.getElementById('ui-wave').innerText = wave;
+    }
+
+    // 그리드 클릭 시 타워 배치 처리
+    function handleGridClick(r, c) {
+        if (r !== 1 && r !== 3) {
+            showToast("타워 라인(배경 점선 구역)에만 설치 가능합니다!");
+            return;
+        }
+
+        if (grid[r][c] !== null) {
+            const t = grid[r][c];
+            const upgradeCost = Math.floor(t.cost * 0.8);
+            if (gold >= upgradeCost) {
+                gold -= upgradeCost;
+                t.level += 1;
+                t.damage = Math.floor(t.damage * 1.5);
+                t.range = Math.floor(t.range * 1.1);
+                spawnFloatingText(c * cellSize + cellSize/2, r * cellSize + 20, `LV ${t.level} UP!`, '#00f2fe');
+                createExplosion(c * cellSize + cellSize/2, r * cellSize + cellSize/2, t.color, 15);
+                updateUI();
+            } else {
+                showToast(`업그레이드 비용 부족 (${upgradeCost} 필요)`);
+            }
+            return;
+        }
+
+        if (gold >= selectedTowerCost) {
+            gold -= selectedTowerCost;
+            const template = towerTemplates[selectedTowerType];
+            
+            const newTower = {
+                id: Date.now() + Math.random(),
+                type: selectedTowerType,
+                gridX: c,
+                gridY: r,
+                x: c * cellSize + cellSize / 2,
+                y: r * cellSize + cellSize / 2,
+                range: template.range,
+                damage: template.damage,
+                cooldown: template.cooldown,
+                currentCooldown: 0,
+                color: template.color,
+                bulletSpeed: template.bulletSpeed,
+                level: 1,
+                cost: selectedTowerCost
+            };
+
+            grid[r][c] = newTower;
+            towers.push(newTower);
+            createExplosion(newTower.x, newTower.y, newTower.color, 20);
+            updateUI();
+        } else {
+            showToast("에너지가 부족합니다!");
+        }
+    }
+
+    // 행 밀기 플립 메커니즘 (Shift Row)
+    function shiftRow(r, direction) {
+        if (r !== 1 && r !== 3) return;
+
+        if (direction === 'right') {
+            const last = grid[r][cols - 1];
+            for (let c = cols - 1; c > 0; c--) {
+                grid[r][c] = grid[r][c - 1];
+                if (grid[r][c]) grid[r][c].gridX = c;
+            }
+            grid[r][0] = last;
+            if (last) last.gridX = 0;
+        } else {
+            const first = grid[r][0];
+            for (let c = 0; c < cols - 1; c++) {
+                grid[r][c] = grid[r][c + 1];
+                if (grid[r][c]) grid[r][c].gridX = c;
+            }
+            grid[r][cols - 1] = first;
+            if (first) first.gridX = cols - 1;
+        }
+        
+        triggerRowBlurEffect(r);
+    }
+
+    function checkArrowClicks(mx, my) {
+        const arrowW = 40;
+        const arrowH = 40;
+        const y1 = 1 * cellSize + cellSize / 2;
+        const y3 = 3 * cellSize + cellSize / 2;
+
+        if (mx > 5 && mx < 5 + arrowW && Math.abs(my - y1) < arrowH/2) { shiftRow(1, 'left'); return true; }
+        if (mx > canvas.width - 5 - arrowW && mx < canvas.width - 5 && Math.abs(my - y1) < arrowH/2) { shiftRow(1, 'right'); return true; }
+        if (mx > 5 && mx < 5 + arrowW && Math.abs(my - y3) < arrowH/2) { shiftRow(3, 'left'); return true; }
+        if (mx > canvas.width - 5 - arrowW && mx < canvas.width - 5 && Math.abs(my - y3) < arrowH/2) { shiftRow(3, 'right'); return true; }
+
+        return false;
+    }
+
+    function triggerRowBlurEffect(r) {
+        shakeDuration = 8;
+        shakeIntensity = 4;
+        for (let c = 0; c < cols; c++) {
+            createExplosion(c * cellSize + cellSize/2, r * cellSize + cellSize/2, '#00f2fe', 6);
+        }
+    }
+
+    function startNextWave() {
+        waveInProgress = true;
+        enemiesToSpawn = 5 + wave * 3;
+        spawnInterval = Math.max(300, 1000 - wave * 50);
+        spawnTimer = 0;
+    }
+
+    function spawnEnemy() {
+        const hp = 30 + Math.pow(wave, 1.7) * 15;
+        const speed = 1.2 + Math.min(1.5, wave * 0.08);
+        const types = ['normal', 'fast', 'heavy'];
+        const currentType = wave % 3 === 0 ? 'heavy' : (Math.random() > 0.6 ? 'fast' : 'normal');
+
+        let scaleHp = hp;
+        let scaleSpeed = speed;
+        let size = 14;
+        let col = '#ff4757';
+
+        if (currentType === 'fast') {
+            scaleHp *= 0.6;
+            scaleSpeed *= 1.5;
+            col = '#00ff88';
+            size = 11;
+        } else if (currentType === 'heavy') {
+            scaleHp *= 2.5;
+            scaleSpeed *= 0.6;
+            col = '#8a2be2';
+            size = 20;
+        }
+
+        enemies.push({
+            x: pathNodes[0].x * cellSize,
+            y: pathNodes[0].y * cellSize,
+            hp: scaleHp,
+            maxHp: scaleHp,
+            speed: scaleSpeed,
+            nodeIndex: 0,
+            size: size,
+            color: col,
+            reward: 15 + wave * 2
+        });
+    }
+
+    function createExplosion(x, y, color, count = 10) {
+        for (let i = 0; i < count; i++) {
+            particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 6,
+                vy: (Math.random() - 0.5) * 6,
+                radius: Math.random() * 3 + 2,
+                color: color,
+                alpha: 1,
+                decay: Math.random() * 0.03 + 0.02
+            });
+        }
+    }
+
+    function spawnFloatingText(x, y, text, color) {
+        floatingTexts.push({ x: x, y: y, text: text, color: color, alpha: 1, vy: -0.8 });
+    }
+
+    function update(dt) {
+        if (shakeDuration > 0) shakeDuration--;
+
+        if (waveInProgress) {
+            spawnTimer += dt;
+            if (spawnTimer >= spawnInterval) {
+                spawnTimer = 0;
+                if (enemiesToSpawn > 0) {
+                    spawnEnemy();
+                    enemiesToSpawn--;
+                }
+            }
+
+            if (enemiesToSpawn === 0 && enemies.length === 0) {
+                waveInProgress = false;
+                wave++;
+                nextWaveTimer = 4000;
+                gold += 50 + wave * 10;
+                updateUI();
+                spawnFloatingText(canvas.width/2, canvas.height/2 - 50, "WAVE CLEAR!", "#ffd700");
+            }
+        } else {
+            nextWaveTimer -= dt;
+            if (nextWaveTimer <= 0) {
+                startNextWave();
+                updateUI();
+            }
+        }
+
+        towers.forEach(t => {
+            const targetX = t.gridX * cellSize + cellSize / 2;
+            t.x += (targetX - t.x) * 0.2;
+            
+            if (t.currentCooldown > 0) t.currentCooldown--;
+
+            if (t.currentCooldown <= 0) {
+                let target = null;
+                let maxProgress = -1;
+
+                enemies.forEach(e => {
+                    const dist = Math.hypot(e.x - t.x, e.y - t.y);
+                    if (dist <= t.range) {
+                        const progress = e.nodeIndex * 1000 + (cellSize - Math.hypot(e.x - (pathNodes[Math.min(e.nodeIndex+1, pathNodes.length-1)].x*cellSize), e.y - (pathNodes[Math.min(e.nodeIndex+1, pathNodes.length-1)].y*cellSize)));
+                        if (progress > maxProgress) {
+                            maxProgress = progress;
+                            target = e;
+                        }
+                    }
+                });
+
+                if (target) {
+                    fireTower(t, target);
+                    t.currentCooldown = t.cooldown;
+                }
+            }
+        });
+
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            const e = enemies[i];
+            const nextNode = pathNodes[e.nodeIndex + 1];
+
+            if (!nextNode) {
+                lives -= (e.size > 15 ? 3 : 1);
+                shakeDuration = 15;
+                shakeIntensity = 8;
+                createExplosion(e.x, e.y, '#ff4757', 25);
+                enemies.splice(i, 1);
+                updateUI();
+
+                if (lives <= 0) {
+                    lives = 0;
+                    gameState = 'GAMEOVER';
+                    document.getElementById('final-wave').innerText = wave;
+                    document.getElementById('gameover-overlay').classList.remove('hidden');
+                }
+                continue;
+            }
+
+            const targetX = nextNode.x * cellSize;
+            const targetY = nextNode.y * cellSize;
+            const angle = Math.atan2(targetY - e.y, targetX - e.x);
+
+            e.x += Math.cos(angle) * e.speed;
+            e.y += Math.sin(angle) * e.speed;
+
+            if (Math.hypot(targetX - e.x, targetY - e.y) < e.speed * 1.5) {
+                e.nodeIndex++;
+            }
+
+            if (e.hp <= 0) {
+                gold += e.reward;
+                createExplosion(e.x, e.y, e.color, 15);
+                spawnFloatingText(e.x, e.y - 10, `+${e.reward}`, '#ffd700');
+                enemies.splice(i, 1);
+                updateUI();
+            }
+        }
+
+        for (let i = projectiles.length - 1; i >= 0; i--) {
+            const p = projectiles[i];
+            
+            if (!enemies.includes(p.target) && p.type !== 'tesla') {
+                if (enemies.length > 0) p.target = enemies[0];
+                else { projectiles.splice(i, 1); continue; }
+            }
+
+            const angle = Math.atan2(p.target.y - p.y, p.target.x - p.x);
+            p.x += Math.cos(angle) * p.speed;
+            p.y += Math.sin(angle) * p.speed;
+
+            if (Math.hypot(p.target.x - p.x, p.target.y - p.y) < p.target.size) {
+                enemies.forEach(e => {
+                    if (Math.hypot(e.x - p.x, e.y - p.y) <= p.splashRadius) {
+                        e.hp -= p.damage;
+                    }
+                });
+                createExplosion(p.x, p.y, p.color, 20);
+                projectiles.splice(i, 1);
+            }
+        }
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.alpha -= p.decay;
+            if (p.alpha <= 0) particles.splice(i, 1);
+        }
+
+        for (let i = floatingTexts.length - 1; i >= 0; i--) {
+            const f = floatingTexts[i];
+            f.y += f.vy;
+            f.alpha -= 0.02;
+            if (f.alpha <= 0) floatingTexts.splice(i, 1);
+        }
+    }
+
+    function fireTower(t, target) {
+        if (t.type === 'plasma') {
+            target.hp -= t.damage;
+            particles.push({
+                type: 'laser',
+                x1: t.x, y1: t.y,
+                x2: target.x, y2: target.y,
+                color: t.color, alpha: 1
+            });
+            if (Math.random() > 0.7) createExplosion(target.x, target.y, t.color, 2);
+        } 
+        else if (t.type === 'blaster') {
+            projectiles.push({
+                x: t.x, y: t.y,
+                target: target,
+                speed: t.bulletSpeed,
+                damage: t.damage,
+                splashRadius: 70,
+                color: t.color,
+                type: 'bomb'
+            });
+        } 
+        else if (t.type === 'tesla') {
+            let chainTargets = [target];
+            enemies.forEach(e => {
+                if (e !== target && chainTargets.length < 3 && Math.hypot(e.x - target.x, e.y - target.y) < 90) {
+                    chainTargets.push(e);
+                }
+            });
+
+            chainTargets.forEach((ct, index) => {
+                ct.hp -= t.damage / (index + 1);
+                const sourceX = index === 0 ? t.x : chainTargets[index - 1].x;
+                const sourceY = index === 0 ? t.y : chainTargets[index - 1].y;
+                
+                particles.push({
+                    type: 'lightning',
+                    x1: sourceX, y1: sourceY,
+                    x2: ct.x, y2: ct.y,
+                    color: t.color, alpha: 1
+                });
+            });
+        }
+    }
+
+    function draw() {
+        ctx.save();
+        
+        if (shakeDuration > 0) {
+            const dx = (Math.random() - 0.5) * shakeIntensity;
+            const dy = (Math.random() - 0.5) * shakeIntensity;
+            ctx.translate(dx, dy);
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawMapBackground();
+        drawPath();
+
+        towers.forEach(t => {
+            ctx.shadowBlur = 10 + t.level * 2;
+            ctx.shadowColor = t.color;
+
+            ctx.fillStyle = '#1e293b';
+            ctx.strokeStyle = t.color;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, 22, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = t.color;
+            ctx.beginPath();
+            if (t.type === 'plasma') {
+                ctx.arc(t.x, t.y, 10, 0, Math.PI*2);
+            } else if (t.type === 'blaster') {
+                ctx.rect(t.x - 9, t.y - 9, 18, 18);
+            } else {
+                ctx.moveTo(t.x, t.y - 12);
+                ctx.lineTo(t.x + 11, t.y + 8);
+                ctx.lineTo(t.x - 11, t.y + 8);
+                ctx.closePath();
+            }
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Lv.${t.level}`, t.x, t.y + 35);
+        });
+
+        enemies.forEach(e => {
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = e.color;
+            ctx.fillStyle = e.color;
+            ctx.beginPath();
+            ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+            const barW = e.size * 2;
+            const barH = 4;
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(e.x - barW/2, e.y - e.size - 8, barW, barH);
+            
+            const hpRatio = Math.max(0, e.hp / e.maxHp);
+            ctx.fillStyle = '#00ff88';
+            ctx.fillRect(e.x - barW/2, e.y - e.size - 8, barW * hpRatio, barH);
+        });
+
+        projectiles.forEach(p => {
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = p.color;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        particles.forEach(p => {
+            if (p.type === 'laser') {
+                ctx.strokeStyle = p.color;
+                ctx.lineWidth = 4 * p.alpha;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = p.color;
+                ctx.beginPath();
+                ctx.moveTo(p.x1, p.y1);
+                ctx.lineTo(p.x2, p.y2);
+                ctx.stroke();
+                p.alpha -= 0.15;
+            } 
+            else if (p.type === 'lightning') {
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 3 * p.alpha;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = p.color;
+                
+                ctx.beginPath();
+                ctx.moveTo(p.x1, p.y1);
+                const midX = (p.x1 + p.x2) / 2 + (Math.random() - 0.5) * 30;
+                const midY = (p.y1 + p.y2) / 2 + (Math.random() - 0.5) * 30;
+                ctx.lineTo(midX, midY);
+                ctx.lineTo(p.x2, p.y2);
+                ctx.stroke();
+                
+                p.alpha -= 0.12;
+            }
+            else {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.alpha;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        });
+        ctx.shadowBlur = 0;
+
+        floatingTexts.forEach(f => {
+            ctx.fillStyle = f.color;
+            ctx.globalAlpha = f.alpha;
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(f.text, f.x, f.y);
+            ctx.globalAlpha = 1.0;
+        });
+
+        if (!waveInProgress && nextWaveTimer > 0) {
+            ctx.fillStyle = 'rgba(0, 242, 254, 0.15)';
+            ctx.fillRect(0, 0, canvas.width * (nextWaveTimer / 4000), 4);
+        }
+
+        drawRowControlArrows();
+        ctx.restore();
+    }
+
+    function drawMapBackground() {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= cols; i++) {
+            ctx.beginPath(); ctx.moveTo(i * cellSize, 0); ctx.lineTo(i * cellSize, canvas.height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, i * cellSize); ctx.lineTo(canvas.width, i * cellSize); ctx.stroke();
+        }
+
+        ctx.fillStyle = 'rgba(0, 242, 254, 0.03)';
+        ctx.fillRect(0, 1 * cellSize, canvas.width, cellSize);
+        ctx.fillRect(0, 3 * cellSize, canvas.width, cellSize);
+
+        ctx.strokeStyle = 'rgba(0, 242, 254, 0.25)';
+        ctx.setLineDash([6, 6]);
+        ctx.lineWidth = 2;
+        [1, 2, 3, 4].forEach(r => {
+            ctx.beginPath(); ctx.moveTo(0, r * cellSize); ctx.lineTo(canvas.width, r * cellSize); ctx.stroke();
+        });
+        ctx.setLineDash([]);
+
+        const coreX = pathNodes[pathNodes.length-1].x * cellSize;
+        const coreY = pathNodes[pathNodes.length-1].y * cellSize;
+        
+        let pulseGlow = 15 + Math.sin(performance.now() / 150) * 5;
+        ctx.shadowBlur = pulseGlow;
+        ctx.shadowColor = '#ff4757';
+        ctx.fillStyle = 'rgba(255, 71, 87, 0.2)';
+        ctx.strokeStyle = '#ff4757';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(coreX, coreY, 35, 0, Math.PI*2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+
+    function drawPath() {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.lineWidth = 12;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        pathNodes.forEach((node, i) => {
+            if (i === 0) ctx.moveTo(node.x * cellSize, node.y * cellSize);
+            else ctx.lineTo(node.x * cellSize, node.y * cellSize);
+        });
+        ctx.stroke();
+    }
+
+    function drawRowControlArrows() {
+        const arrowW = 34;
+        const arrowH = 34;
+        const rowsToDraw = [1, 3];
+
+        rowsToDraw.forEach(r => {
+            const y = r * cellSize + cellSize / 2;
+
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+            ctx.strokeStyle = '#00f2fe';
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.roundRect(8, y - arrowH/2, arrowW, arrowH, 6);
+            ctx.fill(); ctx.stroke();
+            
+            ctx.fillStyle = '#00f2fe';
+            ctx.font = 'bold 16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('◀', 8 + arrowW/2, y);
+
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+            ctx.beginPath();
+            ctx.roundRect(canvas.width - 8 - arrowW, y - arrowH/2, arrowW, arrowH, 6);
+            ctx.fill(); ctx.stroke();
+            
+            ctx.fillStyle = '#00f2fe';
+            ctx.fillText('▶', canvas.width - 8 - arrowW/2, y);
+        });
+    }
+
+    function animate() {
+        if (gameState !== 'PLAYING') return;
+
+        const now = performance.now();
+        let dt = now - lastTime;
+        if (dt > 100) dt = 16;
+        lastTime = now;
+
+        update(dt);
+        draw();
+
+        requestAnimationFrame(animate);
+    }
+</script>
+
+</body>
+</html>
