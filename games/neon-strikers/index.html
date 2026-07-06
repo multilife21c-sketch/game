@@ -14,7 +14,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Jua&family=Outfit:wght@500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Jua&family=Outfit:wght@500;700;900&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#0d1b2a; --bg2:#14263b;
@@ -24,7 +24,7 @@
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;height:100%;height:100dvh;overflow:hidden;background:var(--bg);color:var(--ink);
-    font-family:'Outfit',system-ui,sans-serif;touch-action:none;user-select:none;}
+    font-family:'Outfit','Noto Sans KR',system-ui,sans-serif;touch-action:none;user-select:none;-webkit-font-smoothing:antialiased;}
   #app{position:fixed;inset:0;}
   canvas{display:block;position:absolute;inset:0;width:100%;height:100%;}
 
@@ -40,11 +40,11 @@
     background:linear-gradient(180deg,#fff,#ffd23f 60%,#ff8c42);
     -webkit-background-clip:text;background-clip:text;color:transparent;
     text-shadow:0 6px 0 rgba(0,0,0,.25);}
-  .logo small{display:block;font-family:'Jua';font-size:clamp(12px,min(3.4vw,4vh),20px);
+  .logo small{display:block;font-family:'Noto Sans KR';font-size:clamp(12px,min(3.4vw,4vh),20px);
     letter-spacing:3px;color:var(--muted);-webkit-text-fill-color:var(--muted);margin-top:6px;}
   .tip{color:var(--muted);font-size:14px;max-width:520px;text-align:center;line-height:1.5;}
 
-  .btn{font-family:'Jua';font-size:clamp(16px,min(4.6vw,5.5vh),22px);border:none;cursor:pointer;
+  .btn{font-family:'Noto Sans KR';font-size:clamp(16px,min(4.6vw,5.5vh),22px);border:none;cursor:pointer;
     color:#1a1205;padding:14px 30px;border-radius:16px;
     background:linear-gradient(180deg,#ffe071,#ffd23f);
     box-shadow:0 6px 0 #b88a13, 0 10px 22px rgba(0,0,0,.4);
@@ -65,7 +65,7 @@
   .card.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,210,63,.3),0 8px 20px rgba(0,0,0,.4);}
   .card .ava{width:54px;height:54px;border-radius:50%;margin:0 auto 8px;display:block;
     box-shadow:inset 0 -6px 0 rgba(0,0,0,.25);}
-  .card .nm{font-family:'Jua';text-align:center;font-size:15px;}
+  .card .nm{font-family:'Noto Sans KR';text-align:center;font-size:15px;}
   .card .role{text-align:center;font-size:11px;color:var(--muted);margin-top:2px;}
   .stats{display:flex;flex-direction:column;gap:5px;margin-top:9px;}
   .stat{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);}
@@ -83,7 +83,7 @@
   .topbar{position:absolute;top:max(10px,env(safe-area-inset-top));left:60px;right:60px;
     display:flex;justify-content:center;flex-wrap:wrap;gap:6px;padding:0 8px;}
   .badge{background:var(--panel);border:1px solid #2a4660;border-radius:12px;
-    padding:6px 12px;font-family:'Jua';font-size:14px;display:flex;align-items:center;gap:8px;}
+    padding:6px 12px;font-family:'Noto Sans KR';font-size:14px;display:flex;align-items:center;gap:8px;}
   .badge.alive b{color:var(--good);}
   .pill{position:absolute;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));
     max-width:44vw;background:var(--panel);border:1px solid #2a4660;border-radius:12px;padding:6px 10px;font-size:13px;color:var(--muted);
@@ -99,7 +99,7 @@
   .knob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;
     background:linear-gradient(180deg,#fff,#cfe);box-shadow:0 4px 10px rgba(0,0,0,.4);transition:opacity .15s;}
   #stickR .knob{background:linear-gradient(180deg,#ffd1de,#ff5c8a);}
-  .stick .lbl{position:absolute;left:0;right:0;bottom:-22px;text-align:center;font-family:'Jua';
+  .stick .lbl{position:absolute;left:0;right:0;bottom:-22px;text-align:center;font-family:'Noto Sans KR';
     font-size:12px;color:var(--muted);}
   #superBtn{position:absolute;right:max(160px,calc(env(safe-area-inset-right) + 158px));
     bottom:max(86px,calc(env(safe-area-inset-bottom) + 58px));
@@ -175,12 +175,12 @@
   .skillCard.lockedSkill{opacity:.55;border-style:dashed;border-color:#6a5a8a}
   .rareTag{font-size:9px;color:#ffd23f;margin-left:3px;background:rgba(179,136,255,.3);padding:1px 5px;border-radius:6px}
   .skillCard .ic{font-size:24px}
-  .skillCard .sn{font-family:'Jua';font-size:13px;margin-top:2px}
+  .skillCard .sn{font-family:'Noto Sans KR';font-size:13px;margin-top:2px}
   .skillCard .sd{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.25}
 
   /* Portrait / level */
   canvas.ava{border-radius:14px!important;background:radial-gradient(circle at 50% 30%,#1d3650,#0e1c2c);box-shadow:inset 0 -6px 0 rgba(0,0,0,.25);}
-  .lvtag{margin-top:6px;font-family:'Jua';font-size:11px;color:var(--accent);}
+  .lvtag{margin-top:6px;font-family:'Noto Sans KR';font-size:11px;color:var(--accent);}
   .xpmini{height:4px;border-radius:3px;background:#0a1521;overflow:hidden;margin-top:3px;}
   .xpmini i{display:block;height:100%;background:linear-gradient(90deg,#6fd3ff,#3ddc97);}
   /* Ranking / profile */
@@ -190,15 +190,15 @@
   .rrk{font-family:'Bungee';font-size:16px;width:34px;text-align:center;color:var(--muted);}
   .rrow.me .rrk{color:var(--accent);}
   .rrow.top{background:linear-gradient(90deg,rgba(255,210,63,.12),#142436);}
-  .rnk .rtier{font-size:11px;margin-left:8px;font-family:'Jua';opacity:.95;}
+  .rnk .rtier{font-size:11px;margin-left:8px;font-family:'Noto Sans KR';opacity:.95;}
   .rankHead{background:linear-gradient(160deg,#16314a,#0e1c2c);border:2px solid #2a4660;border-radius:16px;padding:14px;margin-bottom:10px;text-align:center;}
   .rhTier{font-family:'Bungee';font-size:22px;}
-  .rhTr{font-family:'Jua';font-size:18px;color:#ffd23f;margin-top:2px;}
+  .rhTr{font-family:'Noto Sans KR';font-size:18px;color:#ffd23f;margin-top:2px;}
   .rhBar{height:10px;border-radius:6px;background:#0a1521;overflow:hidden;margin:8px 0 6px;}
   .rhBar i{display:block;height:100%;border-radius:6px;}
   .rhSub{font-size:12px;color:var(--muted);}
-  .rnk{font-family:'Jua';flex:1;}
-  .rtr{font-family:'Jua';color:#ffd23f;}
+  .rnk{font-family:'Noto Sans KR';flex:1;}
+  .rtr{font-family:'Noto Sans KR';color:#ffd23f;}
   .card{position:relative;}
   .card.locked{opacity:.5;}
   .lockbadge{position:absolute;top:8px;right:8px;font-size:18px;}
@@ -206,18 +206,18 @@
   .shopCard{background:#142436;border:2px solid #28415c;border-radius:14px;padding:10px;text-align:center;}
   .shopCard.owned{border-color:var(--good);}
   .shopCard canvas{width:56px;height:56px;}
-  .shopCard .nm{font-family:'Jua';font-size:14px;margin-top:4px;}
-  .shopCard .pbtn{margin-top:8px;width:100%;font-family:'Jua';font-size:13px;border:none;border-radius:10px;padding:8px;cursor:pointer;background:linear-gradient(180deg,#ffe071,#ffd23f);color:#3a2a05;}
+  .shopCard .nm{font-family:'Noto Sans KR';font-size:14px;margin-top:4px;}
+  .shopCard .pbtn{margin-top:8px;width:100%;font-family:'Noto Sans KR';font-size:13px;border:none;border-radius:10px;padding:8px;cursor:pointer;background:linear-gradient(180deg,#ffe071,#ffd23f);color:#3a2a05;}
   .shopCard .pbtn.dis{background:#26405a;color:#9fb3c8;cursor:default;}
   .skinSwatch{width:56px;height:56px;border-radius:14px;margin:0 auto;border:2px solid rgba(255,255,255,.3);}
   .btn.shopTab.on{background:var(--accent);color:#1a1300;}
   .pbtn.alt2{background:linear-gradient(180deg,#9fe3ff,#3aa0e0);color:#06243a;}
-  .loadoutBar{grid-column:1/-1;background:#102132;border:1px solid #28415c;border-radius:12px;padding:9px 12px;font-family:'Jua';text-align:center;font-size:15px;}
+  .loadoutBar{grid-column:1/-1;background:#102132;border:1px solid #28415c;border-radius:12px;padding:9px 12px;font-family:'Noto Sans KR';text-align:center;font-size:15px;}
   .shopCard .ciIcon{font-size:30px;}
   .shopCard .ciOwn{font-size:10px;color:var(--accent);margin-top:4px;}
   .gachaResult{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px;min-height:96px;}
   .gcard{width:86px;padding:12px 6px;border-radius:14px;text-align:center;animation:pop .4s ease;box-shadow:0 6px 16px rgba(0,0,0,.4);}
-  .gcard .gi{font-size:30px;} .gcard .gt{font-size:11px;font-family:'Jua';margin-top:5px;}
+  .gcard .gi{font-size:30px;} .gcard .gt{font-size:11px;font-family:'Noto Sans KR';margin-top:5px;}
   .gcard .gsw{width:36px;height:36px;border-radius:9px;margin:0 auto;border:2px solid rgba(255,255,255,.4);}
   @keyframes pop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
   .rar-epic{background:linear-gradient(180deg,#ffd86b,#e8a92b);color:#3a2a05;}
@@ -230,23 +230,23 @@
   .ultCard.ult-g1{border-color:#4aa0e0;}
   .ultCard.ult-g2{border-color:#b388ff;}
   .ultCard.ult-g3{border-color:#ffd23f;box-shadow:0 0 14px rgba(255,210,63,.35);}
-  .profilePill{font-family:'Jua';background:var(--panel);border:1px solid #2a4660;border-radius:12px;padding:8px 14px;font-size:14px;text-align:center;line-height:1.5;}
+  .profilePill{font-family:'Noto Sans KR';background:var(--panel);border:1px solid #2a4660;border-radius:12px;padding:8px 14px;font-size:14px;text-align:center;line-height:1.5;}
   /* Quests */
   .qsec{font-family:'Bungee';font-size:15px;margin:14px 0 8px;color:var(--accent);}
   .qcard{background:#142436;border:1px solid #28415c;border-radius:14px;padding:10px 12px;margin-bottom:8px;}
   .qcard.qdone{border-color:var(--good);opacity:.85;}
-  .qn{font-family:'Jua';font-size:14px;margin-bottom:6px;}
+  .qn{font-family:'Noto Sans KR';font-size:14px;margin-bottom:6px;}
   .qbarwrap{height:8px;background:#0a1521;border-radius:5px;overflow:hidden;}
   .qbar{height:100%;border-radius:5px;background:linear-gradient(90deg,#3ddc97,#ffd23f);}
   .qmeta{font-size:11px;color:var(--muted);margin-top:5px;}
   #questBody{width:min(560px,100%);max-height:62vh;overflow-y:auto;padding:4px;}
-  .coinPill{font-family:'Jua';background:var(--panel);border:1px solid #2a4660;border-radius:12px;padding:6px 14px;font-size:16px;}
+  .coinPill{font-family:'Noto Sans KR';background:var(--panel);border:1px solid #2a4660;border-radius:12px;padding:6px 14px;font-size:16px;}
   #toast{position:fixed;left:50%;top:14%;transform:translateX(-50%) translateY(-12px);z-index:50;
-    background:rgba(13,27,42,.95);border:1px solid var(--good);color:#fff;font-family:'Jua';font-size:14px;
+    background:rgba(13,27,42,.95);border:1px solid var(--good);color:#fff;font-family:'Noto Sans KR';font-size:14px;
     padding:10px 18px;border-radius:14px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;box-shadow:0 8px 24px rgba(0,0,0,.5);}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .advGrid{display:grid;grid-template-columns:repeat(4,minmax(78px,1fr));gap:8px;max-width:480px;width:94vw;max-height:56vh;overflow-y:auto;padding:4px}
-  .advCard{position:relative;background:#142436;border:2px solid #28415c;border-radius:13px;padding:8px 5px;text-align:center;font-family:'Jua';cursor:pointer;transition:transform .1s}
+  .advCard{position:relative;background:#142436;border:2px solid #28415c;border-radius:13px;padding:8px 5px;text-align:center;font-family:'Noto Sans KR';cursor:pointer;transition:transform .1s}
   .advCard:hover{transform:translateY(-2px)}
   .advCard .rg{font-size:10px;color:var(--muted)}
   .advCard .nm{font-size:12px;color:#eaf6ff;margin:2px 0;line-height:1.2}
@@ -256,10 +256,10 @@
   .advCard.next{border-color:#ffd23f;box-shadow:0 0 12px rgba(255,210,63,.4);animation:pulse 1.4s infinite}
   .advCard.locked{opacity:.42;cursor:not-allowed}
   .advCard.bossCard{background:linear-gradient(135deg,rgba(255,92,92,.12),rgba(20,36,54,1))}
-  .attStreak{font-family:'Jua';font-size:16px;color:#ffd23f;background:rgba(255,210,63,.1);
+  .attStreak{font-family:'Noto Sans KR';font-size:16px;color:#ffd23f;background:rgba(255,210,63,.1);
     border:1px solid rgba(255,210,63,.35);border-radius:12px;padding:8px 16px;margin-bottom:10px;text-align:center}
   .attBoard{display:grid;grid-template-columns:repeat(4,minmax(72px,1fr));gap:8px;max-width:440px;width:92vw}
-  .attCard{position:relative;background:#142436;border:2px solid #28415c;border-radius:13px;padding:9px 4px;text-align:center;font-family:'Jua'}
+  .attCard{position:relative;background:#142436;border:2px solid #28415c;border-radius:13px;padding:9px 4px;text-align:center;font-family:'Noto Sans KR'}
   .attCard .ad{font-size:11px;color:var(--muted)}
   .attCard .ai{font-size:21px;margin:3px 0}
   .attCard .ar{font-size:11px;color:#cfe3f5}
@@ -272,7 +272,7 @@
   #killBanner.show{animation:kbAnim 1.7s ease forwards;}
   @keyframes kbAnim{0%{opacity:0;transform:translateX(-50%) scale(.5)}14%{opacity:1;transform:translateX(-50%) scale(1.12)}28%{transform:translateX(-50%) scale(1)}82%{opacity:1}100%{opacity:0}}
   #killBanner .kbMain{font-family:'Bungee';font-size:clamp(24px,min(8vw,9vh),54px);text-shadow:0 3px 14px rgba(0,0,0,.65);display:block;}
-  #killBanner .kbSub{font-family:'Jua';font-size:16px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.6);}
+  #killBanner .kbSub{font-family:'Noto Sans KR';font-size:16px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.6);}
   #gachaCele{position:fixed;inset:0;z-index:60;pointer-events:none;opacity:0;display:flex;align-items:center;justify-content:center;overflow:hidden;}
   #gachaCele.show{animation:celeFade 1.9s ease forwards;}
   @keyframes celeFade{0%{opacity:0}10%{opacity:1}80%{opacity:1}100%{opacity:0}}
@@ -297,6 +297,7 @@
 #accountBtn{display:none !important;}</style>
 </head>
 <body>
+<div id="ver" style="position:fixed;top:5px;left:8px;z-index:40;font-family:'Outfit',sans-serif;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,.4);pointer-events:none;">NEON STRIKERS <span id="vernum">v1.1</span></div>
 <div id="app">
   <canvas id="cv"></canvas>
   <div id="toast"></div>
@@ -635,6 +636,7 @@ let DPR = Math.min(window.devicePixelRatio||1, 2);
 let VW = 0, VH = 0;                 // viewport(px)
 const WORLD = { w:2200, h:1500 };   // 고정 월드 크기
 const cam = { x:0, y:0, zoom:1, zoomBase:1, zoomPunch:0, sx:0, sy:0 };
+const GAME_VERSION='v1.1'; try{document.getElementById('vernum').textContent=GAME_VERSION;}catch(e){}
 let rings=[], flashes=[], beams=[], swings=[], screenFlash=0, shake=0, hitstop=0, hurtV=0;
 // 분위기 입자(테마빛 반딧불/먼지) — 카메라 주변을 떠다님
 let ambient=[];
@@ -2493,7 +2495,7 @@ function drawItem(it){
   ctx.fillStyle="rgba(255,255,255,.7)"; ctx.beginPath();ctx.moveTo(0,-it.r);ctx.lineTo(it.r*0.7,0);ctx.lineTo(0,0);ctx.closePath();ctx.fill();
   if(it.hp<it.maxHp){ ctx.strokeStyle="rgba(11,58,74,.85)"; ctx.lineWidth=1.5;
     ctx.beginPath();ctx.moveTo(0,-it.r*0.5);ctx.lineTo(it.r*0.2,0);ctx.lineTo(-it.r*0.15,it.r*0.4);ctx.stroke(); }
-  ctx.fillStyle="#eaffff"; ctx.font="bold 9px Jua,sans-serif"; ctx.textAlign="center"; ctx.fillText("XP",0,it.r+11);
+  ctx.fillStyle="#eaffff"; ctx.font="bold 11px Noto Sans KR,sans-serif"; ctx.textAlign="center"; ctx.fillText("XP",0,it.r+11);
   ctx.restore();
 }
 function drawBreakable(cr){ const hp=cr.hp/cr.maxHp, hit=cr.hit>0;
@@ -2512,7 +2514,7 @@ function drawBreakable(cr){ const hp=cr.hp/cr.maxHp, hit=cr.hit>0;
     ctx.beginPath(); ctx.moveTo(-s*0.4,-s); ctx.lineTo(-s*0.2,0); ctx.lineTo(-s*0.5,s*0.6); ctx.stroke(); }
   if(hp<0.3){ ctx.beginPath(); ctx.moveTo(s*0.5,-s); ctx.lineTo(s*0.3,s*0.2); ctx.stroke(); }
   // 물음표(아이템 들었다는 힌트)
-  ctx.fillStyle='rgba(255,240,200,.85)'; ctx.font='bold 16px Jua,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='rgba(255,240,200,.85)'; ctx.font='bold 16px Noto Sans KR,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillText('?',0,1); ctx.textBaseline='alphabetic';
   ctx.restore();
 }
@@ -2526,7 +2528,7 @@ function drawDrop(dp){ const bob=Math.sin(dp.bob)*3, fade=dp.life<2?dp.life/2:1;
   ctx.fillStyle='rgba(10,21,33,.85)'; ctx.beginPath(); ctx.arc(0,0,dp.r,0,7); ctx.fill();
   ctx.strokeStyle=dp.type.color; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(0,0,dp.r,0,7); ctx.stroke();
   // 아이콘
-  ctx.font='15px Jua,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(dp.type.icon,0,1);
+  ctx.font='15px Noto Sans KR,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(dp.type.icon,0,1);
   ctx.textBaseline='alphabetic'; ctx.restore();
 }
 function breakItem(it, by){
@@ -2679,7 +2681,7 @@ function render(){
     traps.forEach(tp=>{ const pulse=0.5+0.5*Math.sin(tp.t*5);
       ctx.fillStyle="rgba(255,92,138,"+(0.12+pulse*0.12)+")"; ctx.beginPath();ctx.arc(tp.x,tp.y,tp.r,0,7);ctx.fill();
       ctx.lineWidth=3; ctx.strokeStyle="#ff5c8a"; ctx.setLineDash([8,6]); ctx.beginPath();ctx.arc(tp.x,tp.y,tp.r,0,7);ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle="#ff5c8a"; ctx.font="bold 20px Jua,sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillStyle="#ff5c8a"; ctx.font="bold 20px Noto Sans KR,sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
       ctx.fillText("⚠️",tp.x,tp.y); ctx.textBaseline="alphabetic"; });
     ctx.restore();
   }
@@ -2694,14 +2696,14 @@ function render(){
   totems.forEach(tm=>{ const pul=0.6+0.4*Math.sin(performance.now()/200);
     ctx.globalAlpha=0.1; ctx.fillStyle="#7dffb0"; ctx.beginPath();ctx.arc(tm.x,tm.y,tm.radius,0,7);ctx.fill(); ctx.globalAlpha=1;
     ctx.fillStyle="#2f9e44"; roundRect(tm.x-7,tm.y-16,14,22,4); ctx.fill();
-    ctx.fillStyle="#7dffb0"; ctx.font="16px Jua,sans-serif"; ctx.textAlign="center"; ctx.fillText("✚",tm.x,tm.y-2);
+    ctx.fillStyle="#7dffb0"; ctx.font="16px Noto Sans KR,sans-serif"; ctx.textAlign="center"; ctx.fillText("✚",tm.x,tm.y-2);
     ctx.strokeStyle="rgba(125,255,176,"+pul+")"; ctx.lineWidth=2; ctx.beginPath();ctx.arc(tm.x,tm.y,tm.radius*pul,0,7);ctx.stroke(); });
   // 자동 터렛
   turrets.forEach(tr=>{ ctx.save(); ctx.translate(tr.x,tr.y);
     ctx.fillStyle="#5a6470"; ctx.beginPath();ctx.arc(0,0,12,0,7);ctx.fill();
     ctx.rotate(tr.ang); ctx.fillStyle=tr.color; roundRect(0,-4,22,8,3); ctx.fill();
     ctx.restore();
-    ctx.fillStyle="#ffd43b"; ctx.font="11px Jua,sans-serif"; ctx.textAlign="center"; ctx.fillText("🔫",tr.x,tr.y-16); });
+    ctx.fillStyle="#ffd43b"; ctx.font="11px Noto Sans KR,sans-serif"; ctx.textAlign="center"; ctx.fillText("🔫",tr.x,tr.y-16); });
   // 운석 낙하 예고 마커
   meteors.forEach(m=>{ const k=1-Math.max(0,Math.min(1,m.delay/1.0));
     ctx.save(); ctx.globalAlpha=0.25+0.25*Math.sin(performance.now()/60);
@@ -2862,7 +2864,7 @@ function render(){
     const pop=1+Math.max(0,(f.life-0.72))/0.18*0.8; const fs=Math.round(20*(f.scale||1)*pop);
     if(f.tilt===undefined) f.tilt=(Math.random()-0.5)*0.16;
     ctx.save(); ctx.translate(f.x,f.y); ctx.rotate(f.tilt*Math.min(1,pop-0.9));
-    ctx.font="900 "+fs+"px Jua, sans-serif"; ctx.textAlign="center";
+    ctx.font="900 "+fs+"px Noto Sans KR, sans-serif"; ctx.textAlign="center";
     // 그림자
     ctx.fillStyle="rgba(0,0,0,.45)"; ctx.fillText(f.txt,2,3);
     ctx.lineWidth=4.5; ctx.strokeStyle="rgba(0,0,0,.65)"; ctx.lineJoin="round";
@@ -2899,7 +2901,12 @@ function render(){
     const lg=ctx.createRadialGradient(VW/2,VH/2,Math.min(VW,VH)*0.3,VW/2,VH/2,Math.max(VW,VH)*0.7);
     lg.addColorStop(0,"rgba(255,0,0,0)"); lg.addColorStop(1,"rgba(255,30,30,"+lp+")"); ctx.fillStyle=lg; ctx.fillRect(0,0,VW,VH); }
   if(screenFlash>0.01){ ctx.save(); ctx.globalCompositeOperation="lighter";
-    ctx.fillStyle="rgba(255,255,255,"+screenFlash+")"; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
+    // 흰 전체 번쩍임 대신 가장자리 글로우 (중앙 투명 → 눈부심 완화)
+    const a=Math.min(0.45,screenFlash)*0.55;
+    const g=ctx.createRadialGradient(VW/2,VH/2,Math.min(VW,VH)*0.40,VW/2,VH/2,Math.max(VW,VH)*0.66);
+    g.addColorStop(0,"rgba(150,220,255,0)");
+    g.addColorStop(1,"rgba(150,220,255,"+a.toFixed(3)+")");
+    ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
   if(hurtV>0.01){ const g=ctx.createRadialGradient(VW/2,VH/2,Math.min(VW,VH)*0.3,VW/2,VH/2,Math.max(VW,VH)*0.7);
     g.addColorStop(0,"rgba(255,40,40,0)"); g.addColorStop(1,"rgba(255,20,20,"+(hurtV*0.5)+")");
     ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH); }
@@ -2914,11 +2921,11 @@ function render(){
     ctx.fillStyle="rgba(0,0,0,.35)"; ctx.fillRect(0,0,VW,VH);
     ctx.translate(VW/2, VH/2); ctx.scale(pop,pop);
     ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.font="900 "+Math.round(Math.min(VW,VH)*0.22)+"px Bungee, Jua, sans-serif";
+    ctx.font="900 "+Math.round(Math.min(VW,VH)*0.22)+"px Bungee, 'Noto Sans KR', sans-serif";
     ctx.lineWidth=Math.min(VW,VH)*0.02; ctx.strokeStyle="rgba(0,0,0,.6)"; ctx.lineJoin="round";
     ctx.fillStyle = c>=1 ? "#ffd23f" : "#3ddc97";
     ctx.strokeText(label,0,0); ctx.fillText(label,0,0);
-    ctx.font="bold "+Math.round(Math.min(VW,VH)*0.04)+"px Jua, sans-serif";
+    ctx.font="bold "+Math.round(Math.min(VW,VH)*0.04)+"px Noto Sans KR, sans-serif";
     ctx.fillStyle="rgba(255,255,255,.9)";
     if(c>=1) ctx.fillText("시작 2초간 무적", 0, Math.min(VW,VH)*0.16);
     ctx.restore();
@@ -3084,7 +3091,7 @@ function drawEntity(e, hidden, selfStealth){
   if(selfStealth){ // 풀숲에 숨은 본인/아군 — 반투명하게(내 눈에만 희미하게 보임)
     ctx.save(); ctx.globalAlpha=0.45; drawCharacter(e, false); ctx.restore();
     // 은신 표시 아이콘
-    ctx.save(); ctx.globalAlpha=0.7; ctx.font='12px Jua,sans-serif'; ctx.textAlign='center'; ctx.fillStyle='#b6c4e0';
+    ctx.save(); ctx.globalAlpha=0.7; ctx.font='12px Noto Sans KR,sans-serif'; ctx.textAlign='center'; ctx.fillStyle='#b6c4e0';
     ctx.fillText('👁️', e.x, e.y-e.radius-8); ctx.restore();
     return;
   }
@@ -3108,7 +3115,7 @@ function drawEntity(e, hidden, selfStealth){
     const segCol=["#ffd23f","#ff8c42","#ff4d6d"];
     for(let i=0;i<3;i++){ ctx.fillStyle = i<st ? segCol[i] : "#2b2b2b";
       roundRect(bx+i*(segW+4), by, segW, h, 3); ctx.fill(); }
-    if(st>0){ ctx.font="bold 9px Jua, sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+    if(st>0){ ctx.font="bold 11px Noto Sans KR, sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
       ctx.lineWidth=2.5; ctx.strokeStyle="rgba(0,0,0,.7)"; ctx.fillStyle=segCol[st-1];
       ctx.strokeText("둔화 "+st, e.x, by-8); ctx.fillText("둔화 "+st, e.x, by-8);
       ctx.textBaseline="alphabetic"; }
@@ -3119,7 +3126,7 @@ function drawEntity(e, hidden, selfStealth){
   roundRect(bx,by,w*Math.max(0,e.hp/e.maxHp),h,3); ctx.fill();
   if(e.shield>0){ ctx.fillStyle="#748ffc"; roundRect(bx,by-5,w*Math.min(1,e.shield/e.maxHp),3,2); ctx.fill(); }
   // 체력 수치
-  ctx.font="bold 9px Jua, sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.font="bold 11px Noto Sans KR, sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
   ctx.lineWidth=2.5; ctx.strokeStyle="rgba(0,0,0,.7)"; ctx.fillStyle="#fff";
   const hpTxt=Math.ceil(Math.max(0,e.hp));
   ctx.strokeText(hpTxt, e.x, by+h/2); ctx.fillText(hpTxt, e.x, by+h/2);
@@ -3132,7 +3139,7 @@ function drawEntity(e, hidden, selfStealth){
   if(e.isPlayer){ const sc=e.superCharge/e.superMax;
     ctx.fillStyle="rgba(0,0,0,.5)";roundRect(bx,by+h+14,w,4,2);ctx.fill();
     ctx.fillStyle = sc>=1?"#ffd23f":"#ff8c42"; roundRect(bx,by+h+14,w*Math.min(1,sc),4,2);ctx.fill(); }
-  ctx.font="bold 12px Jua, sans-serif"; ctx.textAlign="center"; ctx.fillStyle="#fff";
+  ctx.font="bold 12px Noto Sans KR, sans-serif"; ctx.textAlign="center"; ctx.fillStyle="#fff";
   ctx.lineWidth=3; ctx.strokeStyle="rgba(0,0,0,.6)";
   ctx.strokeText(e.name,e.x,by-8); ctx.fillText(e.name,e.x,by-8);
 }
