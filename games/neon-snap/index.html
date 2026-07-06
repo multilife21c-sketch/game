@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Neon Snap - v0.3</title>
+    <title>Neon Snap - v0.5</title>
     <style>
         :root {
             --neon-cyan: #00ffcc;
@@ -20,6 +20,10 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
+            overscroll-behavior: none;
+            position: fixed;
+            width: 100%;
+            height: 100%;
             background-color: var(--bg-dark);
             font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
             user-select: none;
@@ -161,21 +165,23 @@
         }
         #hud {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 25px;
+            top: 0; left: 0; width: 100%;
+            padding: max(14px, env(safe-area-inset-top)) 18px 10px;
             z-index: 5;
             pointer-events: none;
             color: #fff;
             display: flex;
             justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+            flex-wrap: wrap;
             font-family: monospace;
         }
         .hud-item {
-            font-size: calc(14px + 0.8vw);
+            font-size: clamp(12px, 3.4vw, 20px);
             font-weight: bold;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
+            white-space: nowrap;
         }
         #scoreDisplay {
             color: var(--neon-cyan);
@@ -240,6 +246,33 @@
             border-color: var(--neon-cyan);
             box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
         }
+        @media (max-width: 600px) {
+            #hud { padding-top: max(10px, env(safe-area-inset-top)); padding-left: 12px; padding-right: 12px; }
+            .hud-item { font-size: clamp(11px, 3.2vw, 16px); letter-spacing: 0.5px; }
+            #survDisplay { color: #ffd23f; }
+            h1 { font-size: calc(2rem + 4vw); }
+            .subtitle { font-size: 13px; padding: 0 14px; }
+            .version-tag { font-size: 11px; bottom: 6px; right: 8px; }
+            #effectBanner { font-size: 15px; top: 58px; }
+            .btn { font-size: 15px; padding: 12px 20px; }
+            .rank-item { font-size: 12px; }
+        }
+        @media (max-height: 480px) and (orientation: landscape) {
+            h1 { font-size: calc(1.6rem + 2vw); }
+            .header-group { margin-bottom: 8px; }
+            .upg-card { padding: 12px 10px; }
+            .upg-ic { font-size: 30px; }
+        }
+        .upg-grid { display:flex; gap:18px; flex-wrap:wrap; justify-content:center; margin-top:10px; }
+        .upg-card { width:200px; background:rgba(0,20,30,0.6); border:1px solid rgba(0,255,204,0.3);
+            border-radius:16px; padding:22px 16px; cursor:pointer; transition:all 0.18s;
+            display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; }
+        .upg-card:hover { transform:translateY(-6px); border-color:#00ffcc;
+            box-shadow:0 0 30px rgba(0,255,204,0.4); background:rgba(0,40,50,0.8); }
+        .upg-ic { font-size:44px; line-height:1; }
+        .upg-nm { font-size:18px; font-weight:bold; color:#00ffcc; }
+        .upg-ds { font-size:13px; color:#9fd; opacity:0.85; line-height:1.5; }
+        @media (max-width:640px){ .upg-card{ width:30%; min-width:96px; padding:14px 8px; } .upg-ic{font-size:30px;} .upg-nm{font-size:14px;} .upg-ds{font-size:11px;} }
         .version-tag {
             position: absolute;
             bottom: 15px;
@@ -265,13 +298,15 @@
 
     <div id="hud" style="display:none;">
         <div class="hud-item" id="scoreDisplay">SCORE: 0</div>
+        <div class="hud-item" id="stageDisplay">STAGE 1</div>
+        <div class="hud-item" id="survDisplay">⏱ 60.0s</div>
         <div class="hud-item" id="hpDisplay">CORE: 100%</div>
     </div>
     
     <div id="effectBanner"></div>
 
     <div id="startScreen" class="ui-screen">
-        <div class="version-tag">v0.3</div>
+        <div class="version-tag">v0.5</div>
         <div class="fullscreen-container">
             <div class="header-group">
                 <h1>NEON SNAP</h1>
@@ -301,8 +336,18 @@
             <div></div> </div>
     </div>
 
+    <div id="upgradeScreen" class="ui-screen" style="display:none;">
+        <div class="fullscreen-container">
+            <div class="header-group">
+                <h1 style="color:#00ffcc">STAGE <span id="upgClearStage">1</span> CLEAR</h1>
+                <div class="subtitle">업그레이드를 선택하세요 — 강해진 만큼 적도 강해집니다</div>
+            </div>
+            <div id="upgradeCards" class="upg-grid"></div>
+        </div>
+    </div>
+
     <div id="gameOverScreen" class="ui-screen" style="display:none;">
-        <div class="version-tag">v0.3</div>
+        <div class="version-tag">v0.5</div>
         <div class="fullscreen-container">
             <div class="header-group">
                 <h1>CONNECTION LOST</h1>
@@ -310,9 +355,8 @@
             </div>
             
             <div class="main-content">
-                <input type="text" id="nicknameInput" placeholder="ACCESS CODE (이름 입력)" maxlength="10">
                 <div id="loginRankNote" style="display:none;font-size:14px;color:#7fd8ff;margin-bottom:12px;"></div>
-                <button class="btn btn-start" onclick="game.submitScore()">데이터 업로드 및 재시작</button>
+                <button class="btn btn-start" onclick="game.submitScore()">재시작 (RESTART)</button>
                 <button class="btn" onclick="game.showStartScreen()">메인 터미널로</button>
 
                 <div class="leaderboard">
@@ -414,13 +458,16 @@
 
         let width, height, dpr;
         function resize() {
-            dpr = window.devicePixelRatio || 1;
+            dpr = Math.min(2, window.devicePixelRatio || 1);   // 모바일 성능: DPR 상한 2
             width = window.innerWidth;
             height = window.innerHeight;
-            canvas.width = width * dpr;
-            canvas.height = height * dpr;
-            ctx.scale(dpr, dpr);
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);   // 누적 방지 (기존 scale 버그 수정)
         }
+        window.addEventListener('orientationchange', () => setTimeout(resize, 100));
         window.addEventListener('resize', resize);
         resize();
 
@@ -556,6 +603,30 @@
                 ctx.restore();
             }
         }
+
+        // ===== 스킬 풀 (스테이지 클리어 시 3택1) =====
+        const SKILL_POOL = [
+          { id:'dmg',    name:'파괴력 강화',   icon:'💥', desc:'베기 데미지 +1', apply:s=>s.damage++ },
+          { id:'back',   name:'백스트라이크', icon:'↔️', desc:'반대 방향도 동시에 벤다', apply:s=>s.back=true },
+          { id:'cross',  name:'크로스 슬래시', icon:'✳️', desc:'수직 방향까지 4방향 베기', apply:s=>{s.back=true;s.cross=true;} },
+          { id:'multi',  name:'연속 베기',     icon:'⚡', desc:'스냅 시 한 번 더 벤다 (+1회)', apply:s=>s.multi++ },
+          { id:'pierce', name:'관통',         icon:'➹', desc:'레이저가 화면 끝까지 관통', apply:s=>s.pierce=true },
+          { id:'thick',  name:'광폭 블레이드', icon:'📏', desc:'베기 판정 폭 +12', apply:s=>s.radius+=12 },
+          { id:'fan3',   name:'삼중 부채',     icon:'🔱', desc:'±20° 부채꼴 3갈래 추가', apply:s=>s.fan=Math.max(s.fan,1) },
+          { id:'fan5',   name:'오중 폭풍',     icon:'🌪️', desc:'±35° 부채꼴 5갈래 추가', apply:s=>s.fan=2 },
+          { id:'longer', name:'리치 확장',     icon:'📡', desc:'레이저 사거리 +25%', apply:s=>s.reach+=0.25 },
+          { id:'combo',  name:'콤보 마스터',   icon:'🎯', desc:'콤보 점수 1.5배', apply:s=>s.comboMul*=1.5 },
+          { id:'knock',  name:'충격파',       icon:'🌀', desc:'베기 시 주변 적 밀쳐냄', apply:s=>s.knock=true },
+          { id:'exec',   name:'즉결 처형',     icon:'☠️', desc:'장갑 적도 한 방', apply:s=>s.exec=true },
+          { id:'heal',   name:'코어 수리',     icon:'❤️', desc:'즉시 코어 HP +40', apply:s=>{} , instant:true },
+          { id:'shield', name:'자동 실드',     icon:'🛡️', desc:'스테이지당 1회 피해 무효', apply:s=>s.autoShield++ },
+          { id:'freeze', name:'시간 왜곡',     icon:'❄️', desc:'불릿타임이 더 느려짐', apply:s=>s.slowmo=0.06 },
+          { id:'score',  name:'데이터 증폭',   icon:'💠', desc:'모든 점수 +25%', apply:s=>s.scoreMul*=1.25 },
+          { id:'split',  name:'분열탄',       icon:'✴️', desc:'처치 시 파편이 인접 적 타격', apply:s=>s.split=true },
+          { id:'chain',  name:'연쇄 번개',     icon:'🔗', desc:'처치 적에서 번개가 튐', apply:s=>s.chain=true },
+          { id:'vamp',   name:'흡수 코어',     icon:'🩸', desc:'처치 시 코어 HP +1', apply:s=>s.vamp=true },
+          { id:'magnet', name:'아이템 자석',   icon:'🧲', desc:'아이템이 더 자주 등장', apply:s=>s.magnet=true },
+        ];
 
         class Enemy {
             constructor() {
@@ -720,12 +791,14 @@
                 window.addEventListener('mouseup', endDrag);
 
                 window.addEventListener('touchstart', e => {
+                    if (this.state === 'PLAYING') e.preventDefault();
                     if (e.touches.length > 0) startDrag(e.touches[0].clientX, e.touches[0].clientY);
-                });
+                }, { passive: false });
                 window.addEventListener('touchmove', e => {
+                    if (this.isDragging) e.preventDefault();
                     if (e.touches.length > 0) moveDrag(e.touches[0].clientX, e.touches[0].clientY);
-                });
-                window.addEventListener('touchend', endDrag);
+                }, { passive: false });
+                window.addEventListener('touchend', e => { endDrag(); }, { passive: false });
             }
             start() {
                 sound.init();
@@ -741,7 +814,14 @@
                 this.nextItemTime = 8000; // 첫 아이템은 8초 후
                 this.activeEffect = null;
                 this.effectTimer = 0;
-                
+                // 스테이지 & 스킬
+                this.stage = 1;
+                this.stageTime = 60000;      // 60초 생존 목표
+                this.survTimer = 0;
+                this.skills = { damage:0, back:false, cross:false, multi:0, pierce:false, radius:0,
+                    fan:0, reach:0, comboMul:1, scoreMul:1, knock:false, exec:false, autoShield:0,
+                    slowmo:0.10, split:false, chain:false, vamp:false, magnet:false };
+                this.shieldCharges = 0;
                 this.state = 'PLAYING';
                 
                 document.getElementById('startScreen').style.display = 'none';
@@ -753,8 +833,13 @@
             updateHUD() {
                 document.getElementById('scoreDisplay').innerText = `SCORE: ${this.score}`;
                 document.getElementById('hpDisplay').innerText = `CORE: ${this.hp}%`;
+                const st = document.getElementById('stageDisplay'); if (st) st.innerText = `STAGE ${this.stage}`;
+                const sv = document.getElementById('survDisplay');
+                if (sv) sv.innerText = `⏱ ${Math.max(0,(this.stageTime - this.survTimer)/1000).toFixed(1)}s`;
             }
             damageCore(amount) {
+                if (this.shieldCharges > 0) { this.shieldCharges--; this.shakeIntensity = 10;
+                    this.floatingTexts.push(new FloatingText(width/2, height/2 - 40, 'SHIELD!', '#00ff66')); return; }
                 // 방패 아이템 효과 처리
                 if (this.activeEffect && this.activeEffect.id === 'SHIELD') {
                     sound.playShieldBlock();
@@ -779,73 +864,120 @@
                 this.updateHUD();
             }
             triggerSnap() {
-                const cx = width / 2;
-                const cy = height / 2;
-                const snapAngle = Math.atan2(this.pointerY - cy, this.pointerX - cx);
-                
+                const cx = width / 2, cy = height / 2;
+                const sk = this.skills;
+                const baseAngle = Math.atan2(this.pointerY - cy, this.pointerX - cx);
+                const baseLen = Math.hypot(this.pointerX - cx, this.pointerY - cy) * (1 + sk.reach);
+                const reach = sk.pierce ? Math.max(width, height) : baseLen;
+                const hitR = 15 + sk.radius;
                 sound.playSnap();
-                
-                // 아이템 타격 체크
+
+                // 베기 방향(각도) 목록 구성
+                let angles = [baseAngle];
+                if (sk.back) angles.push(baseAngle + Math.PI);
+                if (sk.cross) { angles.push(baseAngle + Math.PI/2, baseAngle - Math.PI/2); }
+                if (sk.fan >= 1) { const f = sk.fan>=2 ? [0.61,0.35,-0.35,-0.61] : [0.35,-0.35];
+                    const base=[...angles]; base.forEach(a=>f.forEach(o=>angles.push(a+o))); }
+                // 연속 베기(multi)만큼 반복 판정
+                const passes = 1 + (sk.multi||0);
+
+                // 아이템 타격 (첫 패스, 기본 방향)
                 for (let i = this.items.length - 1; i >= 0; i--) {
                     const item = this.items[i];
-                    if (lineCircleIntersect(cx, cy, this.pointerX, this.pointerY, item.x, item.y, item.radius + 15)) {
-                        this.activeEffect = item.info;
-                        this.effectTimer = item.info.duration;
-                        sound.playPowerUp();
-                        item.active = false;
-                        
-                        // 아이템 획득 이펙트
-                        for (let p = 0; p < 15; p++) {
-                            this.particles.push(new Particle(item.x, item.y, item.info.color, snapAngle));
-                        }
+                    const ex = cx + Math.cos(baseAngle)*reach, ey = cy + Math.sin(baseAngle)*reach;
+                    if (lineCircleIntersect(cx, cy, ex, ey, item.x, item.y, item.radius + hitR)) {
+                        this.activeEffect = item.info; this.effectTimer = item.info.duration;
+                        sound.playPowerUp(); item.active = false;
+                        for (let p = 0; p < 15; p++) this.particles.push(new Particle(item.x, item.y, item.info.color, baseAngle));
                         this.floatingTexts.push(new FloatingText(item.x, item.y - 20, item.info.name, item.info.color));
                     }
                 }
 
-                // 적 타격 체크
                 let killedCount = 0;
-                for (let i = this.enemies.length - 1; i >= 0; i--) {
-                    const enemy = this.enemies[i];
-                    const isHit = lineCircleIntersect(cx, cy, this.pointerX, this.pointerY, enemy.x, enemy.y, enemy.radius + 15);
-                    
-                    if (isHit) {
-                        enemy.hp--;
-                        if (enemy.hp <= 0) {
-                            killedCount++;
-                            sound.playExplode(enemy.type === 'armored');
-                            
-                            for (let p = 0; p < 24; p++) {
-                                this.particles.push(new Particle(enemy.x, enemy.y, enemy.color, snapAngle));
-                            }
-                            this.enemies.splice(i, 1);
-                        } else {
-                            const kx = enemy.x - cx;
-                            const ky = enemy.y - cy;
-                            const kl = Math.hypot(kx, ky);
-                            enemy.x += (kx / kl) * 70;
-                            enemy.y += (ky / kl) * 70;
-                            for (let p = 0; p < 8; p++) {
-                                this.particles.push(new Particle(enemy.x, enemy.y, '#ffffff', snapAngle));
+                const dmg = 1 + (sk.damage||0);
+                for (let pass = 0; pass < passes; pass++) {
+                  for (const ang of angles) {
+                    const ex = cx + Math.cos(ang)*reach, ey = cy + Math.sin(ang)*reach;
+                    for (let i = this.enemies.length - 1; i >= 0; i--) {
+                        const enemy = this.enemies[i];
+                        if (enemy.hp <= 0) continue;
+                        if (lineCircleIntersect(cx, cy, ex, ey, enemy.x, enemy.y, enemy.radius + hitR)) {
+                            enemy.hp -= sk.exec ? 99 : dmg;
+                            if (enemy.hp <= 0) {
+                                killedCount++;
+                                sound.playExplode(enemy.type === 'armored');
+                                for (let p = 0; p < 24; p++) this.particles.push(new Particle(enemy.x, enemy.y, enemy.color, ang));
+                                if (sk.vamp) this.hp = Math.min(100, this.hp + 1);
+                                if (sk.split || sk.chain) this.splitDamage(enemy.x, enemy.y, sk);
+                                this.enemies.splice(i, 1);
+                            } else {
+                                const kx = enemy.x - cx, ky = enemy.y - cy, kl = Math.hypot(kx,ky)||1;
+                                const push = sk.knock ? 120 : 70;
+                                enemy.x += (kx/kl)*push; enemy.y += (ky/kl)*push;
+                                for (let p = 0; p < 8; p++) this.particles.push(new Particle(enemy.x, enemy.y, '#ffffff', ang));
                             }
                         }
                     }
+                  }
                 }
 
                 if (killedCount > 0) {
                     this.hitStopFrames = 6;
                     this.shakeIntensity = 8 + killedCount * 5;
-                    
-                    let comboScore = killedCount * 10 * killedCount;
-                    
-                    // 더블 스코어 아이템 효과 적용
-                    if (this.activeEffect && this.activeEffect.id === 'DOUBLE') {
-                        comboScore *= 2;
-                    }
-                    
+                    let comboScore = killedCount * 10 * killedCount * sk.comboMul;
+                    if (this.activeEffect && this.activeEffect.id === 'DOUBLE') comboScore *= 2;
+                    comboScore = Math.round(comboScore * sk.scoreMul);
                     this.score += comboScore;
                     this.updateHUD();
                     this.floatingTexts.push(new FloatingText(this.pointerX, this.pointerY - 20, `${killedCount} SLICES! +${comboScore}`, '#ffff00'));
                 }
+            }
+            // 분열/연쇄: 처치 위치 주변 적에게 피해
+            splitDamage(x, y, sk) {
+                const R = sk.chain ? 220 : 140;
+                let hit = 0;
+                for (let i = this.enemies.length - 1; i >= 0; i--) {
+                    const e = this.enemies[i]; if (e.hp<=0) continue;
+                    if (Math.hypot(e.x-x, e.y-y) < R) {
+                        for (let p=0;p<6;p++) this.particles.push(new Particle(e.x, e.y, sk.chain?'#00ffff':'#ff8800', 0));
+                        e.hp -= 1;
+                        if (e.hp <= 0) { for (let p=0;p<16;p++) this.particles.push(new Particle(e.x,e.y,e.color,0)); this.enemies.splice(i,1); this.score += 20; }
+                        if (++hit >= (sk.chain?3:2)) break;
+                    }
+                }
+                if (hit>0) this.updateHUD();
+            }
+            stageClear() {
+                this.state = 'UPGRADE';
+                this.survTimer = 0;
+                this.shieldCharges = this.skills.autoShield;   // 스테이지마다 실드 충전
+                // 3개 랜덤 스킬 추첨 (즉시효과 heal 포함, 중복 없이)
+                const pool = SKILL_POOL.slice();
+                const picks = [];
+                while (picks.length < 3 && pool.length) picks.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+                const box = document.getElementById('upgradeCards');
+                box.innerHTML = '';
+                picks.forEach(sk => {
+                    const card = document.createElement('div');
+                    card.className = 'upg-card';
+                    card.innerHTML = `<div class="upg-ic">${sk.icon}</div><div class="upg-nm">${sk.name}</div><div class="upg-ds">${sk.desc}</div>`;
+                    card.onclick = () => this.chooseUpgrade(sk);
+                    box.appendChild(card);
+                });
+                document.getElementById('upgClearStage').innerText = this.stage;
+                document.getElementById('upgradeScreen').style.display = 'flex';
+            }
+            chooseUpgrade(sk) {
+                if (sk.id === 'heal') this.hp = Math.min(100, this.hp + 40);
+                else sk.apply(this.skills);
+                document.getElementById('upgradeScreen').style.display = 'none';
+                this.stage++;
+                this.survTimer = 0;
+                // 다음 스테이지: 적 강화(속도/체력) + 코어 살짝 회복
+                this.hp = Math.min(100, this.hp + 10);
+                this.state = 'PLAYING';
+                this.floatingTexts.push(new FloatingText(width/2, height/2 - 60, `STAGE ${this.stage}`, '#00ffcc'));
+                this.updateHUD();
             }
             gameOver() {
                 this.state = 'GAMEOVER';
@@ -853,21 +985,16 @@
                 document.getElementById('hud').style.display = 'none';
                 document.getElementById('effectBanner').style.display = 'none';
                 document.getElementById('finalScoreDisplay').innerText = `최종 동기화 점수: ${this.score}`;
-                // 로그인 여부에 따라 닉네임 입력창/안내 전환
-                const inp = document.getElementById('nicknameInput');
                 const note = document.getElementById('loginRankNote');
                 if (window.NS && window.NS.user) {
-                    inp.style.display = 'none';
                     note.style.display = 'block';
-                    note.innerText = `🏆 ${window.NS.myName || '플레이어'} 님으로 통합 랭킹에 자동 기록됩니다`;
+                    note.innerText = `🏆 ${window.NS.myName || '플레이어'} 님으로 통합 랭킹에 자동 기록되었습니다`;
                 } else {
-                    inp.style.display = '';
                     note.style.display = 'block';
                     note.innerText = '⚪ 포탈에서 로그인하면 통합 랭킹에 기록됩니다 (미로그인 시 기기 저장)';
                 }
                 document.getElementById('gameOverScreen').style.display = 'flex';
                 this.loadLeaderboard();
-                document.getElementById('nicknameInput').focus();
             }
             showStartScreen() {
                 this.state = 'START';
@@ -900,17 +1027,14 @@
                 document.getElementById('endLeaderboard').innerHTML = html;
             }
             async submitScore() {
-                // 로그인 상태면 포탈 통합 랭킹에 자동 기록 (닉네임 사용)
+                // 로그인: 통합 랭킹 자동 기록 / 비로그인: 기기 저장(익명)
                 if (window.NS && window.NS.ready && window.NS.user) {
                     await window.NS.report(this.score);
                 } else {
-                    let name = document.getElementById('nicknameInput').value.trim().toUpperCase();
-                    if (!name) name = "OPERATOR";
                     const scores = JSON.parse(localStorage.getItem('neon_snap_ranks_v2')) || [];
-                    scores.push({name: name, score: this.score});
+                    scores.push({name: (window.NS && window.NS.myName) || "OPERATOR", score: this.score});
                     scores.sort((a,b) => b.score - a.score);
                     localStorage.setItem('neon_snap_ranks_v2', JSON.stringify(scores.slice(0, 10)));
-                    document.getElementById('nicknameInput').value = '';
                 }
                 this.start();
             }
@@ -919,13 +1043,17 @@
                     this.hitStopFrames--;
                     return;
                 }
-                this.timeScale = this.isDragging ? 0.10 : 1.0;
+                this.timeScale = this.isDragging ? (this.skills ? this.skills.slowmo : 0.10) : 1.0;
 
                 if (this.state === 'PLAYING') {
-                    // 적 스폰
+                    // 생존 타이머 → 60초 버티면 스테이지 클리어
+                    this.survTimer += dt;
+                    if (this.survTimer >= this.stageTime) { this.stageClear(); return; }
+                    // 적 스폰 (스테이지가 오를수록 빨라짐)
                     this.spawnTimer += dt;
                     this.difficultyFactor += 0.00007 * dt;
-                    const nextInterval = Math.max(350, this.spawnInterval / Math.min(4, this.difficultyFactor));
+                    const stageBoost = 1 + (this.stage - 1) * 0.35;
+                    const nextInterval = Math.max(220, this.spawnInterval / Math.min(5, this.difficultyFactor) / stageBoost);
                     if (this.spawnTimer >= nextInterval) {
                         this.enemies.push(new Enemy());
                         this.spawnTimer = 0;
@@ -954,6 +1082,7 @@
                     }
                 }
 
+                if (this.state === 'UPGRADE') { return; }  // 업그레이드 선택 중 정지
                 this.enemies.forEach(e => e.update(this.timeScale, this.isDragging, this.pointerX, this.pointerY));
                 this.enemies = this.enemies.filter(e => e.hp > 0);
 
