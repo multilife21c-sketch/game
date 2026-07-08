@@ -306,7 +306,7 @@
     <div id="effectBanner"></div>
 
     <div id="startScreen" class="ui-screen">
-        <div class="version-tag">v0.5</div>
+        <div class="version-tag">v0.6</div>
         <div class="fullscreen-container">
             <div class="header-group">
                 <h1>NEON SNAP</h1>
@@ -347,7 +347,7 @@
     </div>
 
     <div id="gameOverScreen" class="ui-screen" style="display:none;">
-        <div class="version-tag">v0.5</div>
+        <div class="version-tag">v0.6</div>
         <div class="fullscreen-container">
             <div class="header-group">
                 <h1>CONNECTION LOST</h1>
@@ -1238,6 +1238,67 @@ Nova.onUser(u => {
   if (window.game && typeof window.game.loadLeaderboard === 'function') window.game.loadLeaderboard();
 });
 console.log('[NEON SNAP] NOVA ARCADE 통합 연동됨');
+</script>
+<!-- ===== 첫 실행 튜토리얼 오버레이 (NEON SNAP) ===== -->
+<style>
+#tutov{position:fixed;inset:0;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(4,8,14,.92);backdrop-filter:blur(6px);padding:24px;text-align:center;font-family:'Noto Sans KR',sans-serif;}
+#tutov.show{display:flex;}
+#tutov .tt{font-family:'Orbitron','Noto Sans KR',sans-serif;font-weight:900;font-size:clamp(24px,6vw,40px);
+  background:linear-gradient(90deg,#00ffcc,#ff2b5e);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:6px;}
+#tutov .slide{max-width:440px;color:#dfeaf5;}
+#tutov .emoji{font-size:60px;line-height:1;margin:10px 0;}
+#tutov .stitle{font-size:20px;font-weight:700;color:#00ffcc;margin-bottom:8px;}
+#tutov .sdesc{font-size:15px;line-height:1.7;color:#c3d2e2;min-height:80px;}
+#tutov .dots{display:flex;gap:8px;justify-content:center;margin:18px 0;}
+#tutov .dot{width:9px;height:9px;border-radius:50%;background:#2c4258;transition:.2s;}
+#tutov .dot.on{background:#00ffcc;width:22px;border-radius:5px;}
+#tutov .row{display:flex;gap:10px;}
+#tutov button{font-family:'Noto Sans KR',sans-serif;font-size:16px;font-weight:700;padding:13px 26px;border-radius:12px;cursor:pointer;border:none;}
+#tutov .next{background:linear-gradient(90deg,#00ffcc,#00b8a0);color:#062018;}
+#tutov .skip{background:transparent;border:1px solid #2c4258;color:#8fa3b8;}
+#tutHelp{position:fixed;bottom:8px;left:10px;z-index:60;width:30px;height:30px;border-radius:50%;
+  border:1px solid #2c4258;background:rgba(10,20,30,.7);color:#00ffcc;font-size:15px;cursor:pointer;font-weight:700;}
+</style>
+<button id="tutHelp" title="게임 방법">?</button>
+<div id="tutov">
+  <div class="tt">HOW TO PLAY</div>
+  <div class="slide">
+    <div class="emoji" id="tutEmoji">🎯</div>
+    <div class="stitle" id="tutTitle"></div>
+    <div class="sdesc" id="tutDesc"></div>
+  </div>
+  <div class="dots" id="tutDots"></div>
+  <div class="row">
+    <button class="skip" id="tutSkip">건너뛰기</button>
+    <button class="next" id="tutNext">다음</button>
+  </div>
+</div>
+<script>
+(function(){
+  var SLIDES=[
+    {e:"🖱️",t:"당겼다 놓기",d:"화면 빈 곳을 <b>누른 채 드래그</b>하면 코어와 손가락 사이에 네온 레이저 실이 팽팽하게 당겨집니다. 놓는 순간 실이 튕겨 돌아가며 <b>궤적의 적을 모두 벱니다.</b>"},
+    {e:"⏳",t:"불릿 타임",d:"당기고 있는 동안 <b>시간이 느려집니다.</b> 길게·넓게 당길수록 더 많은 적을 한 번에 베어 <b>콤보 점수가 폭발</b>하지만, 그동안 코어는 무방비! 타이밍이 관건입니다."},
+    {e:"⚡",t:"스테이지 & 스킬",d:"<b>60초 생존하면 다음 스테이지</b>로 넘어가고, 매번 <b>강화 스킬 3개 중 1개</b>를 고릅니다. 연속 베기·관통·백스트라이크 등 스킬을 쌓아 최강의 슬라이서가 되세요!"}
+  ];
+  var i=0, ov=document.getElementById('tutov');
+  var dots=document.getElementById('tutDots');
+  SLIDES.forEach(function(_,k){var d=document.createElement('div');d.className='dot'+(k===0?' on':'');dots.appendChild(d);});
+  function paint(){
+    document.getElementById('tutEmoji').textContent=SLIDES[i].e;
+    document.getElementById('tutTitle').textContent=SLIDES[i].t;
+    document.getElementById('tutDesc').innerHTML=SLIDES[i].d;
+    [].forEach.call(dots.children,function(d,k){d.className='dot'+(k===i?' on':'');});
+    document.getElementById('tutNext').textContent=(i===SLIDES.length-1)?'시작하기':'다음';
+  }
+  function open(){i=0;paint();ov.classList.add('show');}
+  function close(){ov.classList.remove('show');try{localStorage.setItem('neon_snap_tut','1');}catch(e){}}
+  document.getElementById('tutNext').onclick=function(){ if(i<SLIDES.length-1){i++;paint();} else close(); };
+  document.getElementById('tutSkip').onclick=close;
+  document.getElementById('tutHelp').onclick=open;
+  var seen=false; try{seen=localStorage.getItem('neon_snap_tut')==='1';}catch(e){}
+  if(!seen) open();
+})();
 </script>
 </body>
 </html>
