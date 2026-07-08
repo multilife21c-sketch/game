@@ -22,11 +22,22 @@ import {
 } from "./firebase-config.js";
 
 let GAME_ID = null;
+// 🗓️ 주간 시즌 (ISO 주차, 예: 2026-W28) — 매주 월요일 자동으로 새 리더보드 시작
+function _season(){
+  const d = new Date();
+  const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const ys = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  const wk = Math.ceil((((t - ys) / 86400000) + 1) / 7);
+  return t.getUTCFullYear() + '-W' + String(wk).padStart(2, '0');
+}
 let CURRENT = null;
 const userCbs = [];
 
 export const Nova = {
   init(gameId){ GAME_ID = gameId; return Nova; },
+  season(){ return _season(); },
 
   onUser(cb){ userCbs.push(cb); if(CURRENT!==undefined) cb(CURRENT); return Nova; },
 
@@ -40,13 +51,14 @@ export const Nova = {
     score = Math.round(Number(score)||0);
     try{
       // 사용자별 최고기록 문서: scores/{gameId}_{uid}
-      const ref = doc(db, "scores", `${GAME_ID}_${CURRENT.uid}`);
+      const SEASON = _season();
+      const ref = doc(db, "scores", `${GAME_ID}_${SEASON}_${CURRENT.uid}`);
       if(!always){
         const prev = await getDoc(ref);
         if(prev.exists() && (prev.data().score||0) >= score) return false;
       }
       await setDoc(ref, {
-        gameId: GAME_ID, uid: CURRENT.uid,
+        gameId: GAME_ID, uid: CURRENT.uid, season: SEASON,
         name: CURRENT.displayName || "익명", photoURL: CURRENT.photoURL || "",
         score, createdAt: serverTimestamp(),
       }, { merge:true });

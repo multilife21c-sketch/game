@@ -394,11 +394,14 @@ async function openLeaderboard(g){
   if(g.reportsScore===false){ body.innerHTML=`<div class="lb-note">이 게임은 아직 점수 보고를 연결하지 않았어요.<br><code>portal-sdk.js</code>를 적용하면 랭킹이 쌓입니다.</div>`; return; }
   body.innerHTML=`<div class="lb-note">불러오는 중…</div>`;
   try{
-    const qy=query(collection(db,"scores"),where("gameId","==",g.id),orderBy("score","desc"),limit(20));
+    const _S=(()=>{const d=new Date();const t=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()));const day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);const ys=new Date(Date.UTC(t.getUTCFullYear(),0,1));const wk=Math.ceil((((t-ys)/86400000)+1)/7);return t.getUTCFullYear()+'-W'+String(wk).padStart(2,'0');})();
+    const qy=query(collection(db,"scores"),where("gameId","==",g.id),orderBy("score","desc"),limit(200));
     const snap=await getDocs(qy);
     if(snap.empty){ body.innerHTML=`<div class="lb-note">아직 기록이 없어요. 첫 기록의 주인공이 되어보세요!</div>`; return; }
-    let html='<div class="lb-list">';
-    snap.docs.forEach((d,i)=>{const s=d.data();
+    const _rows=snap.docs.map(d=>d.data()).filter(x=>(x.season||null)===_S).slice(0,20);
+    let html=`<div style="text-align:center;font-size:12px;color:#7fd8ff;margin-bottom:10px;font-weight:700;">🗓️ 시즌 ${_S} · 매주 월요일 리셋</div><div class="lb-list">`;
+    if(!_rows.length){ body.innerHTML=`<div class="lb-note">🗓️ 시즌 ${_S}<br>이번 주 기록이 아직 없어요. 첫 주자가 되어보세요!</div>`; return; }
+    _rows.forEach((s,i)=>{
       html+=`<div class="lb-row ${i<3?'top'+(i+1):''}"><div class="lb-rank">${i+1}</div>
         <img class="lb-av" src="${esc(s.photoURL||'')}" referrerpolicy="no-referrer">
         <div class="lb-name">${esc(s.name||'익명')}</div>

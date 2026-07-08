@@ -796,11 +796,12 @@ window.ND={ ready:true, user:null,
   async report(enc){ try{ return await Nova.reportScore(enc); }catch(e){ console.warn('[ND]',e); return false; } },
   async loadTop(){ const body=document.getElementById('lb-body');
     if(DEMO){ body.innerHTML='<div class="lbnote">Firebase 연결 후 표시됩니다</div>'; return; }
-    try{ const snap=await getDocs(query(collection(db,'scores'),where('gameId','==',GAME_ID),orderBy('score','desc'),limit(10)));
-      if(snap.empty){ body.innerHTML='<div class="lbnote">첫 도전자가 되어보세요!</div>'; return; }
+    try{ const snap=await getDocs(query(collection(db,'scores'),where('gameId','==',GAME_ID),orderBy('score','desc'),limit(200)));
+      const _S=Nova.season(); const _docs=snap.docs.filter(d=>((d.data().season)||null)===_S).slice(0,10);
+      if(!_docs.length){ body.innerHTML=`<div class="lbnote">🗓️ 시즌 ${_S} · 이번 주 첫 도전자가 되어보세요!</div>`; return; }
       const uid=this.user&&this.user.uid;
       const esc=(t)=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-      body.innerHTML=snap.docs.map((d,i)=>{ const s=d.data(); const streak=Math.floor((s.score||0)/100000);
+      body.innerHTML=`<div class="lbnote" style="color:#7fd8ff">🗓️ 시즌 ${_S} · 매주 리셋</div>`+_docs.map((d,i)=>{ const s=d.data(); const streak=Math.floor((s.score||0)/100000);
         const secs=99999-((s.score||0)%100000);
         return `<div class="lbrow ${i<3?'t'+(i+1):''} ${s.uid===uid?'me':''}">
           <span class="rk">${i+1}</span><span class="nm">${esc(s.name||'익명')}</span>

@@ -13,6 +13,19 @@ service cloud.firestore {
     }
     function signedIn() { return request.auth != null; }
 
+    // 게임별 점수 상한 (치트성 초대형 값 차단). 새 게임은 여기에 추가.
+    function maxScore(g) {
+      return {
+        'neon-strikers': 50000,
+        'neon-duel':     100000000,
+        'neural-grid':   1000000,
+        'neon-snap':     5000000,
+        'neon-runner':   10000000,
+        'cosmic-gear':   100000,
+        'nationrise':    1000000000000
+      }.get(g, 1000000);
+    }
+
     // 게임 카탈로그: 누구나 읽기 / 관리자만 등록·수정·삭제
     // 단, 로그인 사용자는 playCount 만 증가시킬 수 있음(플레이 집계)
     match /games/{gameId} {
@@ -29,11 +42,22 @@ service cloud.firestore {
     }
 
     // 통합 랭킹: 누구나 읽기 / 본인 점수만 기록
+    // 🔒 포탈 통합 랭킹 (시즌제 + 위·변조 방지)
+    //  문서 ID = "{gameId}_{season}_{uid}"  (시즌 = ISO 주차, 예: 2026-W28)
     match /scores/{docId} {
       allow read: if true;
       allow create, update: if signedIn()
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.score is number;
+        && request.resource.data.gameId is string
+        && request.resource.data.season is string
+        && docId == request.resource.data.gameId + '_' + request.resource.data.season + '_' + request.auth.uid
+        && request.resource.data.keys().hasOnly(
+             ['gameId','uid','season','name','photoURL','score','createdAt','updatedAt'])
+        && request.resource.data.score is number
+        && request.resource.data.score >= 0
+        && request.resource.data.score <= maxScore(request.resource.data.gameId)
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 30;
       allow delete: if isAdmin();
     }
   }

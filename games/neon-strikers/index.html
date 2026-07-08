@@ -4292,9 +4292,10 @@ if ('serviceWorker' in navigator) {
           collection(db, "scores"),
           where("gameId", "==", GAME_ID),
           orderBy("score", "desc"),
-          limit(n || 50)
+          limit(200)
         ));
-        return snap.docs.map(d => {
+        const _S = Nova.season();
+        return snap.docs.filter(d => ((d.data().season)||null)===_S).slice(0, n||50).map(d => {
           const s = d.data();
           return { id: d.id, nick: s.name || "익명", trophies: s.score || 0, real: true };
         });

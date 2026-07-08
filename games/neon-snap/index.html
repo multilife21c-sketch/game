@@ -1220,9 +1220,10 @@ window.NS = {
   async loadTop(){
     if (DEMO) return null;
     try {
-      const snap = await getDocs(query(collection(db,"scores"), where("gameId","==",GAME_ID), orderBy("score","desc"), limit(5)));
+      const snap = await getDocs(query(collection(db,"scores"), where("gameId","==",GAME_ID), orderBy("score","desc"), limit(200)));
+      const _S = Nova.season();
       const esc = (t)=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-      return snap.docs.map(d=>{ const x=d.data(); return { name: esc(x.name||'익명'), score: Number(x.score||0) }; });
+      return snap.docs.map(d=>d.data()).filter(x=>(x.season||null)===_S).slice(0,5).map(x=>({ name: esc(x.name||'익명'), score: Number(x.score||0) }));
     } catch(e){ console.warn("[NS] loadTop", e); return null; }
   }
 };
