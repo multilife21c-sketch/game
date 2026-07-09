@@ -306,7 +306,7 @@
     <div id="effectBanner"></div>
 
     <div id="startScreen" class="ui-screen">
-        <div class="version-tag">v0.6</div>
+        <div class="version-tag">v0.7</div>
         <div class="fullscreen-container">
             <div class="header-group">
                 <h1>NEON SNAP</h1>
@@ -347,7 +347,7 @@
     </div>
 
     <div id="gameOverScreen" class="ui-screen" style="display:none;">
-        <div class="version-tag">v0.6</div>
+        <div class="version-tag">v0.7</div>
         <div class="fullscreen-container">
             <div class="header-group">
                 <h1>CONNECTION LOST</h1>
@@ -979,7 +979,7 @@
                 this.floatingTexts.push(new FloatingText(width/2, height/2 - 60, `STAGE ${this.stage}`, '#00ffcc'));
                 this.updateHUD();
             }
-            gameOver() {
+            async gameOver() {
                 this.state = 'GAMEOVER';
                 this.isDragging = false;
                 document.getElementById('hud').style.display = 'none';
@@ -994,6 +994,7 @@
                     note.innerText = '⚪ 포탈에서 로그인하면 통합 랭킹에 기록됩니다 (미로그인 시 기기 저장)';
                 }
                 document.getElementById('gameOverScreen').style.display = 'flex';
+                if (window.NS && window.NS.ready && window.NS.user) { await window.NS.report(this.score); }
                 this.loadLeaderboard();
             }
             showStartScreen() {
@@ -1027,10 +1028,8 @@
                 document.getElementById('endLeaderboard').innerHTML = html;
             }
             async submitScore() {
-                // 로그인: 통합 랭킹 자동 기록 / 비로그인: 기기 저장(익명)
-                if (window.NS && window.NS.ready && window.NS.user) {
-                    await window.NS.report(this.score);
-                } else {
+                // 점수는 이미 gameOver 시점에 기록됨. 비로그인만 기기 저장 후 재시작.
+                if (!(window.NS && window.NS.ready && window.NS.user)) {
                     const scores = JSON.parse(localStorage.getItem('neon_snap_ranks_v2')) || [];
                     scores.push({name: (window.NS && window.NS.myName) || "OPERATOR", score: this.score});
                     scores.sort((a,b) => b.score - a.score);
