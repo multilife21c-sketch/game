@@ -22,6 +22,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // ▼▼▼ 여기 채우세요 ▼▼▼
+// ⚠️ 보안 안내: 아래 apiKey 는 Firebase "웹 API 키"로, 클라이언트에 공개되는 것이 정상입니다
+//   (비밀이 아님 — https://firebase.google.com/docs/projects/api-keys).
+//   실제 보호는 ① Firestore 보안 규칙(firestore.rules) ② Google Cloud Console 의 API 키
+//   HTTP 리퍼러 제한 으로 이뤄집니다. 아래 도메인만 허용하도록 콘솔에서 키를 제한하세요:
+//     https://multilife21c-sketch.github.io/*  ,  https://game-sooty-gamma.vercel.app/*
+//     https://nova-arcade-55375.firebaseapp.com/*  ,  https://nova-arcade-55375.web.app/*
 export const firebaseConfig = {
   apiKey: "AIzaSyApM7BihAI_Lbo81WXweO2hvRo2fAtH1W8",
   authDomain: "nova-arcade-55375.firebaseapp.com",
