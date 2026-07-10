@@ -299,14 +299,14 @@
     <div id="hud" style="display:none;">
         <div class="hud-item" id="scoreDisplay">SCORE: 0</div>
         <div class="hud-item" id="stageDisplay">STAGE 1</div>
-        <div class="hud-item" id="survDisplay">⏱ 60.0s</div>
+        <div class="hud-item" id="survDisplay">⏱ 50.0s</div>
         <div class="hud-item" id="hpDisplay">CORE: 100%</div>
     </div>
     
     <div id="effectBanner"></div>
 
     <div id="startScreen" class="ui-screen">
-        <div class="version-tag">v0.7</div>
+        <div class="version-tag">v0.8</div>
         <div class="fullscreen-container">
             <div class="header-group">
                 <h1>NEON SNAP</h1>
@@ -347,7 +347,7 @@
     </div>
 
     <div id="gameOverScreen" class="ui-screen" style="display:none;">
-        <div class="version-tag">v0.7</div>
+        <div class="version-tag">v0.8</div>
         <div class="fullscreen-container">
             <div class="header-group">
                 <h1>CONNECTION LOST</h1>
@@ -755,7 +755,7 @@
                 this.hitStopFrames = 0;
                 
                 this.spawnTimer = 0;
-                this.spawnInterval = 1400;
+                this.spawnInterval = 900;   // v0.8: 초반 밀도 개선 (1400→900)
                 this.difficultyFactor = 1;
                 
                 this.itemSpawnTimer = 0;
@@ -808,15 +808,15 @@
                 this.particles = [];
                 this.floatingTexts = [];
                 this.items = [];
-                this.spawnInterval = 1400;
+                this.spawnInterval = 900;   // v0.8: 초반 밀도 개선 (1400→900)
                 this.difficultyFactor = 1;
                 this.itemSpawnTimer = 0;
-                this.nextItemTime = 8000; // 첫 아이템은 8초 후
+                this.nextItemTime = 5000; // v0.8: 첫 아이템 8→5초 (초반 보상 감각)
                 this.activeEffect = null;
                 this.effectTimer = 0;
                 // 스테이지 & 스킬
                 this.stage = 1;
-                this.stageTime = 60000;      // 60초 생존 목표
+                this.stageTime = 50000;      // v0.8: 60→50초 (템포 개선)
                 this.survTimer = 0;
                 this.skills = { damage:0, back:false, cross:false, multi:0, pierce:false, radius:0,
                     fan:0, reach:0, comboMul:1, scoreMul:1, knock:false, exec:false, autoShield:0,
@@ -1050,9 +1050,9 @@
                     if (this.survTimer >= this.stageTime) { this.stageClear(); return; }
                     // 적 스폰 (스테이지가 오를수록 빨라짐)
                     this.spawnTimer += dt;
-                    this.difficultyFactor += 0.00007 * dt;
+                    this.difficultyFactor += 0.00013 * dt;   // v0.8: 램프 가속 (0.00007→0.00013)
                     const stageBoost = 1 + (this.stage - 1) * 0.35;
-                    const nextInterval = Math.max(220, this.spawnInterval / Math.min(5, this.difficultyFactor) / stageBoost);
+                    const nextInterval = Math.max(180, this.spawnInterval / Math.min(5, this.difficultyFactor) / stageBoost);
                     if (this.spawnTimer >= nextInterval) {
                         this.enemies.push(new Enemy());
                         this.spawnTimer = 0;
