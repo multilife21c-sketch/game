@@ -150,7 +150,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 <!-- MENU -->
 <div class="screen" id="menu">
   <div class="logo">NEON DUEL</div>
-  <div style="font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:2px;color:#5a6f8c;margin-top:-6px;" id="menu-ver">v1.6</div>
+  <div style="font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:2px;color:#5a6f8c;margin-top:-6px;" id="menu-ver">v1.7</div>
   <div class="tagline">좌우 비행체의 <b>미사일 대결</b>! 가운데 아이템을 먹고,<br>정확히 <b>한가운데</b> 맞춰 크리티컬 → 궁극기로 폭발시켜라 ⚡</div>
   <div id="acct" style="font-size:13.5px;padding:8px 16px;border-radius:10px;border:1px solid var(--border2);background:rgba(17,29,49,.6);color:#93a4bb;">계정 확인 중…</div>
   <div class="modes">
@@ -187,7 +187,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
    모드: 랭킹(연승) / 스테이지 / AI 1:1
    랭킹: 연승 수 (동률 시 짧은 클리어시간 우선 → score 인코딩)
    ============================================================ */
-const GAME_VERSION='v1.6';
+const GAME_VERSION='v1.7';
 document.getElementById('vernum').textContent=GAME_VERSION;
 const _mv=document.getElementById('menu-ver'); if(_mv)_mv.textContent=GAME_VERSION;
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
@@ -387,7 +387,8 @@ function damage(p, dmg, crit, srcMissile){
   flash(crit?'#fde047':'#ff4d6d', crit?0.28:0.16);
   ring(p.x,p.y, crit?'#fde047':p.color, crit?90:55, crit?6:4);
   burst(p.x,p.y, crit?'#fde047':'#ff6b6b', crit?26:14);
-  ftext(p.x, p.y-20, (crit?'CRIT ':'')+real, crit?'#fde047':'#fff', crit?24:16);
+  if(crit){ ftext(p.x, p.y-46, 'CRIT!', '#fde047', 30); ring(p.x, p.y, '#fde047', 130, 5); }
+  ftext(p.x, p.y-20, (crit?'CRIT ':'')+real, crit?'#fde047':'#fff', crit?28:16);
   // 공격자 궁극 충전 (크리티컬은 2배)
   const src=players.find(q=>q.side===srcMissile.owner);
   if(src){ src.hits+=crit?2:1; gainUlt(src, crit?2:1);
@@ -533,7 +534,7 @@ function update(dt){
   } else $id('round-timer').textContent='';
 
   // 아이템 스폰
-  itemTimer-=dt; if(itemTimer<=0){ itemTimer=rand(1.1,2.2); if(items.length<4) spawnItem(); }
+  itemTimer-=dt; if(itemTimer<=0){ itemTimer=rand(0.8,1.6); if(items.length<5) spawnItem(); }
 
   // 플레이어 업데이트
   players.forEach((p,idx)=>{
@@ -591,8 +592,8 @@ function update(dt){
     const tp=players.find(q=>q.side!==m.owner);
     const tpz=tp?sizeMul(tp):1;
     if(tp && !tp.isDummy && Math.abs(m.x-tp.x)<tp.w/2*tpz+m.r && Math.abs(m.y-tp.y)<tp.h/2*tpz+m.r){
-      // 크리티컬: 중심(±crit범위)에 맞으면
-      const critRange=(players.find(q=>q.side===m.owner) && hasFx(players.find(q=>q.side===m.owner),'crit'))?18:9;
+      // 크리티컬: 중심(±crit범위)에 맞으면. 모바일 체감 강화 (v1.7)
+      const critRange=(players.find(q=>q.side===m.owner) && hasFx(players.find(q=>q.side===m.owner),'crit'))?26:16;
       const crit=Math.abs(m.y-tp.y)<critRange;
       damage(tp, m.dmg, crit, m);
       if(!m.pierce) m.dead=true;
