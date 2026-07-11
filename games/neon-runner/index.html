@@ -128,6 +128,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 <!-- START -->
 <div class="screen" id="startScr">
   <div class="logo"><span class="n">NEON</span> <span class="r">RUNNER</span></div>
+  <div id="nova-header-slot" style="max-width:520px;width:92vw;"></div>
   <div id="coinBar"><span class="c">🪙</span><span id="coinTotal">0</span></div>
   <div id="equipLine"></div>
   <div class="sub">장애물은 <b>점프</b>, 드론은 <b>슬라이드</b>!<br>오브를 모아 <b>⚡피버</b>로 폭주하라!</div>
@@ -776,14 +777,22 @@ requestAnimationFrame(loop);
      ============================================================ -->
 <script type="module">
 import { Nova } from "../../portal-sdk.js";
+import { NovaHeader } from "../../portal-common.js";
 import { DEMO, db, doc, getDoc, setDoc, collection, query, where, orderBy, limit, getDocs, serverTimestamp } from "../../firebase-config.js";
 
 const GAME_ID="neon-runner";
 Nova.init(GAME_ID);
+NovaHeader.mount(document.getElementById('nova-header-slot'), GAME_ID);
 
 window.NR={
   ready:true, user:null,
-  async report(dist){ try{ return await Nova.reportScore(dist); }catch(e){ console.warn('[NR] report',e); return false; } },
+  async report(dist){
+    try{
+      const ok = await Nova.reportScore(dist);
+      if(ok) NovaHeader.checkDaily({ score: dist });
+      return ok;
+    }catch(e){ console.warn('[NR] report',e); return false; }
+  },
   async saveCloud(save){ if(DEMO||!this.user) return;
     try{ await setDoc(doc(db,'runner_saves',this.user.uid), {...save, updatedAt:serverTimestamp()}, {merge:true}); }
     catch(e){ console.warn('[NR] saveCloud',e); } },

@@ -126,7 +126,7 @@
       <div class="version">v2.5</div>
       <div class="title">NEURAL GRID</div>
       <div class="subtitle">PROJECT: ZERO HOUR</div>
-      <div id="acct-badge" style="margin-top:6px;font-size:11px;color:#93a4bb;line-height:1.3;">계정 확인 중…</div>
+      <div id="nova-header-slot" style="margin-top:10px;"></div>
     </div>
     <div class="gold-box">
       <div class="status-label">FUNDS (GOLD)</div>
@@ -779,9 +779,11 @@
 <!-- 🌐 NOVA ARCADE 포탈 통합 (SSO + 랭킹) -->
 <script type="module">
 import { Nova } from "../../portal-sdk.js";
+import { NovaHeader } from "../../portal-common.js";
 import { DEMO } from "../../firebase-config.js";
 const GAME_ID = "neural-grid";
 Nova.init(GAME_ID);
+NovaHeader.mount(document.getElementById('nova-header-slot'), GAME_ID);
 
 // 게임의 기존 window.reportScore 뼈대를 포탈로 연결
 window.__ngUser = null;
@@ -789,6 +791,7 @@ window.reportScore = async (score) => {
   try {
     if (!window.__ngUser) { console.log("[NG] 비로그인 — 점수 미기록"); return false; }
     const ok = await Nova.reportScore(Math.max(0, Math.round(score)));
+    if(ok) NovaHeader.checkDaily({ score });
     console.log("[NG] reportScore", score, ok ? "기록됨" : "실패");
     return ok;
   } catch (e) { console.warn("[NG] reportScore 오류", e); return false; }
@@ -796,13 +799,7 @@ window.reportScore = async (score) => {
 
 Nova.onUser(u => {
   window.__ngUser = u || null;
-  const b = document.getElementById('acct-badge');
-  if (!b) return;
-  if (u) {
-    b.innerHTML = '🟢 <b style="color:#00e5a0">' + String(u.displayName || '해커').replace(/[<>&]/g,'') + '</b> · 랭킹 기록됨';
-  } else {
-    b.innerHTML = (typeof DEMO!=="undefined" && DEMO) ? '데모 모드' : '⚪ 비로그인 — 포탈에서 로그인 시 랭킹 연동';
-  }
+  // 헤더는 NovaHeader가 자동 처리
 });
 console.log('[NEURAL GRID] NOVA ARCADE 통합 연동됨');
 </script>

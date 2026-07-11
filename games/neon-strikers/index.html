@@ -331,6 +331,7 @@
   <!-- Main menu -->
   <div id="menu" class="overlay">
     <div class="logo">NEON STRIKERS<small>TOP-DOWN ACTION SHOOTER</small></div>
+    <div id="nova-header-slot" style="max-width:520px;width:92vw;"></div>
     <div class="profilePill" id="profilePill"></div>
     <p class="tip" id="ctrlTip"></p>
     <button class="btn alt" id="toSelect">게임 시작 ▶</button>
@@ -4270,11 +4271,13 @@ if ('serviceWorker' in navigator) {
      ============================================================ -->
 <script type="module">
   import { Nova } from "../../portal-sdk.js";
+  import { NovaHeader } from "../../portal-common.js";
   import { db, collection, query, where, orderBy, limit, getDocs,
            auth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut } from "../../firebase-config.js";
 
   const GAME_ID = "neon-strikers";
   Nova.init(GAME_ID);
+  NovaHeader.mount(document.getElementById('nova-header-slot'), GAME_ID);
 
   // 게임 엔진이 호출하는 훅(window.NS_FB)을 포탈 SDK로 연결.
   // (게임 내장 firebaseConfig 는 비워둔 채로 두면 이 모듈이 우선 동작)
@@ -4282,7 +4285,14 @@ if ('serviceWorker' in navigator) {
     ready: true,
     // 매치 결과 보고: 현재 트로피를 포탈 통합 랭킹에 기록(로그인 상태에서만)
     async submit(id, nick, trophies, wins) {
-      try { await Nova.reportScore(Number(trophies) || 0, { always: true }); }
+      try {
+        await Nova.reportScore(Number(trophies) || 0, { always: true });
+        // 데일리 도전(트로피 획득 관련)은 delta 방식이라, 매치 종료 시 최근 획득량으로 체크
+        if(window.__nsLastDelta && window.__nsLastDelta > 0){
+          NovaHeader.checkDaily({ delta: window.__nsLastDelta });
+          window.__nsLastDelta = 0;
+        }
+      }
       catch (e) { console.warn("[Nova] submit", e); }
     },
     // 통합 랭킹 TOP N (포탈 scores 컬렉션 → 게임 랭킹 화면 포맷으로 변환)

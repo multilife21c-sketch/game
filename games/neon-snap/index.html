@@ -311,7 +311,7 @@
             <div class="header-group">
                 <h1>NEON SNAP</h1>
                 <div class="subtitle">Tension Slicing Action • Ultimate</div>
-                <div id="acctBadge" style="margin-top:10px;font-size:13px;color:#7fd8ff;">계정 확인 중…</div>
+                <div id="nova-header-slot" style="margin:12px auto 4px;"></div>
             </div>
             
             <div class="main-content">
@@ -1207,13 +1207,21 @@
 <!-- 🌐 NOVA ARCADE 포탈 통합 (SSO + 통합 랭킹) -->
 <script type="module">
 import { Nova } from "../../portal-sdk.js";
+import { NovaHeader } from "../../portal-common.js";
 import { DEMO, db, collection, query, where, orderBy, limit, getDocs } from "../../firebase-config.js";
 const GAME_ID = "neon-snap";
 Nova.init(GAME_ID);
+NovaHeader.mount(document.getElementById('nova-header-slot'), GAME_ID);
 window.NS = {
   ready: true, demo: DEMO, user: null, myName: null,
   async report(score){
-    try { const ok = await Nova.reportScore(Math.max(0, Math.round(score))); console.log("[NS] report", score, ok); return ok; }
+    try {
+      const ok = await Nova.reportScore(Math.max(0, Math.round(score)));
+      console.log("[NS] report", score, ok);
+      // 데일리 도전 체크
+      if(ok) NovaHeader.checkDaily({ score, stage: window.game && window.game.stage });
+      return ok;
+    }
     catch(e){ console.warn("[NS] report", e); return false; }
   },
   async loadTop(){
@@ -1229,12 +1237,7 @@ window.NS = {
 Nova.onUser(u => {
   window.NS.user = u || null;
   window.NS.myName = u ? (u.displayName || '플레이어') : null;
-  const b = document.getElementById('acctBadge');
-  if (b) {
-    if (u) b.innerHTML = '🟢 <b style="color:#00ffcc">' + String(u.displayName||'플레이어').replace(/[<>&]/g,'') + '</b> · 통합 랭킹 기록됨';
-    else b.innerHTML = (DEMO) ? '데모 모드' : '⚪ 비로그인 — 포탈에서 로그인 시 랭킹 연동';
-  }
-  // 로그인 상태 바뀌면 리더보드 새로고침
+  // 헤더/상태는 NovaHeader가 자동 처리. 리더보드 새로고침만 유지.
   if (window.game && typeof window.game.loadLeaderboard === 'function') window.game.loadLeaderboard();
 });
 console.log('[NEON SNAP] NOVA ARCADE 통합 연동됨');
