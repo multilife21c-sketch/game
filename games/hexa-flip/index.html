@@ -353,6 +353,7 @@
         <div class="panel">
             <h1>HEXA-FLIP</h1>
             <p class="subtitle">다이내믹 메이징 디펜스</p>
+            <div id="nova-header-slot" style="width:100%;display:flex;justify-content:center;"></div>
             
             <div class="resource-bar">
                 <span>⭐ 스타 코인:</span>
@@ -673,6 +674,8 @@
     function endGame() {
         gameState = 'GAMEOVER'; const earnedCoins = wave * 10; metaData.starCoin += earnedCoins; saveData();
         document.getElementById('final-wave').innerText = wave; document.getElementById('earned-coin').innerText = earnedCoins; document.getElementById('gameover-overlay').classList.remove('hidden');
+        // 🌐 포탈 통합 랭킹에 wave 기록 (로그인 상태에서만)
+        try { if (window.HF && window.HF.ready) window.HF.report(wave); } catch(e) { console.warn('[HF] report', e); }
     }
 
     function update(dt) {
@@ -858,6 +861,29 @@
 
     loadData(); openMenu('lobby');
 
+</script>
+
+<!-- 🌐 NOVA ARCADE 포탈 통합 (SSO + 랭킹 + 데일리) -->
+<script type="module">
+import { Nova } from "../../portal-sdk.js";
+import { NovaHeader } from "../../portal-common.js";
+const GAME_ID = "hexa-flip";
+Nova.init(GAME_ID);
+NovaHeader.mount(document.getElementById('nova-header-slot'), GAME_ID);
+
+window.HF = {
+  ready: true, user: null,
+  async report(wave){
+    try {
+      const ok = await Nova.reportScore(Math.max(0, Math.round(wave)));
+      if(ok) NovaHeader.checkDaily({ score: wave });
+      console.log("[HF] wave", wave, ok?"기록됨":"실패");
+      return ok;
+    } catch(e){ console.warn("[HF] report", e); return false; }
+  }
+};
+Nova.onUser(u => { window.HF.user = u || null; });
+console.log('[HEXA-FLIP] NOVA ARCADE 통합 연동됨');
 </script>
 
 </body>
