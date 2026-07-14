@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Neon Snap - v0.5</title>
+    <title>Neon Snap - v0.9</title>
     <style>
         :root {
             --neon-cyan: #00ffcc;
@@ -280,6 +280,92 @@
         .upg-nm { font-size:18px; font-weight:bold; color:#00ffcc; }
         .upg-ds { font-size:13px; color:#9fd; opacity:0.85; line-height:1.5; }
         @media (max-width:640px){ .upg-card{ width:30%; min-width:96px; padding:14px 8px; } .upg-ic{font-size:30px;} .upg-nm{font-size:14px;} .upg-ds{font-size:11px;} }
+        /* v0.9 스킬 게이지·버튼 */
+        #skillHud {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 6;
+            pointer-events: none;
+            text-align: center;
+            font-family: monospace;
+        }
+        #skillGaugeWrap {
+            width: min(300px, 60vw);
+            height: 10px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(0, 255, 204, 0.4);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        #skillGauge {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-yellow));
+            border-radius: 6px;
+            box-shadow: 0 0 12px rgba(0,255,204,0.6);
+            transition: width 0.15s ease;
+        }
+        #skillGaugeWrap.ready { border-color: var(--neon-yellow); animation: gpulse 0.7s infinite; }
+        #skillGaugeWrap.ready #skillGauge {
+            background: linear-gradient(90deg, var(--neon-yellow), #ff6b00, var(--neon-magenta));
+            box-shadow: 0 0 22px rgba(255,255,0,0.8);
+        }
+        @keyframes gpulse { 50% { box-shadow: 0 0 24px rgba(255,255,0,0.7); } }
+        #skillLabel {
+            font-size: 12px;
+            color: #8899af;
+            letter-spacing: 2px;
+            margin-top: 4px;
+        }
+        #skillHud.ready #skillLabel {
+            color: var(--neon-yellow);
+            font-weight: 900;
+            text-shadow: 0 0 8px rgba(255,255,0,0.6);
+        }
+        #skillBtn {
+            position: fixed;
+            right: max(20px, env(safe-area-inset-right));
+            bottom: max(20px, env(safe-area-inset-bottom));
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            border: 3px solid rgba(0, 255, 204, 0.4);
+            background: radial-gradient(circle at 40% 30%, rgba(0,255,204,0.15), rgba(0,10,20,0.85));
+            color: #8899af;
+            z-index: 15;
+            cursor: pointer;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            font-family: monospace;
+            opacity: 0.4;
+            transition: opacity 0.2s, transform 0.1s;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+            -webkit-tap-highlight-color: transparent;
+        }
+        #skillBtn.on { display: flex; }
+        #skillBtn .ic { font-size: 26px; line-height: 1; }
+        #skillBtn .pct { font-size: 10px; margin-top: 2px; letter-spacing: 1px; }
+        #skillBtn.ready {
+            opacity: 1;
+            border-color: var(--neon-yellow);
+            color: var(--neon-yellow);
+            background: radial-gradient(circle at 40% 30%, rgba(255,255,0,0.35), rgba(255,100,0,0.55));
+            animation: bpulse 0.7s infinite;
+            box-shadow: 0 0 22px rgba(255,255,0,0.7);
+        }
+        @keyframes bpulse { 50% { box-shadow: 0 0 34px rgba(255,255,0,0.9); transform: scale(1.05); } }
+        #skillBtn:active { transform: scale(0.92); }
+        @media (max-width: 600px) {
+            #skillHud { top: 44px; }
+            #skillBtn { width: 62px; height: 62px; right: 12px; bottom: 12px; }
+            #skillBtn .ic { font-size: 22px; }
+        }
+        /* 우하단 오래된 버전 태그 */
         .version-tag {
             position: absolute;
             bottom: 15px;
@@ -306,14 +392,24 @@
     <div id="hud" style="display:none;">
         <div class="hud-item" id="scoreDisplay">SCORE: 0</div>
         <div class="hud-item" id="stageDisplay">STAGE 1</div>
-        <div class="hud-item" id="survDisplay">⏱ 50.0s</div>
+        <div class="hud-item" id="survDisplay">⏱ 30.0s</div>
         <div class="hud-item" id="hpDisplay">CORE: 100%</div>
     </div>
+
+    <div id="skillHud" style="display:none;">
+        <div id="skillGaugeWrap"><div id="skillGauge"></div></div>
+        <div id="skillLabel">⚡ EMP: 0%</div>
+    </div>
+
+    <button id="skillBtn" type="button" style="display:none;">
+        <span class="ic">⚡</span>
+        <span class="pct" id="skillBtnPct">0%</span>
+    </button>
     
     <div id="effectBanner"></div>
 
     <div id="startScreen" class="ui-screen">
-        <div class="version-tag">v0.8</div>
+        <div class="version-tag">v0.9</div>
         <div class="fullscreen-container">
             <div class="header-group">
                 <h1>NEON SNAP</h1>
@@ -323,8 +419,8 @@
             
             <div class="main-content">
                 <div class="instructions">
-                    <strong>💡 [v0.2 신규] 아이템 등장!</strong><br>
-                    게임 중 화면에 등장하는 특수 아이템(마름모꼴)을 베면 강력한 버프 효과가 발동합니다. 상단 타이머를 확인하며 전략적으로 활용하세요!
+                    <strong>⚡ [v0.9] 30초 스테이지 + EMP 스킬!</strong><br>
+                    30초마다 스테이지 클리어! 동시에 여러 적을 베면 <b>콤보 등급</b>(DOUBLE~MASTER)으로 점수가 폭증하고, 적을 벨수록 <b>EMP 게이지</b>가 차서 SPACE·버튼으로 전체 공격을 발동할 수 있습니다.
                 </div>
                 
                 <div class="enemy-legend">
@@ -354,7 +450,7 @@
     </div>
 
     <div id="gameOverScreen" class="ui-screen" style="display:none;">
-        <div class="version-tag">v0.8</div>
+        <div class="version-tag">v0.9</div>
         <div class="fullscreen-container">
             <div class="header-group">
                 <h1>CONNECTION LOST</h1>
@@ -504,6 +600,7 @@
                 this.color = color;
                 this.alpha = 1;
                 this.vy = -2;
+                this.scale = 1;   // v0.9: 콤보 등급에 따른 크기 배율
             }
             update(timeScale) {
                 this.y += this.vy * timeScale;
@@ -513,8 +610,8 @@
                 ctx.save();
                 ctx.globalAlpha = this.alpha;
                 ctx.fillStyle = this.color;
-                ctx.font = 'black 24px monospace';
-                ctx.shadowBlur = 10;
+                ctx.font = `black ${Math.round(24 * this.scale)}px monospace`;
+                ctx.shadowBlur = 10 * this.scale;
                 ctx.shadowColor = this.color;
                 ctx.textAlign = 'center';
                 ctx.fillText(this.text, this.x, this.y);
@@ -806,6 +903,44 @@
                     if (e.touches.length > 0) moveDrag(e.touches[0].clientX, e.touches[0].clientY);
                 }, { passive: false });
                 window.addEventListener('touchend', e => { endDrag(); }, { passive: false });
+
+                // v0.9: EMP 특수 스킬 — SPACE 키 또는 버튼 탭으로 발동
+                window.addEventListener('keydown', e => {
+                    if (e.code === 'Space' && this.state === 'PLAYING') { e.preventDefault(); this.activateSkill(); }
+                });
+                const skillBtnEl = document.getElementById('skillBtn');
+                if (skillBtnEl) {
+                    const fireSkill = (e) => { e.preventDefault(); e.stopPropagation(); this.activateSkill(); };
+                    skillBtnEl.addEventListener('pointerdown', fireSkill);
+                }
+            }
+            // v0.9: EMP 스킬 — 게이지 100%일 때 화면의 모든 적에게 강력한 피해
+            activateSkill() {
+                if (this.state !== 'PLAYING') return;
+                if (this.skillCharge < 100) {
+                    // 아직 안 찼으면 안내만 (흔들림 없이 은은한 피드백)
+                    this.floatingTexts.push(new FloatingText(width/2, height/2 - 20,
+                        `⚡ ${Math.round(this.skillCharge)}%`, '#8899af'));
+                    return;
+                }
+                this.skillCharge = 0;
+                sound.playPowerUp();
+                this.hitStopFrames = 8;
+                this.shakeIntensity = 45;
+                const cx = width / 2, cy = height / 2;
+                let killed = 0;
+                for (let i = this.enemies.length - 1; i >= 0; i--) {
+                    const e = this.enemies[i];
+                    e.hp -= 3; // 대부분의 적을 즉사시키되, 고체력 적은 큰 피해만
+                    for (let p = 0; p < 10; p++) this.particles.push(new Particle(e.x, e.y, '#00ffff', 0));
+                    if (e.hp <= 0) { killed++; this.enemies.splice(i, 1); this.score += 15; }
+                }
+                // 전체화면 EMP 링 이펙트 (화면 중앙에서 퍼지는 충격파)
+                for (let i = 0; i < 3; i++) {
+                    this.particles.push(new Particle(cx, cy, '#00ffff', (Math.PI * 2 / 3) * i));
+                }
+                this.floatingTexts.push(new FloatingText(cx, cy - 60, `⚡ EMP BURST! +${killed * 15}`, '#00ffff'));
+                this.updateHUD();
             }
             start() {
                 sound.init();
@@ -823,8 +958,14 @@
                 this.effectTimer = 0;
                 // 스테이지 & 스킬
                 this.stage = 1;
-                this.stageTime = 50000;      // v0.8: 60→50초 (템포 개선)
+                this.stageTime = 30000;      // v0.9: 30초 (50→30, 압축된 긴장감)
                 this.survTimer = 0;
+                // v0.9 특수 스킬 (EMP): 게이지 100% 시 발동, 화면 모든 적 데미지
+                this.skillCharge = 0;        // 0~100
+                this.skillReady = false;
+                this.skillReadyPrev = false;
+                // 동시 파괴 콤보 등급 표시
+                this.lastComboMax = 0;
                 this.skills = { damage:0, back:false, cross:false, multi:0, pierce:false, radius:0,
                     fan:0, reach:0, comboMul:1, scoreMul:1, knock:false, exec:false, autoShield:0,
                     slowmo:0.10, split:false, chain:false, vamp:false, magnet:false };
@@ -834,6 +975,8 @@
                 document.getElementById('startScreen').style.display = 'none';
                 document.getElementById('gameOverScreen').style.display = 'none';
                 document.getElementById('hud').style.display = 'flex';
+                document.getElementById('skillHud').style.display = 'block';
+                document.getElementById('skillBtn').classList.add('on');
                 document.getElementById('effectBanner').style.display = 'none';
                 this.updateHUD();
             }
@@ -842,7 +985,27 @@
                 document.getElementById('hpDisplay').innerText = `CORE: ${this.hp}%`;
                 const st = document.getElementById('stageDisplay'); if (st) st.innerText = `STAGE ${this.stage}`;
                 const sv = document.getElementById('survDisplay');
-                if (sv) sv.innerText = `⏱ ${Math.max(0,(this.stageTime - this.survTimer)/1000).toFixed(1)}s`;
+                const remain = Math.max(0,(this.stageTime - this.survTimer)/1000);
+                if (sv) {
+                    sv.innerText = `⏱ ${remain.toFixed(1)}s`;
+                    // 마지막 5초: 빨간색·굵게로 긴장감 부여
+                    sv.style.color = remain <= 5 ? '#ff3355' : '#ffd23f';
+                    sv.style.textShadow = remain <= 5 ? '0 0 10px rgba(255,50,80,0.7)' : '';
+                }
+                // 스킬 게이지 UI
+                const g = document.getElementById('skillGauge');
+                const wrap = document.getElementById('skillGaugeWrap');
+                const lbl = document.getElementById('skillLabel');
+                const hud = document.getElementById('skillHud');
+                const btn = document.getElementById('skillBtn');
+                const pct = document.getElementById('skillBtnPct');
+                if (g) g.style.width = this.skillCharge + '%';
+                if (pct) pct.textContent = Math.round(this.skillCharge) + '%';
+                const ready = this.skillCharge >= 100;
+                if (wrap) wrap.classList.toggle('ready', ready);
+                if (hud) hud.classList.toggle('ready', ready);
+                if (btn) btn.classList.toggle('ready', ready);
+                if (lbl) lbl.textContent = ready ? '⚡ EMP READY — 탭 또는 SPACE' : `⚡ EMP: ${Math.round(this.skillCharge)}%`;
             }
             damageCore(amount) {
                 if (this.shieldCharges > 0) { this.shieldCharges--; this.shakeIntensity = 10;
@@ -929,14 +1092,39 @@
                 }
 
                 if (killedCount > 0) {
-                    this.hitStopFrames = 6;
-                    this.shakeIntensity = 8 + killedCount * 5;
-                    let comboScore = killedCount * 10 * killedCount * sk.comboMul;
+                    // v0.9 콤보 등급 시스템 — 동시 파괴 수에 따라 배수·색상·크기가 급격히 상승
+                    const grades = [
+                        {n:1, name:'HIT',    color:'#ffff00', size:1.0, mult:1.0,  shake:8},
+                        {n:2, name:'DOUBLE', color:'#00ffcc', size:1.15, mult:1.4,  shake:14},
+                        {n:3, name:'TRIPLE', color:'#ff8c00', size:1.35, mult:1.9,  shake:22},
+                        {n:4, name:'MEGA',   color:'#ff0055', size:1.55, mult:2.6,  shake:30},
+                        {n:5, name:'ULTRA',  color:'#a855f7', size:1.8,  mult:3.5,  shake:40},
+                        {n:7, name:'MASTER', color:'#ffffff', size:2.1,  mult:5.0,  shake:50},
+                    ];
+                    let grade = grades[0];
+                    for (const g of grades) if (killedCount >= g.n) grade = g;
+                    this.hitStopFrames = 4 + Math.min(10, killedCount);
+                    this.shakeIntensity = grade.shake;
+                    // 점수: killedCount² × 10 × 콤보등급 배수 × 스킬 배수
+                    let comboScore = killedCount * killedCount * 10 * grade.mult * sk.comboMul;
                     if (this.activeEffect && this.activeEffect.id === 'DOUBLE') comboScore *= 2;
                     comboScore = Math.round(comboScore * sk.scoreMul);
                     this.score += comboScore;
+                    // 스킬 게이지 충전: kill 수 × 6% (콤보가 클수록 많이)
+                    this.skillCharge = Math.min(100, this.skillCharge + killedCount * 6);
+                    this.lastComboMax = Math.max(this.lastComboMax, killedCount);
                     this.updateHUD();
-                    this.floatingTexts.push(new FloatingText(this.pointerX, this.pointerY - 20, `${killedCount} SLICES! +${comboScore}`, '#ffff00'));
+                    // 텍스트: 콤보 등급명·크기·색상 반영
+                    const ft = new FloatingText(this.pointerX, this.pointerY - 30,
+                        `${grade.name} x${killedCount}  +${comboScore}`, grade.color);
+                    if (ft) { ft.scale = grade.size; ft.grade = grade.name; }
+                    this.floatingTexts.push(ft);
+                    // 큰 콤보(4+): 화면 중앙에도 큰 배지
+                    if (killedCount >= 4) {
+                        const big = new FloatingText(width/2, height/2 - 60, grade.name + '!!', grade.color);
+                        if (big) big.scale = grade.size * 1.4;
+                        this.floatingTexts.push(big);
+                    }
                 }
             }
             // 분열/연쇄: 처치 위치 주변 적에게 피해
@@ -980,8 +1168,8 @@
                 document.getElementById('upgradeScreen').style.display = 'none';
                 this.stage++;
                 this.survTimer = 0;
-                // 다음 스테이지: 적 강화(속도/체력) + 코어 살짝 회복
-                this.hp = Math.min(100, this.hp + 10);
+                // 다음 스테이지: 적 강화(속도/체력) + 코어 회복 (v0.9: 30초 압축판 리스크 보완, 10→15)
+                this.hp = Math.min(100, this.hp + 15);
                 this.state = 'PLAYING';
                 this.floatingTexts.push(new FloatingText(width/2, height/2 - 60, `STAGE ${this.stage}`, '#00ffcc'));
                 this.updateHUD();
@@ -990,6 +1178,8 @@
                 this.state = 'GAMEOVER';
                 this.isDragging = false;
                 document.getElementById('hud').style.display = 'none';
+                document.getElementById('skillHud').style.display = 'none';
+                document.getElementById('skillBtn').classList.remove('on');
                 document.getElementById('effectBanner').style.display = 'none';
                 document.getElementById('finalScoreDisplay').innerText = `최종 동기화 점수: ${this.score}`;
                 const note = document.getElementById('loginRankNote');
@@ -1052,13 +1242,13 @@
                 this.timeScale = this.isDragging ? (this.skills ? this.skills.slowmo : 0.10) : 1.0;
 
                 if (this.state === 'PLAYING') {
-                    // 생존 타이머 → 60초 버티면 스테이지 클리어
+                    // 생존 타이머 → 30초 버티면 스테이지 클리어 (v0.9: 60→30)
                     this.survTimer += dt;
                     if (this.survTimer >= this.stageTime) { this.stageClear(); return; }
                     // 적 스폰 (스테이지가 오를수록 빨라짐)
                     this.spawnTimer += dt;
                     this.difficultyFactor += 0.00013 * dt;   // v0.8: 램프 가속 (0.00007→0.00013)
-                    const stageBoost = 1 + (this.stage - 1) * 0.35;
+                    const stageBoost = 1 + (this.stage - 1) * 0.22;   // v0.9: 30초로 스테이지 전환이 빨라진 만큼 완만하게 (0.35→0.22)
                     const nextInterval = Math.max(180, this.spawnInterval / Math.min(5, this.difficultyFactor) / stageBoost);
                     if (this.spawnTimer >= nextInterval) {
                         this.enemies.push(new Enemy());
@@ -1070,7 +1260,7 @@
                     if (this.itemSpawnTimer >= this.nextItemTime) {
                         this.items.push(new Item());
                         this.itemSpawnTimer = 0;
-                        this.nextItemTime = 12000 + Math.random() * 8000; // 12~20초마다 생성
+                        this.nextItemTime = 8000 + Math.random() * 6000; // v0.9: 30초 스테이지 맞춤 (8~14초마다)
                     }
 
                     // 아이템 효과 타이머 및 UI 업데이트
@@ -1289,7 +1479,9 @@ console.log('[NEON SNAP] NOVA ARCADE 통합 연동됨');
   var SLIDES=[
     {e:"🖱️",t:"당겼다 놓기",d:"화면 빈 곳을 <b>누른 채 드래그</b>하면 코어와 손가락 사이에 네온 레이저 실이 팽팽하게 당겨집니다. 놓는 순간 실이 튕겨 돌아가며 <b>궤적의 적을 모두 벱니다.</b>"},
     {e:"⏳",t:"불릿 타임",d:"당기고 있는 동안 <b>시간이 느려집니다.</b> 길게·넓게 당길수록 더 많은 적을 한 번에 베어 <b>콤보 점수가 폭발</b>하지만, 그동안 코어는 무방비! 타이밍이 관건입니다."},
-    {e:"⚡",t:"스테이지 & 스킬",d:"<b>60초 생존하면 다음 스테이지</b>로 넘어가고, 매번 <b>강화 스킬 3개 중 1개</b>를 고릅니다. 연속 베기·관통·백스트라이크 등 스킬을 쌓아 최강의 슬라이서가 되세요!"}
+    {e:"🔥",t:"동시 파괴 콤보",d:"한 번에 여러 적을 베면 <b>DOUBLE・TRIPLE・MEGA・ULTRA</b> 콤보 등급이 발동해 점수가 폭발적으로 증가합니다. 최대한 많이 모아서 한 번에 베세요!"},
+    {e:"⚡",t:"EMP 특수 스킬",d:"적을 벨 때마다 화면 상단 <b>EMP 게이지</b>가 충전됩니다. 100% 차면 <b>SPACE 키 또는 버튼</b>으로 발동 — 화면의 모든 적에게 강력한 피해를 줍니다!"},
+    {e:"⏱️",t:"스테이지 & 스킬",d:"<b>30초 생존하면 다음 스테이지</b>로 넘어가고, 매번 <b>강화 스킬 3개 중 1개</b>를 고릅니다. 연속 베기·관통·백스트라이크 등 스킬을 쌓아 최강의 슬라이서가 되세요!"}
   ];
   var i=0, ov=document.getElementById('tutov');
   var dots=document.getElementById('tutDots');
