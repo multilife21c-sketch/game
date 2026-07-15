@@ -300,7 +300,7 @@
 #accountBtn{display:none !important;}</style>
 </head>
 <body>
-<div id="ver" style="position:fixed;top:5px;left:8px;z-index:40;font-family:'Outfit',sans-serif;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,.4);pointer-events:none;">NEON STRIKERS <span id="vernum">v1.3</span></div>
+<div id="ver" style="position:fixed;top:5px;left:8px;z-index:40;font-family:'Outfit',sans-serif;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,.4);pointer-events:none;">NEON STRIKERS <span id="vernum">v1.40</span></div>
 <div id="app">
   <canvas id="cv"></canvas>
   <div id="toast"></div>
@@ -640,7 +640,7 @@ let DPR = Math.min(window.devicePixelRatio||1, 2);
 let VW = 0, VH = 0;                 // viewport(px)
 const WORLD = { w:2200, h:1500 };   // 고정 월드 크기
 const cam = { x:0, y:0, zoom:1, zoomBase:1, zoomPunch:0, sx:0, sy:0 };
-const GAME_VERSION='v1.3'; try{document.getElementById('vernum').textContent=GAME_VERSION;}catch(e){}
+const GAME_VERSION='v1.40'; try{document.getElementById('vernum').textContent=GAME_VERSION;}catch(e){}
 let rings=[], flashes=[], beams=[], swings=[], screenFlash=0, shake=0, hitstop=0, hurtV=0;
 // 분위기 입자(테마빛 반딧불/먼지) — 카메라 주변을 떠다님
 let ambient=[];
