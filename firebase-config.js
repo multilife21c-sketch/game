@@ -56,6 +56,49 @@ if (!DEMO) {
 
 export const isAdmin = (uid) => !!uid && ADMIN_UIDS.includes(uid);
 
+// ============================================================
+//  🔒 인앱 브라우저(카카오톡/인스타그램/네이버 등) 감지 + 탈출
+//  Google은 보안 정책상 인앱 웹뷰에서의 OAuth 로그인을 원천 차단합니다
+//  (403 disallowed_useragent). 코드로 우회할 수 없으므로,
+//  로그인 시도 전에 감지해서 기본 브라우저로 안내/탈출시킵니다.
+// ============================================================
+export function isInAppBrowser() {
+  const ua = navigator.userAgent || navigator.vendor || "";
+  return /KAKAOTALK|Instagram|FBAN|FBAV|Line\/|NAVER\(inapp|WhatsApp|MicroMessenger|Zalo|Snapchat/i.test(ua);
+}
+
+export function inAppBrowserName() {
+  const ua = navigator.userAgent || "";
+  if (/KAKAOTALK/i.test(ua)) return "카카오톡";
+  if (/Instagram/i.test(ua)) return "인스타그램";
+  if (/FBAN|FBAV/i.test(ua)) return "페이스북";
+  if (/Line\//i.test(ua)) return "라인";
+  if (/NAVER\(inapp/i.test(ua)) return "네이버 앱";
+  if (/MicroMessenger/i.test(ua)) return "위챗";
+  return "인앱 브라우저";
+}
+
+// 가능하면 기본 브라우저로 즉시 전환(카카오톡/라인), 안 되면 false 반환(안내 필요)
+export function escapeToExternalBrowser() {
+  const ua = navigator.userAgent || "";
+  const url = location.href;
+  if (/KAKAOTALK/i.test(ua)) {
+    location.href = "kakaotalk://web/openExternal?url=" + encodeURIComponent(url);
+    return true;
+  }
+  if (/Line\//i.test(ua)) {
+    location.href = url + (url.includes("?") ? "&" : "?") + "openExternalBrowser=1";
+    return true;
+  }
+  if (/Android/i.test(ua) && (/Instagram|FBAN|FBAV|NAVER\(inapp|MicroMessenger/i.test(ua))) {
+    // 안드로이드: Chrome 인텐트로 강제 오픈 시도
+    const bare = url.replace(/^https?:\/\//, "");
+    location.href = "intent://" + bare + "#Intent;scheme=https;package=com.android.chrome;end";
+    return true;
+  }
+  return false; // iOS 인스타/페북 등은 직접 탈출 URL scheme이 없어 안내 필요
+}
+
 export {
   app, auth, db,
   GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,

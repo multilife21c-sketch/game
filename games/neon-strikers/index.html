@@ -4232,6 +4232,16 @@ applyControlMode();
         },
         // 구글 로그인. 이미 익명 유저면 link 로 진행도 승계.
         async google() {
+          // 🔒 카카오톡 등 인앱 브라우저는 구글이 로그인을 원천 차단 (403 disallowed_useragent)
+          if (isInAppBrowser()) {
+            const name = inAppBrowserName();
+            const wantEscape = confirm(`${name}에서는 구글 로그인이 제한됩니다.\n기본 브라우저(Chrome/Safari)에서 열까요?`);
+            if (wantEscape) {
+              const escaped = escapeToExternalBrowser();
+              if (!escaped) { try{ await navigator.clipboard.writeText(location.href); alert('링크를 복사했어요 — 브라우저 앱에 붙여넣어 접속해주세요'); }catch(e){} }
+            }
+            return null;
+          }
           const prov = new GoogleAuthProvider();
           try {
             if (auth.currentUser && auth.currentUser.isAnonymous) {
@@ -4273,7 +4283,8 @@ if ('serviceWorker' in navigator) {
   import { Nova } from "../../portal-sdk.js";
   import { NovaHeader } from "../../portal-common.js";
   import { db, collection, query, where, orderBy, limit, getDocs,
-           auth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut } from "../../firebase-config.js";
+           auth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut,
+           isInAppBrowser, inAppBrowserName, escapeToExternalBrowser } from "../../firebase-config.js";
 
   const GAME_ID = "neon-strikers";
   Nova.init(GAME_ID);
