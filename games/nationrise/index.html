@@ -615,6 +615,7 @@ body { background:var(--bg0); color:var(--txt1); font-family:var(--font-kr), san
 <!-- ===== TOP BAR ===== -->
 <div class="topbar">
   <div class="logo">NATION RISE</div>
+  <div id="ver" style="position:fixed;top:5px;left:8px;z-index:9999;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,.4);pointer-events:none;">v1.00</div>
   <div class="live-badge"><div class="pulse"></div>VIRTUAL WORLD</div>
   <div class="topbar-nav">
     <button class="nav-btn" onclick="openView('map')">🗺️ <span>세계지도</span></button>
@@ -1591,7 +1592,43 @@ document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(init, 100); });
 window.addEventListener('firebase-ready', init);
 
 // === AUTH ===
+// 🔒 카카오톡 등 인앱 브라우저 감지 (구글이 OAuth 로그인을 원천 차단: 403 disallowed_useragent)
+function nrIsInAppBrowser() {
+  const ua = navigator.userAgent || navigator.vendor || "";
+  return /KAKAOTALK|Instagram|FBAN|FBAV|Line\/|NAVER\(inapp|WhatsApp|MicroMessenger|Zalo|Snapchat/i.test(ua);
+}
+function nrInAppBrowserName() {
+  const ua = navigator.userAgent || "";
+  if (/KAKAOTALK/i.test(ua)) return "카카오톡";
+  if (/Instagram/i.test(ua)) return "인스타그램";
+  if (/FBAN|FBAV/i.test(ua)) return "페이스북";
+  if (/Line\//i.test(ua)) return "라인";
+  if (/NAVER\(inapp/i.test(ua)) return "네이버 앱";
+  if (/MicroMessenger/i.test(ua)) return "위챗";
+  return "인앱 브라우저";
+}
+function nrEscapeToExternalBrowser() {
+  const ua = navigator.userAgent || "";
+  const url = location.href;
+  if (/KAKAOTALK/i.test(ua)) { location.href = "kakaotalk://web/openExternal?url=" + encodeURIComponent(url); return true; }
+  if (/Line\//i.test(ua)) { location.href = url + (url.includes("?") ? "&" : "?") + "openExternalBrowser=1"; return true; }
+  if (/Android/i.test(ua) && (/Instagram|FBAN|FBAV|NAVER\(inapp|MicroMessenger/i.test(ua))) {
+    location.href = "intent://" + url.replace(/^https?:\/\//, "") + "#Intent;scheme=https;package=com.android.chrome;end";
+    return true;
+  }
+  return false;
+}
 function signInWithGoogle() {
+  // 🔒 인앱 브라우저면 팝업을 시도하지 않고 바로 안내
+  if (nrIsInAppBrowser()) {
+    const name = nrInAppBrowserName();
+    const wantEscape = confirm(name + "에서는 구글 로그인이 제한됩니다.\n기본 브라우저(Chrome/Safari)에서 열까요?");
+    if (wantEscape) {
+      const escaped = nrEscapeToExternalBrowser();
+      if (!escaped) { try { navigator.clipboard.writeText(location.href); showToast('info','링크 복사됨','브라우저 앱에 붙여넣어 접속해주세요'); } catch(e){} }
+    }
+    return;
+  }
   if (!window.FIREBASE_ENABLED || !window.fb) {
     showToast('warning','로그인 불가','Firebase 미설정 상태입니다. 게스트로 진행합니다.');
     playAsGuest();

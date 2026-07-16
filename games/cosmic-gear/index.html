@@ -13,5 +13,14 @@
 </head>
 <body>
 <div id="root"></div>
+<div id="ver" style="position:fixed;top:5px;left:8px;z-index:9999;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,.4);pointer-events:none;font-family:'Rajdhani',sans-serif;">v1.00</div>
+<!-- 🌐 NOVA ARCADE 포탈 통합 (React 번들과 독립적으로 얹는 헤더 오버레이) -->
+<div id="nova-header-slot" style="position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:9998;max-width:520px;width:92vw;pointer-events:auto;"></div>
+<script type="module">
+  import { Nova } from "../../portal-sdk.js";
+  import { NovaHeader } from "../../portal-common.js";
+  Nova.init("cosmic-gear");
+  NovaHeader.mount(document.getElementById('nova-header-slot'), "cosmic-gear");
+</script>
 </body>
 </html>
