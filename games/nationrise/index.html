@@ -615,7 +615,7 @@ body { background:var(--bg0); color:var(--txt1); font-family:var(--font-kr), san
 <!-- ===== TOP BAR ===== -->
 <div class="topbar">
   <div class="logo">NATION RISE</div>
-  <div id="ver" style="position:fixed;top:5px;left:8px;z-index:9999;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,.4);pointer-events:none;">v1.00</div>
+  <div id="ver" style="position:fixed;top:5px;left:8px;z-index:9999;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,.4);pointer-events:none;">v1.10</div>
   <div class="live-badge"><div class="pulse"></div>VIRTUAL WORLD</div>
   <div class="topbar-nav">
     <button class="nav-btn" onclick="openView('map')">🗺️ <span>세계지도</span></button>
@@ -2596,6 +2596,22 @@ function openView(v) {
     requestAnimationFrame(()=>{ setTimeout(drawChart, 50); });
   }
 }
+
+// 🔄 화면 회전/리사이즈 시, 현재 보이는 캔버스(지도·차트)를 다시 그려 깨짐 방지
+let __nrResizeT = null;
+function __nrHandleResize() {
+  clearTimeout(__nrResizeT);
+  __nrResizeT = setTimeout(() => {
+    try {
+      const mapView = document.getElementById('mapView');
+      const chartView = document.getElementById('chartView');
+      if (mapView && mapView.classList.contains('active') && typeof drawMap === 'function') drawMap();
+      if (chartView && chartView.classList.contains('active') && typeof drawChart === 'function') drawChart();
+    } catch (e) { console.warn('[NR] resize redraw', e); }
+  }, 120);
+}
+window.addEventListener('resize', __nrHandleResize);
+window.addEventListener('orientationchange', () => setTimeout(__nrHandleResize, 200));
 
 // ============================================================
 // WORLD MAP (Canvas-based)

@@ -32,6 +32,7 @@
             justify-content: center;
             background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
             padding: 10px;
+            overflow-y: auto;
         }
         canvas {
             background-color: rgba(10, 15, 30, 0.7);
@@ -40,9 +41,18 @@
             box-shadow: 0 0 30px rgba(0, 242, 254, 0.1);
             max-width: 100%;
             max-height: calc(100vh - 160px);
+            max-height: calc(100dvh - 160px);
             aspect-ratio: 1 / 1;
             image-rendering: -webkit-optimize-contrast;
             image-rendering: crisp-edges;
+        }
+        /* 가로모드(landscape) 저높이 화면: 상단 UI를 축소해 캔버스 공간 확보 */
+        @media (orientation: landscape) and (max-height: 560px) {
+            #top-ui { padding: 5px 14px; margin-bottom: 4px; }
+            .ui-stat .label { font-size: 9px; }
+            h1 { display: none; }
+            .subtitle { display: none; }
+            canvas { max-height: calc(100vh - 70px); max-height: calc(100dvh - 70px); }
         }
         /* 상단 UI 정보 바 */
         #top-ui {
@@ -352,7 +362,7 @@
     <div id="lobby-overlay" class="overlay">
         <div class="panel">
             <h1>HEXA-FLIP</h1>
-            <div id="ver" style="position:fixed;top:5px;left:8px;z-index:9999;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,.4);pointer-events:none;">v1.50</div>
+            <div id="ver" style="position:fixed;top:5px;left:8px;z-index:9999;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,.4);pointer-events:none;">v1.60</div>
             <p class="subtitle">다이내믹 메이징 디펜스</p>
             <div id="nova-header-slot" style="width:100%;display:flex;justify-content:center;"></div>
             

@@ -187,7 +187,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
    모드: 랭킹(연승) / 스테이지 / AI 1:1
    랭킹: 연승 수 (동률 시 짧은 클리어시간 우선 → score 인코딩)
    ============================================================ */
-const GAME_VERSION='v1.7';
+const GAME_VERSION='v1.71';
 document.getElementById('vernum').textContent=GAME_VERSION;
 const _mv=document.getElementById('menu-ver'); if(_mv)_mv.textContent=GAME_VERSION;
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
@@ -208,7 +208,7 @@ function resize(){
   ox=(window.innerWidth-VW*scale)/2; oy=(window.innerHeight-VH*scale)/2;
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
-resize(); addEventListener('resize',resize);
+resize(); addEventListener('resize',resize); addEventListener('orientationchange', ()=>setTimeout(resize,150));
 
 /* ---------------- 사운드 ---------------- */
 const SND=(()=>{ let ac=null,on=localStorage.getItem('nd_snd')!=='0';

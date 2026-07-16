@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, viewport-fit=cover">
 <title>Neural Grid: Zero Hour</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -123,7 +123,7 @@
 <div id="app-wrapper">
   <div class="header">
     <div class="title-box" id="title-box">
-      <div class="version">v2.5</div>
+      <div class="version">v2.60</div>
       <div class="title">NEURAL GRID</div>
       <div class="subtitle">PROJECT: ZERO HOUR</div>
       <div id="nova-header-slot" style="margin-top:10px;"></div>
@@ -259,6 +259,7 @@
     camera.updateProjectionMatrix();
   }
   window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 200));
 
   const scene = new THREE.Scene();
   scene.fog = new THREE.FogExp2(0x04070a, 0.035);

@@ -128,7 +128,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 <!-- START -->
 <div class="screen" id="startScr">
   <div class="logo"><span class="n">NEON</span> <span class="r">RUNNER</span></div>
-  <div id="ver" style="position:fixed;top:5px;left:8px;z-index:40;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,.4);pointer-events:none;">v1.00</div>
+  <div id="ver" style="position:fixed;top:5px;left:8px;z-index:40;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,.4);pointer-events:none;">v1.01</div>
   <div id="nova-header-slot" style="max-width:520px;width:92vw;"></div>
   <div id="coinBar"><span class="c">🪙</span><span id="coinTotal">0</span></div>
   <div id="equipLine"></div>
@@ -194,7 +194,7 @@ function resize(){ DPR=Math.min(2,window.devicePixelRatio||1);
   W=window.innerWidth; H=window.innerHeight;
   cv.width=W*DPR; cv.height=H*DPR; cv.style.width=W+'px'; cv.style.height=H+'px';
   ctx.setTransform(DPR,0,0,DPR,0,0); }
-resize(); addEventListener('resize',resize);
+resize(); addEventListener('resize',resize); addEventListener('orientationchange', ()=>setTimeout(resize,150));
 const $=(s)=>document.querySelector(s);
 const esc=(t)=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
