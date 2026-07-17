@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Neon Beat - v0.1</title>
+<meta name="theme-color" content="#020206">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cyan:#00ffcc; --magenta:#ff0055; --yellow:#ffd23f; --violet:#a855f7;
+  --bg:#020206; --panel:rgba(10,14,26,.78); --border:#1e2c43; --txt:#e6ecf7; --muted:#8194ad;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;}
+html,body{
+  width:100%;height:100%;overflow:hidden;overscroll-behavior:none;position:fixed;
+  background:var(--bg);color:var(--txt);font-family:'Noto Sans KR',system-ui,sans-serif;
+  touch-action:none;-webkit-font-smoothing:antialiased;
+}
+#gameCanvas{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:1;}
+
+.ui-screen{position:fixed;inset:0;z-index:10;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.ui-screen.show{display:block;}
+.fullscreen-container{
+  min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  padding:max(20px,env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom));gap:16px;
+}
+h1{
+  font-family:'Orbitron',sans-serif;font-weight:900;
+  font-size:clamp(2rem,5vw + 1rem,3.6rem);letter-spacing:6px;text-align:center;
+  background:linear-gradient(90deg,var(--cyan),var(--magenta));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 30px rgba(0,255,204,.25);
+}
+.subtitle{color:var(--muted);font-size:14px;text-align:center;letter-spacing:1px;}
+.version-tag{position:fixed;bottom:15px;right:15px;z-index:40;font-family:'Orbitron',sans-serif;
+  font-size:11px;letter-spacing:1px;color:rgba(255,255,255,.35);pointer-events:none;}
+
+.preset-grid{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;max-width:640px;}
+.preset-card{width:170px;background:var(--panel);border:1px solid var(--border);border-radius:16px;
+  padding:18px 14px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;}
+.preset-card:hover,.preset-card.sel{transform:translateY(-4px);border-color:var(--cyan);box-shadow:0 0 24px rgba(0,255,204,.3);}
+.preset-card .pn{font-family:'Orbitron',sans-serif;font-weight:900;font-size:15px;letter-spacing:1px;}
+.preset-card .pb{font-size:12px;color:var(--muted);}
+.preset-card .pt{font-size:10.5px;font-weight:900;padding:3px 10px;border-radius:20px;margin-top:4px;letter-spacing:1px;}
+
+.btn{font-family:'Noto Sans KR',sans-serif;font-weight:900;font-size:16px;letter-spacing:1px;
+  padding:15px 40px;border-radius:14px;border:none;cursor:pointer;color:#04141a;
+  background:linear-gradient(90deg,var(--cyan),#00b8a0);box-shadow:0 6px 22px rgba(0,255,204,.35);}
+.btn.ghost{background:transparent;border:1px solid var(--border);color:var(--muted);box-shadow:none;font-weight:700;}
+.keyhint{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:4px;}
+.kbd{display:inline-block;background:#0a1521;border:1px solid #2a4660;border-bottom-width:3px;
+  border-radius:6px;padding:3px 10px;font-family:'Orbitron',monospace;font-size:13px;color:var(--cyan);}
+
+#hud{position:fixed;top:0;left:0;width:100%;z-index:6;pointer-events:none;
+  padding:max(12px,env(safe-area-inset-top)) 16px 6px;display:flex;justify-content:space-between;
+  align-items:flex-start;gap:8px;flex-wrap:wrap;font-family:'Orbitron',sans-serif;}
+.hud-item{font-size:clamp(11px,3vw,16px);font-weight:900;letter-spacing:1px;color:var(--txt);
+  text-shadow:0 0 8px rgba(0,0,0,.8);}
+#comboDisplay{color:var(--yellow);}
+#accDisplay{color:var(--cyan);}
+#hpDisplay{color:#3ddc97;}
+#hpDisplay.low{color:#ff3355;text-shadow:0 0 10px rgba(255,50,80,.7);}
+
+#skillHud{position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:6;pointer-events:none;
+  text-align:center;font-family:monospace;}
+#skillGaugeWrap{width:min(280px,58vw);height:9px;background:rgba(0,0,0,.5);
+  border:1px solid rgba(255,210,63,.4);border-radius:6px;overflow:hidden;}
+#skillGauge{height:100%;width:0%;background:linear-gradient(90deg,var(--yellow),#ff8c00);
+  box-shadow:0 0 10px rgba(255,210,63,.6);transition:width .12s;}
+#skillGaugeWrap.ready{border-color:var(--yellow);animation:gpulse .7s infinite;}
+@keyframes gpulse{50%{box-shadow:0 0 20px rgba(255,210,63,.8);}}
+#skillLabel{font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:3px;}
+#skillHud.ready #skillLabel{color:var(--yellow);font-weight:900;}
+#skillBtn{position:fixed;top:max(10px,env(safe-area-inset-top));right:14px;z-index:15;
+  width:52px;height:52px;border-radius:50%;border:2px solid rgba(255,210,63,.4);
+  background:radial-gradient(circle at 40% 30%,rgba(255,210,63,.15),rgba(20,10,0,.85));
+  color:var(--muted);cursor:pointer;display:none;flex-direction:column;align-items:center;justify-content:center;
+  font-family:monospace;opacity:.5;transition:.2s;-webkit-tap-highlight-color:transparent;}
+#skillBtn.on{display:flex;}
+#skillBtn .ic{font-size:20px;line-height:1;}
+#skillBtn.ready{opacity:1;border-color:var(--yellow);color:var(--yellow);
+  animation:bpulse .7s infinite;box-shadow:0 0 18px rgba(255,210,63,.7);}
+@keyframes bpulse{50%{transform:scale(1.08);box-shadow:0 0 28px rgba(255,210,63,.9);}}
+#skillBtn:active{transform:scale(.9);}
+
+#muteBtn{position:fixed;top:max(10px,env(safe-area-inset-top));left:14px;z-index:15;
+  width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:rgba(10,14,26,.7);
+  color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+#touchZones{position:fixed;left:0;bottom:0;width:100%;z-index:8;display:none;
+  padding-bottom:env(safe-area-inset-bottom);}
+#touchZones.on{display:flex;}
+.tzone{flex:1;height:92px;border-top:1px solid rgba(255,255,255,.06);
+  display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;
+  font-size:11px;color:rgba(255,255,255,.25);transition:background .08s;}
+.tzone.hit{background:rgba(0,255,204,.18);}
+
+#tutov{position:fixed;inset:0;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(2,2,6,.94);backdrop-filter:blur(6px);padding:24px;text-align:center;}
+#tutov.show{display:flex;}
+#tutov .tt{font-family:'Orbitron',sans-serif;font-weight:900;font-size:clamp(22px,6vw,36px);
+  background:linear-gradient(90deg,var(--cyan),var(--magenta));-webkit-background-clip:text;background-clip:text;
+  color:transparent;margin-bottom:8px;}
+#tutov .slide{max-width:440px;}
+#tutov .emoji{font-size:54px;margin:8px 0;}
+#tutov .stitle{font-size:19px;font-weight:900;color:var(--cyan);margin-bottom:8px;}
+#tutov .sdesc{font-size:14.5px;line-height:1.7;color:#c3d2e2;min-height:88px;}
+#tutov .sdesc b{color:#7ee0ff;}
+#tutov .dots{display:flex;gap:8px;justify-content:center;margin:16px 0;}
+#tutov .dot{width:9px;height:9px;border-radius:50%;background:#2c4258;}
+#tutov .dot.on{background:var(--cyan);width:22px;border-radius:5px;}
+#tutov .row{display:flex;gap:10px;}
+#tutov button{font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:900;padding:12px 24px;
+  border-radius:12px;cursor:pointer;border:none;}
+#tutov .next{background:linear-gradient(90deg,var(--cyan),#00b8a0);color:#04141a;}
+#tutov .skip{background:transparent;border:1px solid #2c4258;color:var(--muted);}
+#tutHelp{position:fixed;bottom:14px;left:14px;z-index:60;width:30px;height:30px;border-radius:50%;
+  border:1px solid var(--border);background:rgba(10,14,26,.7);color:var(--cyan);font-size:15px;cursor:pointer;font-weight:900;}
+
+.result-card{background:var(--panel);border:1px solid var(--border);border-radius:20px;
+  padding:28px 26px;max-width:420px;width:100%;text-align:center;}
+.rank-letter{font-family:'Orbitron',sans-serif;font-weight:900;font-size:72px;line-height:1;margin-bottom:6px;}
+.rank-S{color:var(--yellow);text-shadow:0 0 30px rgba(255,210,63,.6);}
+.rank-A{color:var(--cyan);text-shadow:0 0 24px rgba(0,255,204,.5);}
+.rank-B{color:var(--violet);}
+.rank-C{color:var(--muted);}
+.result-stats{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:16px 0;}
+.rstat{flex:1;min-width:90px;background:rgba(0,0,0,.3);border-radius:12px;padding:10px;}
+.rstat .rl{font-size:10.5px;color:var(--muted);letter-spacing:.5px;}
+.rstat .rv{font-family:'Orbitron',sans-serif;font-weight:900;font-size:18px;color:var(--txt);}
+#rankNote{font-size:12.5px;color:var(--muted);margin-top:10px;}
+
+@media (max-width:600px){
+  h1{letter-spacing:3px;}
+  .preset-card{width:44%;padding:14px 10px;}
+  .rank-letter{font-size:58px;}
+}
+@media (orientation:landscape) and (max-height:520px){
+  #hud{padding-top:max(6px,env(safe-area-inset-top));}
+  .hud-item{font-size:11px;}
+  #skillHud{top:34px;}
+  .tzone{height:64px;}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="hud" style="display:none;">
+  <div class="hud-item" id="scoreDisplay">SCORE: 0</div>
+  <div class="hud-item" id="comboDisplay">COMBO 0</div>
+  <div class="hud-item" id="accDisplay">ACC 100%</div>
+  <div class="hud-item" id="hpDisplay">CORE: 100%</div>
+</div>
+<div id="skillHud" style="display:none;">
+  <div id="skillGaugeWrap"><div id="skillGauge"></div></div>
+  <div id="skillLabel">⚡ RUSH: 0%</div>
+</div>
+<button id="skillBtn" type="button"><span class="ic">⚡</span></button>
+<button id="muteBtn" type="button">🔊</button>
+<div id="touchZones"><div class="tzone" data-lane="0">D</div><div class="tzone" data-lane="1">F</div><div class="tzone" data-lane="2">J</div><div class="tzone" data-lane="3">K</div></div>
+
+<div id="startScreen" class="ui-screen show">
+  <div class="version-tag">v0.1</div>
+  <div class="fullscreen-container">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+      <h1>NEON BEAT</h1>
+      <div class="subtitle">Procedural Rhythm Action</div>
+    </div>
+    <div id="nova-header-slot" style="width:100%;max-width:520px;"></div>
+    <div class="subtitle" style="margin-top:4px;">트랙을 선택하세요 — 음악과 채보가 실시간으로 함께 생성됩니다</div>
+    <div class="preset-grid" id="presetGrid"></div>
+    <button class="btn" id="startBtn">▶ 시작하기</button>
+    <div class="keyhint">
+      <span class="kbd">D</span><span class="kbd">F</span><span class="kbd">J</span><span class="kbd">K</span>
+      <span style="color:var(--muted);font-size:12.5px;align-self:center;margin-left:6px;">또는 하단 탭존</span>
+    </div>
+  </div>
+</div>
+
+<div id="resultScreen" class="ui-screen">
+  <div class="fullscreen-container">
+    <div class="result-card">
+      <div class="rank-letter" id="rankLetter">S</div>
+      <div style="font-family:'Orbitron',sans-serif;font-weight:900;font-size:22px;" id="resultTitle">CLEAR!</div>
+      <div class="result-stats">
+        <div class="rstat"><div class="rl">SCORE</div><div class="rv" id="rScore">0</div></div>
+        <div class="rstat"><div class="rl">ACCURACY</div><div class="rv" id="rAcc">0%</div></div>
+        <div class="rstat"><div class="rl">MAX COMBO</div><div class="rv" id="rCombo">0</div></div>
+      </div>
+      <div class="result-stats">
+        <div class="rstat"><div class="rl" style="color:var(--yellow)">PERFECT</div><div class="rv" id="rPerfect">0</div></div>
+        <div class="rstat"><div class="rl" style="color:var(--cyan)">GREAT</div><div class="rv" id="rGreat">0</div></div>
+        <div class="rstat"><div class="rl" style="color:var(--violet)">GOOD</div><div class="rv" id="rGood">0</div></div>
+        <div class="rstat"><div class="rl" style="color:#ff3355">MISS</div><div class="rv" id="rMiss">0</div></div>
+      </div>
+      <div id="rankNote"></div>
+      <div style="display:flex;gap:10px;margin-top:18px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn" id="retryBtn">다시하기</button>
+        <button class="btn ghost" id="homeBtn">포탈로</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button id="tutHelp" title="게임 방법">?</button>
+<div id="tutov">
+  <div class="tt">HOW TO PLAY</div>
+  <div class="slide">
+    <div class="emoji" id="tutEmoji">🎵</div>
+    <div class="stitle" id="tutTitle"></div>
+    <div class="sdesc" id="tutDesc"></div>
+  </div>
+  <div class="dots" id="tutDots"></div>
+  <div class="row">
+    <button class="skip" id="tutSkip">건너뛰기</button>
+    <button class="next" id="tutNext">다음</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   NEON BEAT — 절차적 리듬 액션 (NOVA ARCADE)
+   5대 원칙: 1)랭킹→scores 2)중독루프(콤보/랭크/재도전) 3)포탈SSO(자동인식)
+             4)반응형(dvh/orientationchange/viewport-fit/safe-area) 5)인앱브라우저(포탈에서 처리)
+   핵심: 음악(WebAudio)과 채보(노트)가 "같은 시드"에서 동시에 생성됨
+        → 라이선스 곡 불필요, 채보 수작업 불필요, 결정론적이라 랭킹 공정성 보장
+   ============================================================ */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+let W=0,H=0,DPR=1;
+let laneX=[], laneW=0, hitLineY=0, topY=0, highwayX=0, highwayW=0;
+
+function resize(){
+  DPR = Math.min(2, window.devicePixelRatio||1);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = Math.round(W*DPR); canvas.height = Math.round(H*DPR);
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  layoutLanes();
+}
+function layoutLanes(){
+  highwayW = Math.min(W*0.94, 560);
+  highwayX = (W-highwayW)/2;
+  laneW = highwayW/4;
+  laneX = [0,1,2,3].map(i=>highwayX+i*laneW);
+  topY = Math.max(90, H*0.14);
+  hitLineY = H - Math.max(118, H*0.17);
+}
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', ()=>setTimeout(resize,150));
+resize();
+
+/* ---------------- 사운드 (절차적 신스: 킥/스네어/하이햇/악센트) ---------------- */
+const sound = (()=>{
+  let ctxA=null, on=true;
+  try{ on = localStorage.getItem('nb_snd') !== '0'; }catch(e){}
+  const ac=()=>{ if(!ctxA){ try{ ctxA=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return ctxA; };
+  function kick(t){ const x=ac(); if(!x||!on) return;
+    const o=x.createOscillator(), g=x.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(45,t+0.12);
+    g.gain.setValueAtTime(0.9,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.16);
+    o.connect(g).connect(x.destination); o.start(t); o.stop(t+0.18);
+  }
+  function noiseBurst(t,dur,hpFreq,vol){ const x=ac(); if(!x||!on) return;
+    const n=Math.max(1,Math.floor(x.sampleRate*dur)); const buf=x.createBuffer(1,n,x.sampleRate); const d=buf.getChannelData(0);
+    for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*(1-i/n);
+    const src=x.createBufferSource(); src.buffer=buf;
+    const f=x.createBiquadFilter(); f.type='highpass'; f.frequency.value=hpFreq;
+    const g=x.createGain(); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    src.connect(f).connect(g).connect(x.destination); src.start(t);
+  }
+  function snare(t){ noiseBurst(t,0.14,900,0.55); }
+  function hihat(t){ noiseBurst(t,0.05,5200,0.26); }
+  function accent(t){ const x=ac(); if(!x||!on) return;
+    const o=x.createOscillator(), g=x.createGain();
+    o.type='triangle'; o.frequency.setValueAtTime(660,t);
+    g.gain.setValueAtTime(0.32,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.1);
+    o.connect(g).connect(x.destination); o.start(t); o.stop(t+0.12);
+  }
+  const laneFns=[kick,snare,hihat,accent];
+  function playLane(lane,t){ const f=laneFns[lane]; if(f) f(t); }
+  function sfx(type){ const x=ac(); if(!x||!on) return; const t=x.currentTime;
+    const o=x.createOscillator(), g=x.createGain();
+    const freqMap={perfect:1200,great:820,good:520,miss:140,skill:1600,click:700};
+    o.type = type==='miss' ? 'sawtooth' : 'sine';
+    o.frequency.setValueAtTime(freqMap[type]||600,t);
+    g.gain.setValueAtTime(type==='miss'?0.18:0.22,t); g.gain.exponentialRampToValueAtTime(0.001,t+(type==='skill'?0.35:0.09));
+    o.connect(g).connect(x.destination); o.start(t); o.stop(t+(type==='skill'?0.36:0.1));
+  }
+  function toggle(){ on=!on; try{ localStorage.setItem('nb_snd', on?'1':'0'); }catch(e){} return on; }
+  return { ac, playLane, sfx, toggle, isOn:()=>on };
+})();
+
+/* ---------------- 채보 생성기 (결정론적: 프리셋마다 모두에게 동일) ---------------- */
+function mulberry32(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed);
+  t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function strSeed(s){ let h=0; for(let i=0;i<s.length;i++){ h=Math.imul(31,h)+s.charCodeAt(i)|0; } return h>>>0; }
+
+const PRESETS = [
+  { id:'synthpop', name:'SYNTH POP',   bpm:126, bars:32, seed:'nb-synthpop-v1', diffMul:0.7, tag:'EASY',   color:'#00ffcc' },
+  { id:'chiptune', name:'CHIPTUNE',    bpm:150, bars:36, seed:'nb-chiptune-v1', diffMul:1.0, tag:'NORMAL', color:'#ffd23f' },
+  { id:'dnb',      name:'DRUM & BASS', bpm:174, bars:40, seed:'nb-dnb-v1',      diffMul:1.4, tag:'HARD',   color:'#ff0055' },
+];
+
+function generateChart(preset){
+  const rnd = mulberry32(strSeed(preset.seed));
+  const stepMs = (60000/preset.bpm)/4; // 16분음표 간격
+  const totalSteps = preset.bars*16;
+  const notes = [];
+  for(let i=0;i<totalSteps;i++){
+    const bar = Math.floor(i/16), pos = i%16;
+    const t = i*stepMs;
+    if(pos%4===0) notes.push({time:t, lane:0, judged:null});           // 킥: four-on-floor
+    if(pos===4||pos===12) notes.push({time:t, lane:1, judged:null});   // 스네어: 백비트
+    if(pos%2===0) notes.push({time:t, lane:2, judged:null});           // 하이햇: 8분음표
+    const density = (0.05 + (bar/preset.bars)*0.35) * preset.diffMul;  // 후반으로 갈수록 밀도 상승
+    if(pos%2===1 && rnd()<density) notes.push({time:t, lane:3, judged:null}); // 악센트: 당김음
+  }
+  notes.sort((a,b)=>a.time-b.time);
+  return { notes, durationMs: totalSteps*stepMs, stepMs, preset };
+}
+
+/* ---------------- 판정 상수 ---------------- */
+const LEAD_MS = 900;     // 노트가 스폰되어 히트라인까지 도달하는 시간
+const PERFECT_MS = 45, GREAT_MS = 90, GOOD_MS = 150;
+const MISS_HP = 6.5, PERFECT_REGEN = 0.25;
+const COMBO_TIERS = [
+  {n:0,  mult:1.0, label:'',              color:'#ffffff'},
+  {n:10, mult:1.3, label:'COMBO',         color:'#ffd23f'},
+  {n:20, mult:1.6, label:'GREAT COMBO',   color:'#00ffcc'},
+  {n:35, mult:2.0, label:'SUPER COMBO',   color:'#ff8c42'},
+  {n:50, mult:2.6, label:'ULTRA COMBO',   color:'#a855f7'},
+  {n:75, mult:3.5, label:'MASTER COMBO',  color:'#ffffff'},
+];
+function comboTier(combo){ let t=COMBO_TIERS[0]; for(const c of COMBO_TIERS) if(combo>=c.n) t=c; return t; }
+
+/* ---------------- 플로팅 텍스트 (판정/콤보 배너) ---------------- */
+class FloatingText {
+  constructor(x,y,text,color,scale){ this.x=x; this.y=y; this.text=text; this.color=color;
+    this.scale=scale||1; this.alpha=1; this.vy=-1.6; }
+  update(){ this.y+=this.vy; this.alpha-=0.02; }
+  draw(){ ctx.save(); ctx.globalAlpha=Math.max(0,this.alpha); ctx.fillStyle=this.color;
+    ctx.font=`900 ${Math.round(22*this.scale)}px Orbitron, sans-serif`;
+    ctx.shadowBlur=12*this.scale; ctx.shadowColor=this.color; ctx.textAlign='center';
+    ctx.fillText(this.text, this.x, this.y); ctx.restore(); }
+}
+
+/* ---------------- 게임 상태 ---------------- */
+const G = {
+  state: 'START',            // START | PLAYING | RESULT
+  chart: null,
+  audioStartCtxTime: 0,
+  nextSchedIdx: 0,
+  schedTimer: null,
+  hp: 100,
+  score: 0,
+  combo: 0,
+  maxCombo: 0,
+  perfectCount:0, greatCount:0, goodCount:0, missCount:0,
+  skillCharge: 0,
+  rushActive: false,
+  rushUntil: 0,
+  floats: [],
+  laneFlash: [0,0,0,0],
+  selectedPreset: PRESETS[0],
+  shakeT: 0,
+};
+
+function currentSongTimeMs(){
+  const x = sound.ac(); if(!x) return -99999;
+  return (x.currentTime - G.audioStartCtxTime)*1000;
+}
+
+const SCHEDULE_AHEAD = 0.16; // 초 단위 lookahead
+function startAudioScheduler(){
+  G.nextSchedIdx = 0;
+  const x = sound.ac();
+  G.audioStartCtxTime = (x ? x.currentTime : 0) + 0.15;
+  G.schedTimer = setInterval(()=>{
+    const x2 = sound.ac(); if(!x2) return;
+    const now = x2.currentTime;
+    while(G.nextSchedIdx < G.chart.notes.length &&
+          (G.chart.notes[G.nextSchedIdx].time/1000) <= (now - G.audioStartCtxTime) + SCHEDULE_AHEAD){
+      const n = G.chart.notes[G.nextSchedIdx];
+      sound.playLane(n.lane, G.audioStartCtxTime + n.time/1000);
+      G.nextSchedIdx++;
+    }
+  }, 25);
+}
+function stopAudioScheduler(){ if(G.schedTimer){ clearInterval(G.schedTimer); G.schedTimer=null; } }
+
+/* ---------------- 판정 처리 ---------------- */
+function applyJudgment(grade, lane){
+  const pts = {PERFECT:300, GREAT:150, GOOD:60}[grade] || 0;
+  if(grade==='PERFECT'){ G.perfectCount++; G.hp=Math.min(100,G.hp+PERFECT_REGEN); G.skillCharge=Math.min(100,G.skillCharge+4); sound.sfx('perfect'); }
+  else if(grade==='GREAT'){ G.greatCount++; sound.sfx('great'); }
+  else { G.goodCount++; sound.sfx('good'); }
+  G.combo++; G.maxCombo=Math.max(G.maxCombo,G.combo);
+  const tier = comboTier(G.combo);
+  const addScore = Math.round(pts*tier.mult);
+  G.score += addScore;
+  G.laneFlash[lane] = 1;
+  const cx = laneX[lane]+laneW/2;
+  G.floats.push(new FloatingText(cx, hitLineY-30, grade, grade==='PERFECT'?'#ffd23f':grade==='GREAT'?'#00ffcc':'#a855f7', 0.85));
+  if(tier.label && G.combo===tier.n){
+    G.floats.push(new FloatingText(W/2, H*0.32, `${tier.label} x${G.combo}`, tier.color, 1.3));
+    G.shakeT = 6;
+  }
+  updateHUD();
+}
+function onMiss(lane){
+  G.combo=0; G.missCount++; G.hp=Math.max(0,G.hp-MISS_HP); sound.sfx('miss');
+  if(lane!=null){ const cx=laneX[lane]+laneW/2; G.floats.push(new FloatingText(cx, hitLineY-30, 'MISS', '#ff3355', 0.8)); }
+  updateHUD();
+  if(G.hp<=0) endSong(false);
+}
+function hitLane(lane){
+  if(G.state!=='PLAYING') return;
+  G.laneFlash[lane]=1;
+  const t = currentSongTimeMs();
+  let best=null, bestDist=Infinity;
+  for(const n of G.chart.notes){
+    if(n.lane!==lane || n.judged) continue;
+    const d = Math.abs(n.time-t);
+    if(d<bestDist && d<=GOOD_MS){ bestDist=d; best=n; }
+  }
+  if(!best){ sound.sfx('click'); return; } // 노트 없는 헛탭 — 페널티 없음
+  const pWin = G.rushActive ? PERFECT_MS*3 : PERFECT_MS;
+  const gWin = G.rushActive ? GREAT_MS*2.2 : GREAT_MS;
+  let grade;
+  if(bestDist<=pWin) grade='PERFECT';
+  else if(bestDist<=gWin) grade='GREAT';
+  else grade='GOOD';
+  best.judged=grade;
+  applyJudgment(grade, lane);
+}
+function activateSkill(){
+  if(G.state!=='PLAYING') return;
+  if(G.skillCharge<100){
+    const cx=W/2; G.floats.push(new FloatingText(cx, H*0.3, `⚡ ${Math.round(G.skillCharge)}%`, '#8899af', 0.8));
+    return;
+  }
+  G.skillCharge=0; G.rushActive=true; G.rushUntil=currentSongTimeMs()+4000;
+  sound.sfx('skill');
+  G.floats.push(new FloatingText(W/2, H*0.28, 'PERFECT RUSH!!', '#ffd23f', 1.5));
+  G.shakeT=10;
+}
+
+/* ---------------- HUD ---------------- */
+function updateHUD(){
+  document.getElementById('scoreDisplay').textContent = 'SCORE: '+G.score;
+  document.getElementById('comboDisplay').textContent = 'COMBO '+G.combo;
+  const total = G.perfectCount+G.greatCount+G.goodCount+G.missCount;
+  const acc = total? ((G.perfectCount+G.greatCount*0.7+G.goodCount*0.4)/total*100) : 100;
+  document.getElementById('accDisplay').textContent = 'ACC '+acc.toFixed(1)+'%';
+  const hpEl = document.getElementById('hpDisplay');
+  hpEl.textContent = 'CORE: '+Math.round(G.hp)+'%';
+  hpEl.classList.toggle('low', G.hp<30);
+  const gauge=document.getElementById('skillGauge'), wrap=document.getElementById('skillGaugeWrap');
+  const lbl=document.getElementById('skillLabel'), hud=document.getElementById('skillHud'), btn=document.getElementById('skillBtn');
+  if(gauge) gauge.style.width=G.skillCharge+'%';
+  const ready=G.skillCharge>=100;
+  if(wrap) wrap.classList.toggle('ready',ready);
+  if(hud) hud.classList.toggle('ready',ready);
+  if(btn) btn.classList.toggle('ready',ready);
+  if(lbl) lbl.textContent = ready ? '⚡ RUSH 준비완료 — 탭/SPACE' : `⚡ RUSH: ${Math.round(G.skillCharge)}%`;
+}
+
+/* ---------------- 렌더 루프 ---------------- */
+let rafId=null;
+function frame(){
+  if(G.state!=='PLAYING'){ rafId=null; return; }
+  const t = currentSongTimeMs();
+  if(G.rushActive && t>G.rushUntil) G.rushActive=false;
+  for(const n of G.chart.notes){
+    if(n.judged) continue;
+    if(t-n.time > GOOD_MS){ n.judged='MISS'; onMiss(n.lane); }
+  }
+  if(t > G.chart.durationMs + 500){ endSong(true); return; }
+  draw(t);
+  rafId = requestAnimationFrame(frame);
+}
+function draw(t){
+  ctx.clearRect(0,0,W,H);
+  // 배경 그라데이션
+  const bg = ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#020206'); bg.addColorStop(1,'#050512');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+  let shakeX=0, shakeY=0;
+  if(G.shakeT>0){ shakeX=(Math.random()-0.5)*G.shakeT; shakeY=(Math.random()-0.5)*G.shakeT; G.shakeT*=0.8; if(G.shakeT<0.3) G.shakeT=0; }
+  ctx.save(); ctx.translate(shakeX,shakeY);
+
+  // 하이웨이 배경
+  ctx.fillStyle='rgba(255,255,255,0.02)';
+  ctx.fillRect(highwayX, topY, highwayW, hitLineY-topY);
+  const laneColors=['#00ffcc','#ff5c8a','#ffd23f','#a855f7'];
+  for(let i=0;i<4;i++){
+    ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(laneX[i],topY); ctx.lineTo(laneX[i],hitLineY); ctx.stroke();
+    if(G.laneFlash[i]>0.02){
+      ctx.fillStyle=laneColors[i]; ctx.globalAlpha=G.laneFlash[i]*0.25;
+      ctx.fillRect(laneX[i],topY,laneW,hitLineY-topY);
+      ctx.globalAlpha=1; G.laneFlash[i]*=0.85;
+    }
+  }
+  ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.beginPath();
+  ctx.moveTo(highwayX+highwayW,topY); ctx.lineTo(highwayX+highwayW,hitLineY); ctx.stroke();
+
+  // 히트라인 (비트에 맞춰 은은하게 펄스)
+  const pulse = G.rushActive ? (Math.sin(t*0.02)*0.3+0.7) : 1;
+  ctx.strokeStyle = G.rushActive ? '#ffd23f' : '#00ffcc';
+  ctx.globalAlpha = 0.7*pulse; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(highwayX-4,hitLineY); ctx.lineTo(highwayX+highwayW+4,hitLineY); ctx.stroke();
+  ctx.globalAlpha=1;
+
+  // RUSH 오버레이 틴트
+  if(G.rushActive){ ctx.fillStyle='rgba(255,210,63,0.05)'; ctx.fillRect(highwayX,topY,highwayW,hitLineY-topY); }
+
+  // 노트
+  for(const n of G.chart.notes){
+    if(n.judged) continue;
+    const dt = n.time - t;
+    if(dt>LEAD_MS || dt< -GOOD_MS) continue;
+    const progress = 1 - (dt/LEAD_MS);
+    const y = topY + progress*(hitLineY-topY);
+    if(y< topY-20 || y>H+20) continue;
+    const cx = laneX[n.lane]+laneW/2;
+    ctx.fillStyle = laneColors[n.lane];
+    ctx.shadowBlur=14; ctx.shadowColor=laneColors[n.lane];
+    ctx.beginPath(); ctx.roundRect(cx-laneW*0.36, y-9, laneW*0.72, 18, 8); ctx.fill();
+    ctx.shadowBlur=0;
+  }
+  ctx.restore();
+
+  // 플로팅 텍스트
+  G.floats.forEach(f=>f.update());
+  G.floats = G.floats.filter(f=>f.alpha>0);
+  G.floats.forEach(f=>f.draw());
+}
+
+/* ---------------- 화면 전환 ---------------- */
+const IS_TOUCH = matchMedia('(pointer:coarse)').matches || navigator.maxTouchPoints>0;
+
+function showScreen(id){
+  document.querySelectorAll('.ui-screen').forEach(s=>s.classList.remove('show'));
+  const el=document.getElementById(id); if(el) el.classList.add('show');
+}
+function hideAllScreens(){
+  document.querySelectorAll('.ui-screen').forEach(s=>s.classList.remove('show'));
+}
+
+function startGame(){
+  G.chart = generateChart(G.selectedPreset);
+  G.hp=100; G.score=0; G.combo=0; G.maxCombo=0;
+  G.perfectCount=0; G.greatCount=0; G.goodCount=0; G.missCount=0;
+  G.skillCharge=0; G.rushActive=false; G.floats=[]; G.laneFlash=[0,0,0,0];
+  G.state='PLAYING';
+  hideAllScreens();
+  document.getElementById('hud').style.display='flex';
+  document.getElementById('skillHud').style.display='block';
+  document.getElementById('skillBtn').classList.add('on');
+  if(IS_TOUCH) document.getElementById('touchZones').classList.add('on');
+  updateHUD();
+  startAudioScheduler();
+  if(!rafId) rafId=requestAnimationFrame(frame);
+}
+
+async function endSong(success){
+  if(G.state==='RESULT') return;
+  G.state='RESULT';
+  stopAudioScheduler();
+  document.getElementById('hud').style.display='none';
+  document.getElementById('skillHud').style.display='none';
+  document.getElementById('skillBtn').classList.remove('on');
+  document.getElementById('touchZones').classList.remove('on');
+
+  const total = G.perfectCount+G.greatCount+G.goodCount+G.missCount;
+  const weighted = G.perfectCount*1 + G.greatCount*0.7 + G.goodCount*0.4;
+  const accuracy = total? (weighted/total*100) : 0;
+  const rank = !success ? 'C' : (accuracy>=95?'S':accuracy>=85?'A':accuracy>=70?'B':'C');
+
+  document.getElementById('rankLetter').textContent = rank;
+  document.getElementById('rankLetter').className = 'rank-letter rank-'+rank;
+  document.getElementById('resultTitle').textContent = success ? 'CLEAR!' : '코어 과부하';
+  document.getElementById('rScore').textContent = G.score.toLocaleString();
+  document.getElementById('rAcc').textContent = accuracy.toFixed(1)+'%';
+  document.getElementById('rCombo').textContent = G.maxCombo;
+  document.getElementById('rPerfect').textContent = G.perfectCount;
+  document.getElementById('rGreat').textContent = G.greatCount;
+  document.getElementById('rGood').textContent = G.goodCount;
+  document.getElementById('rMiss').textContent = G.missCount;
+  showScreen('resultScreen');
+
+  // 🌐 포탈 통합 랭킹 자동 기록 + 데일리 도전 체크
+  try{
+    if(window.NB && window.NB.ready){
+      const ok = await window.NB.report(G.score);
+      document.getElementById('rankNote').textContent = ok
+        ? `🏆 ${window.NB.myName||'플레이어'} 님으로 통합 랭킹에 기록되었습니다`
+        : '⚪ 포탈에서 로그인하면 통합 랭킹에 기록됩니다';
+      if(ok && window.NB.checkDaily) window.NB.checkDaily({score:G.score});
+    } else {
+      document.getElementById('rankNote').textContent = '⚪ 포탈에서 로그인하면 통합 랭킹에 기록됩니다';
+    }
+  }catch(e){ console.warn('[NB] report', e); }
+}
+
+/* ---------------- 입력 ---------------- */
+const KEY_LANE = {'d':0,'f':1,'j':2,'k':3};
+window.addEventListener('keydown', e=>{
+  if(e.repeat) return;
+  const k = e.key.toLowerCase();
+  if(k===' ' || e.code==='Space'){ e.preventDefault(); activateSkill(); return; }
+  if(k in KEY_LANE){ hitLane(KEY_LANE[k]); }
+});
+document.querySelectorAll('.tzone').forEach(z=>{
+  z.addEventListener('pointerdown', e=>{
+    e.preventDefault();
+    const lane=Number(z.dataset.lane); hitLane(lane);
+    z.classList.add('hit'); setTimeout(()=>z.classList.remove('hit'),90);
+  }, {passive:false});
+});
+document.getElementById('skillBtn').addEventListener('pointerdown', e=>{ e.preventDefault(); e.stopPropagation(); activateSkill(); });
+document.getElementById('muteBtn').addEventListener('click', ()=>{
+  const on = sound.toggle();
+  document.getElementById('muteBtn').textContent = on ? '🔊' : '🔇';
+});
+// 인게임 중 화면 스크롤/새로고침 방지
+window.addEventListener('touchstart', e=>{ if(G.state==='PLAYING') e.preventDefault(); }, {passive:false});
+window.addEventListener('touchmove', e=>{ if(G.state==='PLAYING') e.preventDefault(); }, {passive:false});
+
+/* ---------------- 프리셋 UI ---------------- */
+function renderPresetGrid(){
+  const grid=document.getElementById('presetGrid');
+  grid.innerHTML='';
+  PRESETS.forEach(p=>{
+    const card=document.createElement('div');
+    card.className='preset-card'+(p.id===G.selectedPreset.id?' sel':'');
+    card.innerHTML = `<div class="pn" style="color:${p.color}">${p.name}</div>
+      <div class="pb">BPM ${p.bpm} · ${p.bars}마디</div>
+      <div class="pt" style="background:${p.color}22;color:${p.color};border:1px solid ${p.color}55;">${p.tag}</div>`;
+    card.onclick = ()=>{ G.selectedPreset=p; renderPresetGrid(); };
+    grid.appendChild(card);
+  });
+}
+renderPresetGrid();
+document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('retryBtn').addEventListener('click', ()=>{ showScreen('startScreen'); });
+document.getElementById('homeBtn').addEventListener('click', ()=>{ location.href='../../'; });
+
+/* ---------------- 튜토리얼 ---------------- */
+(function(){
+  const SLIDES=[
+    {e:'🎹',t:'4레인 노트',d:'노트가 위에서 <b>4개 레인</b>을 따라 내려옵니다. PC는 <b>D·F·J·K</b> 키, 모바일은 하단 <b>탭존</b>으로 히트라인에 맞춰 입력하세요.'},
+    {e:'🎯',t:'판정: PERFECT·GREAT·GOOD',d:'타이밍이 정확할수록 <b>PERFECT</b>, 조금 벗어나면 <b>GREAT·GOOD</b>. 놓치면 <b>MISS</b>로 코어 체력이 줄어듭니다.'},
+    {e:'🔥',t:'콤보 등급',d:'연속으로 성공하면 <b>COMBO → SUPER → ULTRA → MASTER</b> 등급이 올라가며 점수 배율이 폭증합니다. 끊기지 않게 조심하세요!'},
+    {e:'⚡',t:'PERFECT RUSH',d:'PERFECT를 모으면 게이지가 차오릅니다. 100%에서 <b>SPACE 또는 번개 버튼</b>으로 발동하면 잠깐 판정이 매우 관대해집니다.'},
+    {e:'🎵',t:'음악 = 채보',d:'이 게임의 음악과 노트는 <b>같은 시드에서 실시간 생성</b>됩니다 — 매번 정확히 같은 트랙이라 랭킹 경쟁이 공정합니다.'},
+  ];
+  let i=0; const ov=document.getElementById('tutov'), dots=document.getElementById('tutDots');
+  SLIDES.forEach((_,k)=>{ const d=document.createElement('div'); d.className='dot'+(k===0?' on':''); dots.appendChild(d); });
+  function paint(){
+    document.getElementById('tutEmoji').textContent=SLIDES[i].e;
+    document.getElementById('tutTitle').textContent=SLIDES[i].t;
+    document.getElementById('tutDesc').innerHTML=SLIDES[i].d;
+    [...dots.children].forEach((d,k)=>d.className='dot'+(k===i?' on':''));
+    document.getElementById('tutNext').textContent = (i===SLIDES.length-1) ? '시작하기' : '다음';
+  }
+  function open(){ i=0; paint(); ov.classList.add('show'); }
+  function close(){ ov.classList.remove('show'); try{ localStorage.setItem('nb_tut','1'); }catch(e){} }
+  document.getElementById('tutNext').onclick=()=>{ if(i<SLIDES.length-1){ i++; paint(); } else close(); };
+  document.getElementById('tutSkip').onclick=close;
+  document.getElementById('tutHelp').onclick=open;
+  let seen=false; try{ seen = localStorage.getItem('nb_tut')==='1'; }catch(e){}
+  if(!seen) setTimeout(open, 400);
+})();
+</script>
+
+<!-- ============================================================
+     🌐 NOVA ARCADE 포탈 통합 (다른 7개 게임과 완전히 동일한 패턴)
+     - 포탈 로그인 세션 자동 인식 (별도 로그인 버튼 없음 — snap/duel/grid/runner와 동일)
+     - 통합 헤더(닉네임·프로필·이번 주 순위·최고점·오늘의 도전)
+     - 게임오버 시 자동으로 scores 컬렉션에 랭킹 기록 + 데일리 도전 체크
+     ============================================================ -->
+<script type="module">
+  import { Nova } from "../../portal-sdk.js";
+  import { NovaHeader } from "../../portal-common.js";
+  const GAME_ID = "neon-beat";
+  Nova.init(GAME_ID);
+  NovaHeader.mount(document.getElementById('nova-header-slot'), GAME_ID);
+
+  window.NB = {
+    ready: true, user: null, myName: null,
+    async report(score){
+      try{ return await Nova.reportScore(Math.max(0, Math.round(score))); }
+      catch(e){ console.warn('[NB] reportScore', e); return false; }
+    },
+    checkDaily(metrics){ try{ NovaHeader.checkDaily(metrics); }catch(e){} }
+  };
+  Nova.onUser(u => {
+    window.NB.user = u || null;
+    window.NB.myName = u ? (u.displayName || '플레이어') : null;
+  });
+
+  console.log('[NEON BEAT] NOVA ARCADE 통합 로그인+랭킹+데일리 연동됨');
+</script>
+</body>
+</html>
+

@@ -23,7 +23,8 @@ service cloud.firestore {
         'neon-runner':   10000000,
         'cosmic-gear':   100000,
         'nationrise':    1000000000000,
-        'hexa-flip':     10000
+        'hexa-flip':     10000,
+        'neon-beat':     2000000
       }.get(g, 1000000);
     }
 

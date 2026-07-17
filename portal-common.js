@@ -27,6 +27,8 @@ const DAILY_POOL = [
   { key:'nr_score_5k',    gameId:'neon-runner',    desc:'NEON RUNNER 5,000점',       target:5000,   points:15 },
   { key:'nr_score_20k',   gameId:'neon-runner',    desc:'NEON RUNNER 20,000점',      target:20000,  points:25 },
   { key:'cg_wave_20',     gameId:'cosmic-gear',    desc:'COSMIC GEAR 웨이브 20',     target:20,     points:20 },
+  { key:'nb_score_15k',   gameId:'neon-beat',      desc:'NEON BEAT 15,000점 달성',   target:15000,  points:15 },
+  { key:'nb_score_40k',   gameId:'neon-beat',      desc:'NEON BEAT 40,000점 달성',   target:40000,  points:25 },
 ];
 
 const _ymd = () => {
