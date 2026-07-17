@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Neon Beat - v0.1</title>
+<title>Neon Beat - v0.2</title>
 <meta name="theme-color" content="#020206">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
@@ -151,6 +151,7 @@ h1{
 
 <div id="hud" style="display:none;">
   <div class="hud-item" id="scoreDisplay">SCORE: 0</div>
+  <div class="hud-item" id="stageDisplay">STAGE 1/4</div>
   <div class="hud-item" id="comboDisplay">COMBO 0</div>
   <div class="hud-item" id="accDisplay">ACC 100%</div>
   <div class="hud-item" id="hpDisplay">CORE: 100%</div>
@@ -161,10 +162,10 @@ h1{
 </div>
 <button id="skillBtn" type="button"><span class="ic">⚡</span></button>
 <button id="muteBtn" type="button">🔊</button>
-<div id="touchZones"><div class="tzone" data-lane="0">D</div><div class="tzone" data-lane="1">F</div><div class="tzone" data-lane="2">J</div><div class="tzone" data-lane="3">K</div></div>
+<div id="touchZones"></div>
 
 <div id="startScreen" class="ui-screen show">
-  <div class="version-tag">v0.1</div>
+  <div class="version-tag">v0.2</div>
   <div class="fullscreen-container">
     <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
       <h1>NEON BEAT</h1>
@@ -173,11 +174,10 @@ h1{
     <div id="nova-header-slot" style="width:100%;max-width:520px;"></div>
     <div class="subtitle" style="margin-top:4px;">트랙을 선택하세요 — 음악과 채보가 실시간으로 함께 생성됩니다</div>
     <div class="preset-grid" id="presetGrid"></div>
+    <div class="subtitle" style="margin-top:8px;">난이도(키 개수)를 선택하세요</div>
+    <div class="preset-grid" id="keysetGrid"></div>
     <button class="btn" id="startBtn">▶ 시작하기</button>
-    <div class="keyhint">
-      <span class="kbd">D</span><span class="kbd">F</span><span class="kbd">J</span><span class="kbd">K</span>
-      <span style="color:var(--muted);font-size:12.5px;align-self:center;margin-left:6px;">또는 하단 탭존</span>
-    </div>
+    <div class="keyhint" id="keyHint"></div>
   </div>
 </div>
 
@@ -198,6 +198,8 @@ h1{
         <div class="rstat"><div class="rl" style="color:#ff3355">MISS</div><div class="rv" id="rMiss">0</div></div>
       </div>
       <div id="rankNote"></div>
+      <div class="subtitle" style="margin-top:14px;font-size:11.5px;">스테이지 등급</div>
+      <div class="result-stats" id="stageGradeStrip" style="margin-top:6px;"></div>
       <div style="display:flex;gap:10px;margin-top:18px;justify-content:center;flex-wrap:wrap;">
         <button class="btn" id="retryBtn">다시하기</button>
         <button class="btn ghost" id="homeBtn">포탈로</button>
@@ -233,6 +235,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 let W=0,H=0,DPR=1;
 let laneX=[], laneW=0, hitLineY=0, topY=0, highwayX=0, highwayW=0;
+let currentLaneCount = 4; // G보다 먼저 선언 필요 (TDZ 회피용)
 
 function resize(){
   DPR = Math.min(2, window.devicePixelRatio||1);
@@ -243,10 +246,11 @@ function resize(){
   layoutLanes();
 }
 function layoutLanes(){
-  highwayW = Math.min(W*0.94, 560);
+  const n = currentLaneCount;
+  highwayW = Math.min(W*0.94, 90*n+40);
   highwayX = (W-highwayW)/2;
-  laneW = highwayW/4;
-  laneX = [0,1,2,3].map(i=>highwayX+i*laneW);
+  laneW = highwayW/n;
+  laneX = Array.from({length:n}, (_,i)=>highwayX+i*laneW);
   topY = Math.max(90, H*0.14);
   hitLineY = H - Math.max(118, H*0.17);
 }
@@ -275,14 +279,26 @@ const sound = (()=>{
   }
   function snare(t){ noiseBurst(t,0.14,900,0.55); }
   function hihat(t){ noiseBurst(t,0.05,5200,0.26); }
+  function snareHat(t){ noiseBurst(t,0.10,1400,0.4); } // 2키 통합 보이스(스네어+하이햇 중간톤)
   function accent(t){ const x=ac(); if(!x||!on) return;
     const o=x.createOscillator(), g=x.createGain();
     o.type='triangle'; o.frequency.setValueAtTime(660,t);
     g.gain.setValueAtTime(0.32,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.1);
     o.connect(g).connect(x.destination); o.start(t); o.stop(t+0.12);
   }
-  const laneFns=[kick,snare,hihat,accent];
-  function playLane(lane,t){ const f=laneFns[lane]; if(f) f(t); }
+  function melody(t, freq){ const x=ac(); if(!x||!on) return;
+    const o=x.createOscillator(), g=x.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(freq,t);
+    g.gain.setValueAtTime(0.22,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.22);
+    o.connect(g).connect(x.destination); o.start(t); o.stop(t+0.24);
+  }
+  const VOICE_FNS = {
+    KICK:kick, SNARE:snare, HIHAT:hihat, ACCENT:accent, SNARE_HAT:snareHat,
+    MELODY1:(t)=>melody(t,440),   // A4
+    MELODY2:(t)=>melody(t,554.4), // C#5 (A메이저 펜타토닉 느낌)
+    MELODY3:(t)=>melody(t,659.3), // E5
+  };
+  function playVoice(name,t){ const f=VOICE_FNS[name]; if(f) f(t); }
   function sfx(type){ const x=ac(); if(!x||!on) return; const t=x.currentTime;
     const o=x.createOscillator(), g=x.createGain();
     const freqMap={perfect:1200,great:820,good:520,miss:140,skill:1600,click:700};
@@ -292,7 +308,7 @@ const sound = (()=>{
     o.connect(g).connect(x.destination); o.start(t); o.stop(t+(type==='skill'?0.36:0.1));
   }
   function toggle(){ on=!on; try{ localStorage.setItem('nb_snd', on?'1':'0'); }catch(e){} return on; }
-  return { ac, playLane, sfx, toggle, isOn:()=>on };
+  return { ac, playVoice, sfx, toggle, isOn:()=>on };
 })();
 
 /* ---------------- 채보 생성기 (결정론적: 프리셋마다 모두에게 동일) ---------------- */
@@ -306,22 +322,90 @@ const PRESETS = [
   { id:'dnb',      name:'DRUM & BASS', bpm:174, bars:40, seed:'nb-dnb-v1',      diffMul:1.4, tag:'HARD',   color:'#ff0055' },
 ];
 
-function generateChart(preset){
-  const rnd = mulberry32(strSeed(preset.seed));
+/* ---------------- 난이도 = 키(레인) 개수 2~7 ---------------- */
+const KEYSETS = [
+  { n:2, keys:['d','k'],                         voices:['KICK','SNARE_HAT'],                                    tag:'VERY EASY' },
+  { n:3, keys:['d','f','k'],                     voices:['KICK','SNARE','HIHAT'],                                tag:'EASY' },
+  { n:4, keys:['d','f','j','k'],                 voices:['KICK','SNARE','HIHAT','ACCENT'],                       tag:'NORMAL' },
+  { n:5, keys:['s','d','f','j','k'],             voices:['KICK','SNARE','HIHAT','ACCENT','MELODY1'],             tag:'HARD' },
+  { n:6, keys:['s','d','f','j','k','l'],          voices:['KICK','SNARE','HIHAT','ACCENT','MELODY1','MELODY2'],   tag:'VERY HARD' },
+  { n:7, keys:['s','d','f',' ','j','k','l'],      voices:['SNARE','HIHAT','ACCENT','KICK','MELODY1','MELODY2','MELODY3'], tag:'EXPERT' },
+];
+function keysetLabel(k){ return k.keys.map(c=>c===' '?'SPACE':c.toUpperCase()).join(' '); }
+
+/* ---------------- 곡 구조(섹션) 정의: 인트로→벌스→빌드업→드랍→아웃트로 ---------------- */
+const SECTION_PLAN = [
+  {frac:0.15, type:'INTRO'},
+  {frac:0.20, type:'VERSE'},
+  {frac:0.15, type:'BUILD'},
+  {frac:0.35, type:'DROP'},
+  {frac:0.15, type:'OUTRO'},
+];
+function sectionAt(bar, totalBars){
+  const t = bar/totalBars; let acc=0;
+  for(const s of SECTION_PLAN){ acc+=s.frac; if(t<acc) return s.type; }
+  return 'OUTRO';
+}
+
+function generateChart(preset, keyset){
+  const rnd = mulberry32(strSeed(preset.seed+'|k'+keyset.n));
   const stepMs = (60000/preset.bpm)/4; // 16분음표 간격
   const totalSteps = preset.bars*16;
   const notes = [];
+  const voices = keyset.voices;
+  const laneOf = (name)=> voices.indexOf(name);
+  const has = (name)=> voices.includes(name);
+  function mk(t,name){ const lane=laneOf(name); if(lane<0) return null; return {time:t, lane, judged:null, voice:name}; }
+  function push(t,name){ const n=mk(t,name); if(n) notes.push(n); }
+
   for(let i=0;i<totalSteps;i++){
     const bar = Math.floor(i/16), pos = i%16;
     const t = i*stepMs;
-    if(pos%4===0) notes.push({time:t, lane:0, judged:null});           // 킥: four-on-floor
-    if(pos===4||pos===12) notes.push({time:t, lane:1, judged:null});   // 스네어: 백비트
-    if(pos%2===0) notes.push({time:t, lane:2, judged:null});           // 하이햇: 8분음표
-    const density = (0.05 + (bar/preset.bars)*0.35) * preset.diffMul;  // 후반으로 갈수록 밀도 상승
-    if(pos%2===1 && rnd()<density) notes.push({time:t, lane:3, judged:null}); // 악센트: 당김음
+    const section = sectionAt(bar, preset.bars);
+    const phraseBar = bar%4;
+    const isFillZone = (phraseBar===3) && pos>=12; // 4마디 프레이즈의 마지막 마디, 마지막 1/4 구간 = 필인
+
+    // KICK (steady pulse)
+    if(has('KICK')){
+      if(section==='INTRO'){ if(pos%8===0) push(t,'KICK'); }
+      else if(section==='VERSE'){ if(pos%4===0) push(t,'KICK'); }
+      else if(section==='BUILD'){ if(pos%4===0 || (pos===14)) push(t,'KICK'); }
+      else if(section==='DROP'){ if(pos%4===0 || pos===10 || pos===14) push(t,'KICK'); }
+      else { if(pos%8===0) push(t,'KICK'); } // OUTRO
+    }
+    // SNARE (backbeat) / SNARE_HAT(2키 통합형)
+    if(section!=='INTRO'){
+      if(has('SNARE') && (pos===4||pos===12)) push(t,'SNARE');
+      if(has('SNARE_HAT')){
+        if(pos===4||pos===12) push(t,'SNARE_HAT');
+        else if(pos%2===0 && (section==='DROP'||section==='BUILD') && rnd()<0.45) push(t,'SNARE_HAT');
+      }
+    }
+    // HIHAT (섹션별 밀도 변화로 단조로움 탈피)
+    if(has('HIHAT')){
+      let on=false;
+      if(section==='VERSE') on = pos%4===2;
+      else if(section==='BUILD') on = (pos%2===0) || isFillZone;
+      else if(section==='DROP') on = pos%2===0;
+      if(on) push(t,'HIHAT');
+    }
+    // ACCENT (당김음 — 후반/드랍에서 밀도 상승)
+    if(has('ACCENT')){
+      const density = section==='DROP' ? 0.4*preset.diffMul
+                    : section==='BUILD' ? 0.25*preset.diffMul
+                    : section==='VERSE' ? 0.08*preset.diffMul : 0;
+      if(pos%2===1 && rnd()<density) push(t,'ACCENT');
+      if(isFillZone && rnd()<0.6) push(t,'ACCENT');
+    }
+    // MELODY 1/2/3 — 드랍 구간에서만 서로 다른 박자에 얹혀 "진짜 음악처럼" 들리게
+    ['MELODY1','MELODY2','MELODY3'].forEach((mv,mi)=>{
+      if(!has(mv)) return;
+      if(section==='DROP' && pos%4===mi && rnd()<0.7) push(t,mv);
+      else if(section==='BUILD' && mi===0 && pos%8===4 && rnd()<0.5) push(t,mv);
+    });
   }
   notes.sort((a,b)=>a.time-b.time);
-  return { notes, durationMs: totalSteps*stepMs, stepMs, preset };
+  return { notes, durationMs: totalSteps*stepMs, stepMs, preset, keyset };
 }
 
 /* ---------------- 판정 상수 ---------------- */
@@ -367,7 +451,14 @@ const G = {
   floats: [],
   laneFlash: [0,0,0,0],
   selectedPreset: PRESETS[0],
+  selectedKeyset: KEYSETS[2], // 기본 4키(NORMAL)
   shakeT: 0,
+  // 스테이지 등급 시스템
+  stageTotal: 4,
+  stageIdx: 0,
+  stageBounds: [],
+  stagePerfect:0, stageGreat:0, stageGood:0, stageMiss:0,
+  stageGrades: [],
 };
 
 function currentSongTimeMs(){
@@ -386,7 +477,7 @@ function startAudioScheduler(){
     while(G.nextSchedIdx < G.chart.notes.length &&
           (G.chart.notes[G.nextSchedIdx].time/1000) <= (now - G.audioStartCtxTime) + SCHEDULE_AHEAD){
       const n = G.chart.notes[G.nextSchedIdx];
-      sound.playLane(n.lane, G.audioStartCtxTime + n.time/1000);
+      sound.playVoice(n.voice, G.audioStartCtxTime + n.time/1000);
       G.nextSchedIdx++;
     }
   }, 25);
@@ -396,9 +487,9 @@ function stopAudioScheduler(){ if(G.schedTimer){ clearInterval(G.schedTimer); G.
 /* ---------------- 판정 처리 ---------------- */
 function applyJudgment(grade, lane){
   const pts = {PERFECT:300, GREAT:150, GOOD:60}[grade] || 0;
-  if(grade==='PERFECT'){ G.perfectCount++; G.hp=Math.min(100,G.hp+PERFECT_REGEN); G.skillCharge=Math.min(100,G.skillCharge+4); sound.sfx('perfect'); }
-  else if(grade==='GREAT'){ G.greatCount++; sound.sfx('great'); }
-  else { G.goodCount++; sound.sfx('good'); }
+  if(grade==='PERFECT'){ G.perfectCount++; G.stagePerfect++; G.hp=Math.min(100,G.hp+PERFECT_REGEN); G.skillCharge=Math.min(100,G.skillCharge+4); sound.sfx('perfect'); }
+  else if(grade==='GREAT'){ G.greatCount++; G.stageGreat++; sound.sfx('great'); }
+  else { G.goodCount++; G.stageGood++; sound.sfx('good'); }
   G.combo++; G.maxCombo=Math.max(G.maxCombo,G.combo);
   const tier = comboTier(G.combo);
   const addScore = Math.round(pts*tier.mult);
@@ -413,7 +504,7 @@ function applyJudgment(grade, lane){
   updateHUD();
 }
 function onMiss(lane){
-  G.combo=0; G.missCount++; G.hp=Math.max(0,G.hp-MISS_HP); sound.sfx('miss');
+  G.combo=0; G.missCount++; G.stageMiss++; G.hp=Math.max(0,G.hp-MISS_HP); sound.sfx('miss');
   if(lane!=null){ const cx=laneX[lane]+laneW/2; G.floats.push(new FloatingText(cx, hitLineY-30, 'MISS', '#ff3355', 0.8)); }
   updateHUD();
   if(G.hp<=0) endSong(false);
@@ -453,6 +544,8 @@ function activateSkill(){
 /* ---------------- HUD ---------------- */
 function updateHUD(){
   document.getElementById('scoreDisplay').textContent = 'SCORE: '+G.score;
+  const stEl=document.getElementById('stageDisplay');
+  if(stEl) stEl.textContent = 'STAGE '+Math.min(G.stageIdx+1,G.stageTotal)+'/'+G.stageTotal;
   document.getElementById('comboDisplay').textContent = 'COMBO '+G.combo;
   const total = G.perfectCount+G.greatCount+G.goodCount+G.missCount;
   const acc = total? ((G.perfectCount+G.greatCount*0.7+G.goodCount*0.4)/total*100) : 100;
@@ -472,6 +565,24 @@ function updateHUD(){
 
 /* ---------------- 렌더 루프 ---------------- */
 let rafId=null;
+function calcGrade(perfect, great, good, miss){
+  const total = perfect+great+good+miss;
+  const w = perfect*1 + great*0.7 + good*0.4;
+  const acc = total? (w/total*100) : 0;
+  return acc>=95?'S':acc>=85?'A':acc>=70?'B':'C';
+}
+function checkStageBoundary(t){
+  // while 루프: 프레임이 크게 건너뛰어도(백그라운드 탭 등) 여러 경계를 놓치지 않고 따라잡음
+  while(G.stageIdx < G.stageTotal && t >= G.stageBounds[G.stageIdx]){
+    const grade = calcGrade(G.stagePerfect, G.stageGreat, G.stageGood, G.stageMiss);
+    G.stageGrades.push(grade);
+    const gradeColor = {S:'#ffd23f',A:'#00ffcc',B:'#a855f7',C:'#8194ad'}[grade];
+    G.floats.push(new FloatingText(W/2, H*0.24, `STAGE ${G.stageIdx+1} — ${grade}`, gradeColor, 1.2));
+    G.stagePerfect=0; G.stageGreat=0; G.stageGood=0; G.stageMiss=0;
+    G.stageIdx++;
+  }
+  updateHUD();
+}
 function frame(){
   if(G.state!=='PLAYING'){ rafId=null; return; }
   const t = currentSongTimeMs();
@@ -480,6 +591,7 @@ function frame(){
     if(n.judged) continue;
     if(t-n.time > GOOD_MS){ n.judged='MISS'; onMiss(n.lane); }
   }
+  checkStageBoundary(t);
   if(t > G.chart.durationMs + 500){ endSong(true); return; }
   draw(t);
   rafId = requestAnimationFrame(frame);
@@ -498,8 +610,9 @@ function draw(t){
   // 하이웨이 배경
   ctx.fillStyle='rgba(255,255,255,0.02)';
   ctx.fillRect(highwayX, topY, highwayW, hitLineY-topY);
-  const laneColors=['#00ffcc','#ff5c8a','#ffd23f','#a855f7'];
-  for(let i=0;i<4;i++){
+  const laneColors=['#00ffcc','#ff5c8a','#ffd23f','#a855f7','#22d3ee','#ff8c42','#3ddc97'];
+  const nLanes = laneX.length;
+  for(let i=0;i<nLanes;i++){
     ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(laneX[i],topY); ctx.lineTo(laneX[i],hitLineY); ctx.stroke();
     if(G.laneFlash[i]>0.02){
@@ -554,11 +667,34 @@ function hideAllScreens(){
   document.querySelectorAll('.ui-screen').forEach(s=>s.classList.remove('show'));
 }
 
+function buildTouchZones(){
+  const wrap = document.getElementById('touchZones');
+  wrap.innerHTML='';
+  G.selectedKeyset.keys.forEach((k,i)=>{
+    const z=document.createElement('div');
+    z.className='tzone'; z.dataset.lane=String(i);
+    z.textContent = k===' ' ? '␣' : k.toUpperCase();
+    z.addEventListener('pointerdown', e=>{
+      e.preventDefault(); hitLane(i);
+      z.classList.add('hit'); setTimeout(()=>z.classList.remove('hit'),90);
+    }, {passive:false});
+    wrap.appendChild(z);
+  });
+}
 function startGame(){
-  G.chart = generateChart(G.selectedPreset);
+  currentLaneCount = G.selectedKeyset.keys.length;
+  layoutLanes();
+  buildTouchZones();
+  rebuildKeyLane();
+  G.chart = generateChart(G.selectedPreset, G.selectedKeyset);
   G.hp=100; G.score=0; G.combo=0; G.maxCombo=0;
   G.perfectCount=0; G.greatCount=0; G.goodCount=0; G.missCount=0;
-  G.skillCharge=0; G.rushActive=false; G.floats=[]; G.laneFlash=[0,0,0,0];
+  G.skillCharge=0; G.rushActive=false; G.floats=[];
+  G.laneFlash = new Array(currentLaneCount).fill(0);
+  // 스테이지 경계(전체 길이를 4등분한 ms 지점) + 카운터 초기화
+  G.stageIdx=0; G.stageGrades=[];
+  G.stagePerfect=0; G.stageGreat=0; G.stageGood=0; G.stageMiss=0;
+  G.stageBounds = Array.from({length:G.stageTotal}, (_,i)=> G.chart.durationMs*(i+1)/G.stageTotal);
   G.state='PLAYING';
   hideAllScreens();
   document.getElementById('hud').style.display='flex';
@@ -580,9 +716,14 @@ async function endSong(success){
   document.getElementById('touchZones').classList.remove('on');
 
   const total = G.perfectCount+G.greatCount+G.goodCount+G.missCount;
-  const weighted = G.perfectCount*1 + G.greatCount*0.7 + G.goodCount*0.4;
-  const accuracy = total? (weighted/total*100) : 0;
-  const rank = !success ? 'C' : (accuracy>=95?'S':accuracy>=85?'A':accuracy>=70?'B':'C');
+  const accuracy = total? ((G.perfectCount*1+G.greatCount*0.7+G.goodCount*0.4)/total*100) : 0;
+  const rank = !success ? calcGrade(0,0,0,1) : calcGrade(G.perfectCount,G.greatCount,G.goodCount,G.missCount);
+
+  // 진행 중이던 마지막 스테이지도 부분 등급으로 마감
+  const curStageJudged = G.stagePerfect+G.stageGreat+G.stageGood+G.stageMiss;
+  if(G.stageIdx < G.stageTotal && curStageJudged>0){
+    G.stageGrades.push(calcGrade(G.stagePerfect,G.stageGreat,G.stageGood,G.stageMiss));
+  }
 
   document.getElementById('rankLetter').textContent = rank;
   document.getElementById('rankLetter').className = 'rank-letter rank-'+rank;
@@ -594,6 +735,11 @@ async function endSong(success){
   document.getElementById('rGreat').textContent = G.greatCount;
   document.getElementById('rGood').textContent = G.goodCount;
   document.getElementById('rMiss').textContent = G.missCount;
+  const gradeColor2 = {S:'#ffd23f',A:'#00ffcc',B:'#a855f7',C:'#8194ad'};
+  const strip = document.getElementById('stageGradeStrip');
+  strip.innerHTML = G.stageGrades.map((g,i)=>
+    `<div class="rstat"><div class="rl">STAGE ${i+1}</div><div class="rv" style="color:${gradeColor2[g]}">${g}</div></div>`
+  ).join('') || '<div class="subtitle">기록 없음</div>';
   showScreen('resultScreen');
 
   // 🌐 포탈 통합 랭킹 자동 기록 + 데일리 도전 체크
@@ -610,20 +756,24 @@ async function endSong(success){
   }catch(e){ console.warn('[NB] report', e); }
 }
 
-/* ---------------- 입력 ---------------- */
-const KEY_LANE = {'d':0,'f':1,'j':2,'k':3};
+/* ---------------- 입력 (키셋에 따라 동적 매핑) ---------------- */
+let KEY_LANE = {'d':0,'f':1,'j':2,'k':3};
+function rebuildKeyLane(){
+  KEY_LANE = {};
+  G.selectedKeyset.keys.forEach((k,i)=>{ KEY_LANE[k]=i; });
+}
 window.addEventListener('keydown', e=>{
   if(e.repeat) return;
   const k = e.key.toLowerCase();
-  if(k===' ' || e.code==='Space'){ e.preventDefault(); activateSkill(); return; }
-  if(k in KEY_LANE){ hitLane(KEY_LANE[k]); }
-});
-document.querySelectorAll('.tzone').forEach(z=>{
-  z.addEventListener('pointerdown', e=>{
+  const isSpace = (k===' ' || e.code==='Space');
+  // 7키 모드에서는 스페이스가 레인 입력, 그 외 모드에서는 스킬 발동
+  if(isSpace){
     e.preventDefault();
-    const lane=Number(z.dataset.lane); hitLane(lane);
-    z.classList.add('hit'); setTimeout(()=>z.classList.remove('hit'),90);
-  }, {passive:false});
+    if(' ' in KEY_LANE) hitLane(KEY_LANE[' ']);
+    else activateSkill();
+    return;
+  }
+  if(k in KEY_LANE){ hitLane(KEY_LANE[k]); }
 });
 document.getElementById('skillBtn').addEventListener('pointerdown', e=>{ e.preventDefault(); e.stopPropagation(); activateSkill(); });
 document.getElementById('muteBtn').addEventListener('click', ()=>{
@@ -648,7 +798,30 @@ function renderPresetGrid(){
     grid.appendChild(card);
   });
 }
+const KEYSET_COLORS = ['#3ddc97','#00ffcc','#ffd23f','#ff8c42','#ff5c8a','#a855f7'];
+function renderKeysetGrid(){
+  const grid=document.getElementById('keysetGrid');
+  grid.innerHTML='';
+  KEYSETS.forEach((k,idx)=>{
+    const color = KEYSET_COLORS[idx] || '#00ffcc';
+    const card=document.createElement('div');
+    card.className='preset-card'+(k.n===G.selectedKeyset.n?' sel':'');
+    card.innerHTML = `<div class="pn" style="color:${color}">${k.n}키</div>
+      <div class="pb">${keysetLabel(k)}</div>
+      <div class="pt" style="background:${color}22;color:${color};border:1px solid ${color}55;">${k.tag}</div>`;
+    card.onclick = ()=>{ G.selectedKeyset=k; renderKeysetGrid(); updateKeyHint(); };
+    grid.appendChild(card);
+  });
+}
+function updateKeyHint(){
+  const hint=document.getElementById('keyHint');
+  hint.innerHTML = G.selectedKeyset.keys.map(k=>
+    `<span class="kbd">${k===' '?'SPACE':k.toUpperCase()}</span>`
+  ).join('') + '<span style="color:var(--muted);font-size:12.5px;align-self:center;margin-left:6px;">또는 하단 탭존</span>';
+}
 renderPresetGrid();
+renderKeysetGrid();
+updateKeyHint();
 document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('retryBtn').addEventListener('click', ()=>{ showScreen('startScreen'); });
 document.getElementById('homeBtn').addEventListener('click', ()=>{ location.href='../../'; });
@@ -656,11 +829,11 @@ document.getElementById('homeBtn').addEventListener('click', ()=>{ location.href
 /* ---------------- 튜토리얼 ---------------- */
 (function(){
   const SLIDES=[
-    {e:'🎹',t:'4레인 노트',d:'노트가 위에서 <b>4개 레인</b>을 따라 내려옵니다. PC는 <b>D·F·J·K</b> 키, 모바일은 하단 <b>탭존</b>으로 히트라인에 맞춰 입력하세요.'},
+    {e:'🎹',t:'난이도 = 키 개수',d:'<b>2키~7키</b> 중 난이도를 고르세요. 많을수록 더 많은 레인을 동시에 처리해야 해서 어렵습니다. <b>7키에서는 스페이스바</b>도 레인으로 사용됩니다.'},
     {e:'🎯',t:'판정: PERFECT·GREAT·GOOD',d:'타이밍이 정확할수록 <b>PERFECT</b>, 조금 벗어나면 <b>GREAT·GOOD</b>. 놓치면 <b>MISS</b>로 코어 체력이 줄어듭니다.'},
-    {e:'🔥',t:'콤보 등급',d:'연속으로 성공하면 <b>COMBO → SUPER → ULTRA → MASTER</b> 등급이 올라가며 점수 배율이 폭증합니다. 끊기지 않게 조심하세요!'},
-    {e:'⚡',t:'PERFECT RUSH',d:'PERFECT를 모으면 게이지가 차오릅니다. 100%에서 <b>SPACE 또는 번개 버튼</b>으로 발동하면 잠깐 판정이 매우 관대해집니다.'},
-    {e:'🎵',t:'음악 = 채보',d:'이 게임의 음악과 노트는 <b>같은 시드에서 실시간 생성</b>됩니다 — 매번 정확히 같은 트랙이라 랭킹 경쟁이 공정합니다.'},
+    {e:'🎵',t:'곡 구조를 느껴보세요',d:'곡은 <b>인트로 → 벌스 → 빌드업 → 드랍 → 아웃트로</b> 구조로 생성됩니다. 드랍 구간에서는 멜로디 레인이 추가되어 진짜 음악처럼 들립니다 — 귀로 들리는 소리에 맞춰 누르세요!'},
+    {e:'🏆',t:'스테이지 등급',d:'곡이 4개의 스테이지로 나뉘어, 구간마다 <b>S·A·B·C 등급</b>이 매겨집니다. 결과 화면에서 스테이지별 성적을 확인할 수 있어요.'},
+    {e:'🔥',t:'콤보 등급 & PERFECT RUSH',d:'연속 성공 시 <b>COMBO→SUPER→ULTRA→MASTER</b>로 배율이 폭증합니다. PERFECT를 모으면 게이지가 차고, 100%에서 발동하면 판정이 관대해집니다.'},
   ];
   let i=0; const ov=document.getElementById('tutov'), dots=document.getElementById('tutDots');
   SLIDES.forEach((_,k)=>{ const d=document.createElement('div'); d.className='dot'+(k===0?' on':''); dots.appendChild(d); });
