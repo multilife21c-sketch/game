@@ -362,7 +362,7 @@
     <div id="lobby-overlay" class="overlay">
         <div class="panel">
             <h1>HEXA-FLIP</h1>
-            <div id="ver" style="position:fixed;top:5px;left:8px;z-index:9999;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,.4);pointer-events:none;">v1.60</div>
+            <div id="ver" style="position:fixed;top:5px;left:8px;z-index:9999;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,.4);pointer-events:none;">v1.70</div>
             <p class="subtitle">다이내믹 메이징 디펜스</p>
             <div id="nova-header-slot" style="width:100%;display:flex;justify-content:center;"></div>
             
@@ -435,8 +435,8 @@
     }
 
     const commanders = {
-        tech: { id: 'tech', name: '테크 (Tech)', desc: '시작 에너지가 50 증가합니다.', icon: '👩‍💻' },
-        heavy: { id: 'heavy', name: '헤비 (Heavy)', desc: '코어 최대 쉴드가 10 증가합니다.', icon: '🛡️' },
+        tech: { id: 'tech', name: '테크 (Tech)', desc: '시작 에너지가 75 증가합니다.', icon: '👩‍💻' },
+        heavy: { id: 'heavy', name: '헤비 (Heavy)', desc: '코어 최대 쉴드가 15 증가합니다.', icon: '🛡️' },
         speed: { id: 'speed', name: '스피드 (Speed)', desc: '모든 타워의 공격 쿨타임 10% 감소.', icon: '⚡' }
     };
 
@@ -478,9 +478,9 @@
     let spawnTimer = 0; let enemiesToSpawn = 0; let spawnInterval = 1000; let nextWaveTimer = 3000;
 
     const towerTemplates = {
-        plasma: { name: '플라즈마', range: 160, damage: 2, cooldown: 12, color: '#00f2fe', bulletSpeed: 0 },
-        blaster: { name: '블래스터', range: 220, damage: 35, cooldown: 60, color: '#ff4757', bulletSpeed: 7 },
-        tesla: { name: '테슬라', range: 130, damage: 15, cooldown: 40, color: '#ffa500', bulletSpeed: 0 }
+        plasma: { name: '플라즈마', range: 160, damage: 3, cooldown: 12, color: '#00f2fe', bulletSpeed: 0 },
+        blaster: { name: '블래스터', range: 220, damage: 30, cooldown: 60, color: '#ff4757', bulletSpeed: 7 },
+        tesla: { name: '테슬라', range: 150, damage: 15, cooldown: 40, color: '#ffa500', bulletSpeed: 0 }
     };
     
     // 배속 조절 함수
@@ -582,8 +582,8 @@
 
     function initGame() {
         const cmd = metaData.character; const upg = metaData.upgrades;
-        gold = 250 + (cmd === 'tech' ? 50 : 0) + (upg.startEnergy * 25);
-        lives = 20 + (cmd === 'heavy' ? 10 : 0) + (upg.coreLife * 5);
+        gold = 250 + (cmd === 'tech' ? 75 : 0) + (upg.startEnergy * 25);
+        lives = 20 + (cmd === 'heavy' ? 15 : 0) + (upg.coreLife * 5);
         wave = 1;
         enemies = []; towers = []; projectiles = []; particles = []; floatingTexts = [];
         freezeTimer = 0; waveInProgress = false; nextWaveTimer = 3000;
@@ -604,7 +604,7 @@
             if (t.level >= 3) { showToast("MAX 레벨에 도달한 타워입니다!"); return; }
             const upgradeCost = Math.floor(t.cost * Math.pow(1.5, t.level)); 
             if (gold >= upgradeCost) {
-                gold -= upgradeCost; t.level += 1; t.damage = Math.floor(t.damage * 1.6); t.range = Math.floor(t.range * 1.15);
+                gold -= upgradeCost; t.level += 1; t.damage = Math.floor(t.damage * 1.5); t.range = Math.floor(t.range * 1.15);
                 if (t.level === 3) {
                     t.isMax = true; t.cooldown = Math.floor(t.cooldown * 0.75);
                     spawnFloatingText(c * cellSize + cellSize/2, r * cellSize + 10, `MAX LEVEL!`, '#ffd700');
@@ -671,7 +671,7 @@
         let scaleHp = hp; let scaleSpeed = speed; let size = 14; let col = '#ff4757';
         if (currentType === 'fast') { scaleHp *= 0.6; scaleSpeed *= 1.5; col = '#00ff88'; size = 11; } 
         else if (currentType === 'heavy') { scaleHp *= 2.5; scaleSpeed *= 0.6; col = '#8a2be2'; size = 20; }
-        enemies.push({ x: pathNodes[0].x * cellSize, y: pathNodes[0].y * cellSize, hp: scaleHp, maxHp: scaleHp, speed: scaleSpeed, nodeIndex: 0, size: size, color: col, reward: 15 + wave * 2 });
+        enemies.push({ x: pathNodes[0].x * cellSize, y: pathNodes[0].y * cellSize, hp: scaleHp, maxHp: scaleHp, speed: scaleSpeed, nodeIndex: 0, size: size, color: col, reward: 15 + wave * 2 + Math.floor(wave * wave * 0.15) });
     }
 
     function createExplosion(x, y, color, count = 10) {
@@ -697,7 +697,7 @@
             spawnTimer += (dt * gameSpeed);
             if (spawnTimer >= spawnInterval) { spawnTimer = 0; if (enemiesToSpawn > 0) { spawnEnemy(); enemiesToSpawn--; } }
             if (enemiesToSpawn === 0 && enemies.length === 0) {
-                waveInProgress = false; wave++; nextWaveTimer = 4000; gold += 50 + wave * 10;
+                waveInProgress = false; wave++; nextWaveTimer = 4000; gold += 50 + wave * 10 + Math.floor(wave * wave * 0.5);
                 updateUI(); spawnFloatingText(canvas.width/2, canvas.height/2 - 50, "WAVE CLEAR!", "#ffd700");
             }
         } else {
@@ -769,7 +769,7 @@
 
     function fireTower(t, target) {
         if (t.type === 'plasma') {
-            target.hp -= t.damage; particles.push({ type: 'laser', x1: t.x, y1: t.y, x2: target.x, y2: target.y, color: t.color, alpha: 1 });
+            target.hp -= t.damage; particles.push({ type: 'laser', x1: t.x, y1: t.y, x2: target.x, y2: target.y, color: t.color, alpha: 1, decay: 0.15 });
             if (Math.random() > 0.7) createExplosion(target.x, target.y, t.color, 2);
         } 
         else if (t.type === 'blaster') {
@@ -779,8 +779,8 @@
             let chainTargets = [target]; const maxChains = t.isMax ? 5 : 3;
             enemies.forEach(e => { if (e !== target && chainTargets.length < maxChains && Math.hypot(e.x - target.x, e.y - target.y) < 100) chainTargets.push(e); });
             chainTargets.forEach((ct, index) => {
-                ct.hp -= t.damage / (index + 1); const sourceX = index === 0 ? t.x : chainTargets[index - 1].x; const sourceY = index === 0 ? t.y : chainTargets[index - 1].y;
-                particles.push({ type: 'lightning', x1: sourceX, y1: sourceY, x2: ct.x, y2: ct.y, color: t.color, alpha: 1 });
+                ct.hp -= t.damage * (1 - index * 0.2); const sourceX = index === 0 ? t.x : chainTargets[index - 1].x; const sourceY = index === 0 ? t.y : chainTargets[index - 1].y;
+                particles.push({ type: 'lightning', x1: sourceX, y1: sourceY, x2: ct.x, y2: ct.y, color: t.color, alpha: 1, decay: 0.12 });
             });
         }
     }
@@ -824,8 +824,8 @@
 
         projectiles.forEach(p => { ctx.shadowBlur = 10; ctx.shadowColor = p.color; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, Math.PI * 2); ctx.fill(); });
         particles.forEach(p => {
-            if (p.type === 'laser') { ctx.strokeStyle = p.color; ctx.lineWidth = 4 * p.alpha; ctx.shadowBlur = 15; ctx.shadowColor = p.color; ctx.beginPath(); ctx.moveTo(p.x1, p.y1); ctx.lineTo(p.x2, p.y2); ctx.stroke(); p.alpha -= 0.15 * gameSpeed; } 
-            else if (p.type === 'lightning') { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3 * p.alpha; ctx.shadowBlur = 15; ctx.shadowColor = p.color; ctx.beginPath(); ctx.moveTo(p.x1, p.y1); const midX = (p.x1 + p.x2) / 2 + (Math.random() - 0.5) * 30; const midY = (p.y1 + p.y2) / 2 + (Math.random() - 0.5) * 30; ctx.lineTo(midX, midY); ctx.lineTo(p.x2, p.y2); ctx.stroke(); p.alpha -= 0.12 * gameSpeed; }
+            if (p.type === 'laser') { ctx.strokeStyle = p.color; ctx.lineWidth = 4 * p.alpha; ctx.shadowBlur = 15; ctx.shadowColor = p.color; ctx.beginPath(); ctx.moveTo(p.x1, p.y1); ctx.lineTo(p.x2, p.y2); ctx.stroke(); } 
+            else if (p.type === 'lightning') { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3 * p.alpha; ctx.shadowBlur = 15; ctx.shadowColor = p.color; ctx.beginPath(); ctx.moveTo(p.x1, p.y1); const midX = (p.x1 + p.x2) / 2 + (Math.random() - 0.5) * 30; const midY = (p.y1 + p.y2) / 2 + (Math.random() - 0.5) * 30; ctx.lineTo(midX, midY); ctx.lineTo(p.x2, p.y2); ctx.stroke(); }
             else { ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha; ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1.0; }
         });
         ctx.shadowBlur = 0;
